@@ -53,44 +53,43 @@ struct Pos {
     }
 };
 
-void nextIntersect(Pos* pos, Ray ray) {
+// TODO: rewrite without branching
+void nextIntersect(Pos* pos, Ray ray, int step) {
     
-    double xDst = (pos->x + 1) - pos->trueX;
-    double yDst = (pos->y + 1) - pos->trueY;
-    double zDst = (pos->z + 1) - pos->trueZ;
+    double xDst = (pos->x + step) - pos->trueX;
+    double yDst = (pos->y + step) - pos->trueY;
+    double zDst = (pos->z + step) - pos->trueZ;
 
 
-    if (pos->trueY + (xDst * ray.ratioYtoX) > pos->y+1) {
+    if (pos->trueY + (xDst * ray.ratioYtoX) > pos->y + step) {
         // next intercept is with x,y+1
 
-        if (pos->trueZ + (yDst * ray.ratioZtoY) > pos->z+1) {
+        if (pos->trueZ + (yDst * ray.ratioZtoY) > pos->z + step) {
             debug printf(" 1");
-            pos->trueZ = ++pos->z;
+            pos->trueZ = (pos->z += step);
             pos->trueX += zDst * ray.ratioXtoZ;
             pos->trueY += zDst * ray.ratioYtoZ;
         } else {
             debug printf(" 2");
-            pos->trueY = ++pos->y;
+            pos->trueY = (pos->y += step);
             pos->trueX += yDst * ray.ratioXtoY;
             pos->trueZ += yDst * ray.ratioZtoY;
         }
     } else {
         // next intercept is with x+1,y
         
-        if (pos->trueZ + (xDst * ray.ratioZtoX) > pos->z+1) {
+        if (pos->trueZ + (xDst * ray.ratioZtoX) > pos->z + step) {
             debug printf(" 3");
-            pos->trueZ = ++pos->z;
+            pos->trueZ = (pos->z += step);
             pos->trueX += zDst * ray.ratioXtoZ;
             pos->trueY += zDst * ray.ratioYtoZ;
         } else {
             debug  printf(" 4");
-            pos->trueX = ++pos->x;
+            pos->trueX = (pos->x += step);
             pos->trueY += xDst * ray.ratioYtoX;
             pos->trueZ += xDst * ray.ratioZtoX;
         }
     }
-
-    //printf(" : %d,%d,%d",pos->x==pos->trueX,pos->y==pos->trueY,pos->z==pos->trueZ);
 
     pos->x = floor(pos->trueX + 0.00000001);
     pos->y = floor(pos->trueY + 0.00000001);
@@ -109,9 +108,9 @@ struct Node {
     Leaf* children;
 };
 
-int main() {
+int m() {
 
-    printf("\033c"); // resets the terminal
+    printf("\033cHello world!"); // resets the terminal
 
     std::random_device dev;
     std::mt19937 rng(dev());
@@ -125,9 +124,9 @@ int main() {
 
     Node node = Node{{0,0,0},{4,4,4},bitmap};
 
-    Leaf* leafs = new Leaf[std::popcount(bitmap)]{};
+    Leaf* leafs = new Leaf[1]{};
 
-    for (int i = 0; i < std::popcount(bitmap); i++) {
+    for (int i = 0; i < 1; i++) {
         leafs[i].solid = true;
     }
 
@@ -136,7 +135,7 @@ int main() {
 
     while (pos.x < 20) {
         debug printf("pos: %d, %d, %d  truePos: %lf, %lf, %lf ",pos.x,pos.y,pos.z,pos.trueX,pos.trueY,pos.trueZ);
-        nextIntersect(&pos,vec);
+        nextIntersect(&pos,vec,1);
         
     }
     debug printf("pos: %d, %d, %d  truePos: %lf, %lf, %lf ",pos.x,pos.y,pos.z,pos.trueX,pos.trueY,pos.trueZ);
