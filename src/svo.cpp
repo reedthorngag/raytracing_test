@@ -3,11 +3,13 @@
 #include <stdio.h>
 #include <bit>
 
-// 4^3 = 64
-// uint64_t is 8 bytes
-// 
+#define DEBUG 0
 
-//typedef uint64_t Node;
+#if DEBUG
+#define debug
+#else
+#define debug if (false)
+#endif
 
 struct Pos;
 
@@ -15,6 +17,26 @@ struct Ray {
     double x;
     double y;
     double z;
+
+    double ratioYtoX;
+    double ratioYtoZ;
+    double ratioXtoY;
+    double ratioXtoZ;
+    double ratioZtoX;
+    double ratioZtoY;
+
+    Ray(double x, double y, double z) {
+        this->x = x;
+        this->y = y;
+        this->z = z;
+
+        this->ratioYtoX = (double)y / (double)x;
+        this->ratioYtoZ = (double)y / (double)z;
+        this->ratioXtoY = (double)x / (double)y;
+        this->ratioXtoZ = (double)x / (double)z;
+        this->ratioZtoX = (double)z / (double)x;
+        this->ratioZtoY = (double)z / (double)y;
+    }
 };
 
 struct Pos {
@@ -31,32 +53,49 @@ struct Pos {
     }
 };
 
-// Pos pos = Pos{0,0,0};
-// Ray vec = Ray{0.9,0.5,0};
-
-// 0.9 / 0.5 = 1.8
-
-// += 1 * 1.8
-
 void nextIntersect(Pos* pos, Ray ray) {
-    double ratio = (double)ray.y / (double)ray.x;
     
-    double xDst = (pos->x+1) - pos->trueX;
+    double xDst = (pos->x + 1) - pos->trueX;
+    double yDst = (pos->y + 1) - pos->trueY;
+    double zDst = (pos->z + 1) - pos->trueZ;
 
-    printf(" xDst: %lf ratio: %lf : %lf",xDst,ratio,xDst * ratio);
-    if (pos->trueY + (xDst * ratio) > pos->y+1) {
+
+    if (pos->trueY + (xDst * ray.ratioYtoX) > pos->y+1) {
         // next intercept is with x,y+1
-        ratio = ray.x/ray.y;
-        double yDst = ++pos->y - pos->trueY;
-        pos->trueY = pos->y;
-        pos->trueX += yDst*ratio;
+
+        if (pos->trueZ + (yDst * ray.ratioZtoY) > pos->z+1) {
+            debug printf(" 1");
+            pos->trueZ = ++pos->z;
+            pos->trueX += zDst * ray.ratioXtoZ;
+            pos->trueY += zDst * ray.ratioYtoZ;
+        } else {
+            debug printf(" 2");
+            pos->trueY = ++pos->y;
+            pos->trueX += yDst * ray.ratioXtoY;
+            pos->trueZ += yDst * ray.ratioZtoY;
+        }
     } else {
         // next intercept is with x+1,y
-        printf(" here");
-        pos->trueX = ++pos->x;
-        pos->trueY += xDst * ratio;
+        
+        if (pos->trueZ + (xDst * ray.ratioZtoX) > pos->z+1) {
+            debug printf(" 3");
+            pos->trueZ = ++pos->z;
+            pos->trueX += zDst * ray.ratioXtoZ;
+            pos->trueY += zDst * ray.ratioYtoZ;
+        } else {
+            debug  printf(" 4");
+            pos->trueX = ++pos->x;
+            pos->trueY += xDst * ray.ratioYtoX;
+            pos->trueZ += xDst * ray.ratioZtoX;
+        }
     }
-    printf("\n");
+
+    //printf(" : %d,%d,%d",pos->x==pos->trueX,pos->y==pos->trueY,pos->z==pos->trueZ);
+
+    pos->x = floor(pos->trueX + 0.00000001);
+    pos->y = floor(pos->trueY + 0.00000001);
+    pos->z = floor(pos->trueZ + 0.00000001);
+    debug printf("\n");
 }
 
 struct Leaf {
@@ -93,13 +132,14 @@ int main() {
     }
 
     Pos pos = Pos{1,1,1,1,1,1};
-    Ray vec = Ray{.9,.5,1};
+    Ray vec = Ray(.9,.5,.3);
 
-    while (pos.x < 10) {
-        printf("pos: %d, %d  truePos: %lf %lf ",pos.x,pos.y,pos.trueX,pos.trueY);
+    while (pos.x < 20) {
+        debug printf("pos: %d, %d, %d  truePos: %lf, %lf, %lf ",pos.x,pos.y,pos.z,pos.trueX,pos.trueY,pos.trueZ);
         nextIntersect(&pos,vec);
         
     }
+    debug printf("pos: %d, %d, %d  truePos: %lf, %lf, %lf ",pos.x,pos.y,pos.z,pos.trueX,pos.trueY,pos.trueZ);
 
     return 0;
 }
