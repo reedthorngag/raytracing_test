@@ -3,10 +3,17 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 #include <stdio.h>
+#include <bit>
 
 #include "globals.hpp"
 #include "setup.hpp"
 #include "raytracer.hpp"
+
+#define encodeColor(r, g, b) ((uint32_t)(r & ~(uint8_t)0) << 16 | (uint16_t)(g & ~(uint8_t)0) << 8 | (uint8_t)b)
+
+#define decodeR(c) (c >> 16 & ~(uint8_t)0)
+#define decodeG(c) (c >> 8 & ~(uint8_t)0)
+#define decodeB(c) (c & ~(uint8_t)0)
 
 Global global;
 
@@ -21,6 +28,57 @@ struct Point {
 
 Point* points;
 
+Node nodes[9]{
+    Node{0, 0b10
+            0b00
+            0b00
+            0b00,1},
+    Node{1,0,encodeColor(0,255,0)}
+};
+
+const int treeDepth = 16;
+
+struct Cast {
+    int steps;
+    uint32_t color;
+};
+
+Cast cast(Pos pos, Ray ray);
+
+void stepIn(Pos* pos, Ray* ray, int* currdepth, int curreOffset) {
+
+}
+
+void stepOut(Pos* pos, Ray* ray, int* currdepth, int curreOffset) {
+
+}
+
+Cast cast(Pos* pos, Ray* ray) {
+
+    uint32_t stack[16]{};
+    int sp = 15;
+
+    int steps = 0;
+    int offset = 0;
+    int depth = treeDepth;
+    while (!nodes[offset].flags) {
+        uint8_t localpos[3] = {(pos->x >> depth) & 1, (pos->y >> depth) & 1, (pos->z >> depth) & 1};
+        int index = ((1 << localpos[0]) << (localpos[1]<<1) << (localpos[2]<<2));
+
+        if (nodes[offset].bitmap & index) {
+            stepIn(pos,ray,&depth,offset);
+            offset = nodes[offset].offset + std::popcount((uint32_t)(nodes[offset].bitmap & (index-1)));
+            stack[sp--] = offset;
+        } else {
+            nextIntersect(&pos,ray,depth<<1);
+
+        }
+
+    }
+
+    return Cast{steps,nodes[offset].offset};
+}
+
 void render() {
 
     glClearColor(0,0,0,1);
@@ -28,8 +86,11 @@ void render() {
 
     for (int x = 0; x < 100; x++) {
         for (int y = 0; y < 100; y++) {
-            points[x*100+y].pos = glm::vec2(x/150.0-0.5,y/150.0);
-            points[x*100+y].color = glm::vec3(1.0,0,0);
+            points[x*100+y].pos = glm::vec2(x/100.0-0.5,y/100.0-.5);
+            Ray ray = Ray(0,1,0);
+            Pos pos = Pos(x,0,y);
+            Cast hit = cast(pos,ray);
+            points[x*100+y].color = glm::vec3(decodeR(hit.color)/255,decodeG(hit.color),decodeB(hit.color));
         }
     }
 
@@ -53,13 +114,36 @@ void render() {
 //     global.input.glfwMousePosCallback(window,x,y);
 // }
 
-
 int main() {
     printf("Hello world!\n");
 
     points = new Point[100*100]{};
 
-    
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<std::mt19937::result_type> range(0,1);
+
+
+    uint64_t bitmap;
+    for (int i = 0; i < 64; i++)
+        if (range(rng))
+            bitmap |= (1 << i);
+
+    Node* children = new Node[64];
+    children[2*16+2*4+2].bitmap = bitmap;
+
+    // for (int x = 0; x < 4; x++) {
+    //     for (int y = 0; y < 4; y++) {
+    //         for (int z = 0; z < 4; z++) {
+    //             int offset = x*16+y*4+z;
+    //             children[offset].parent = root;
+    //             children[offset].pos = root->pos + Pos(x,y,z);
+    //             root->children->push_back(&children[offset]);
+    //             root->bitmap |= 1 << offset;
+    //         }
+    //     }
+    // }
+
 
     createWindow();
     setupOpenGl();

@@ -2,6 +2,10 @@
 #include <random>
 #include <stdio.h>
 #include <bit>
+#include <vector>
+#include <chrono>
+
+long curr_time() { return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count(); }
 
 #define DEBUG 0
 
@@ -46,10 +50,39 @@ struct Pos {
     double trueX;
     double trueY;
     double trueZ;
-    Pos& operator +=(Ray a) {
-        
 
-        return *this;
+    Pos operator +(Pos pos) const {
+        return Pos(this->x+pos.x,this->y+pos.y,this->z+pos.z);
+    }
+
+    Pos operator +(int i) const {
+        return Pos(this->x+i,this->y+i,this->z+i);
+    }
+
+    bool operator <(int i) const {
+        return this->x < i || this->y < i || this->z < i;
+    }
+
+    Pos operator -(Pos pos) const {
+        return Pos(this->x-pos.x,this->y-pos.y,this->z-pos.z);
+    }
+
+    Pos(int x, int y, int z) {
+        this->x = x;
+        this->trueX = x;
+        this->y = y;
+        this->trueY = y;
+        this->z = z;
+        this->trueZ = z;
+    }
+
+    Pos() {
+        this->x = 0;
+        this->trueX = 0;
+        this->y = 0;
+        this->trueY = 0;
+        this->z = 0;
+        this->trueZ = 0;
     }
 };
 
@@ -97,18 +130,30 @@ void nextIntersect(Pos* pos, Ray ray, int step) {
     debug printf("\n");
 }
 
-struct Leaf {
-    bool solid;
-};
+
+// Nodes are stored in groups of 8, 1 group should be 32 bytes (max) (so it fits in the smallest size cache line)
+
+// child offset requirements:
+// at tree max height, the offset is a maximum of 8 * node size
+// at tree max - 1 it is a maximum of 8 * 8 * node size
+// etc
+
+
+/* Node gpu structure: (1 bytes)
+ *
+ * uint8_t flags - if bit 1 set, then leaf node, and offset is encoded color value
+ * uint8_t bitmap
+ * uint32_t offset - cpu side, Node[8]*
+ * 
+*/
 
 struct Node {
-    Pos origin;
-    Pos size;
-    uint64_t bitmap;
-    Leaf* children;
+    uint8_t flags;
+    uint8_t bitmap;
+    uint32_t offset;
 };
 
-int m() {
+int main1() {
 
     printf("\033cHello world!"); // resets the terminal
 
@@ -122,20 +167,12 @@ int m() {
         if (range(rng))
             bitmap |= (1 << i);
 
-    Node node = Node{{0,0,0},{4,4,4},bitmap};
-
-    Leaf* leafs = new Leaf[1]{};
-
-    for (int i = 0; i < 1; i++) {
-        leafs[i].solid = true;
-    }
-
-    Pos pos = Pos{1,1,1,1,1,1};
+    Pos pos = Pos(1,1,1);
     Ray vec = Ray(.9,.5,.3);
 
     while (pos.x < 20) {
         debug printf("pos: %d, %d, %d  truePos: %lf, %lf, %lf ",pos.x,pos.y,pos.z,pos.trueX,pos.trueY,pos.trueZ);
-        nextIntersect(&pos,vec,1);
+        nextIntersect(&pos,vec,4);
         
     }
     debug printf("pos: %d, %d, %d  truePos: %lf, %lf, %lf ",pos.x,pos.y,pos.z,pos.trueX,pos.trueY,pos.trueZ);
