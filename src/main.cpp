@@ -9,11 +9,11 @@
 #include "setup.hpp"
 #include "raytracer.hpp"
 
-#define encodeColor(r, g, b) ((uint32_t)(r & ~(uint8_t)0) << 16 | (uint16_t)(g & ~(uint8_t)0) << 8 | (uint8_t)b)
+#define encodeColor(r, g, b) ((uint32_t)(r & (uint8_t)~0) << 16 | (uint16_t)(g & (uint8_t)~0) << 8 | (uint8_t)b)
 
-#define decodeR(c) (c >> 16 & ~(uint8_t)0)
-#define decodeG(c) (c >> 8 & ~(uint8_t)0)
-#define decodeB(c) (c & ~(uint8_t)0)
+#define decodeR(c) ((c >> 16) & (uint8_t)~0)
+#define decodeG(c) ((c >> 8) & (uint8_t)~0)
+#define decodeB(c) (c & (uint8_t)~0)
 
 Global global;
 
@@ -29,49 +29,51 @@ struct Point {
 Point* points;
 
 Node nodes[9]{
-    Node{0, 0b10
-            0b00
-            0b00
-            0b00,1},
-    Node{1,0,encodeColor(0,255,0)}
+    Node{0, 0b00000001, 1},
+    Node{1,0,encodeColor(255,0,0)}
 };
 
-const int treeDepth = 16;
+const int treeDepth = 8;
 
 struct Cast {
     int steps;
     uint32_t color;
 };
 
-Cast cast(Pos pos, Ray ray);
-
-void stepIn(Pos* pos, Ray* ray, int* currdepth, int curreOffset) {
-
-}
-
-void stepOut(Pos* pos, Ray* ray, int* currdepth, int curreOffset) {
-
-}
-
 Cast cast(Pos* pos, Ray* ray) {
 
-    uint32_t stack[16]{};
-    int sp = 15;
+    struct Item {
+        Pos pos;
+        int offset;
+        uint8_t index;
+    };
+
+    Item stack[16]{};
+    stack[15] = Item{*pos,0,0};
 
     int steps = 0;
     int offset = 0;
-    int depth = treeDepth;
+    int depth = treeDepth-2;
     while (!nodes[offset].flags) {
-        uint8_t localpos[3] = {(pos->x >> depth) & 1, (pos->y >> depth) & 1, (pos->z >> depth) & 1};
-        int index = ((1 << localpos[0]) << (localpos[1]<<1) << (localpos[2]<<2));
+        uint8_t index = 1 << ((pos->x >> depth) & 1) << (pos->y >> depth << 1) << (pos->z >> depth << 2);
 
+        //printf("here: %d b: %#x i: %d o: %d\n",nodes[offset].bitmap & index, nodes[offset].bitmap, index, offset);
         if (nodes[offset].bitmap & index) {
-            stepIn(pos,ray,&depth,offset);
+            // step in
+            stack[depth] = Item{*pos,offset,index};
             offset = nodes[offset].offset + std::popcount((uint32_t)(nodes[offset].bitmap & (index-1)));
-            stack[sp--] = offset;
+            depth--;
+            continue;
         } else {
-            nextIntersect(&pos,ray,depth<<1);
-
+            nextIntersect(pos,*ray,1<<depth);
+            depth++;
+            uint8_t index2 = 1 << ((pos->x >> depth) & 1) << (pos->y >> depth << 1) << (pos->z >> depth << 2);
+            if (stack[depth].index != index2) {
+                if (depth == 7) return Cast(steps,255);
+                // step out
+                continue;
+            }
+            depth--;
         }
 
     }
@@ -89,8 +91,9 @@ void render() {
             points[x*100+y].pos = glm::vec2(x/100.0-0.5,y/100.0-.5);
             Ray ray = Ray(0,1,0);
             Pos pos = Pos(x,0,y);
-            Cast hit = cast(pos,ray);
-            points[x*100+y].color = glm::vec3(decodeR(hit.color)/255,decodeG(hit.color),decodeB(hit.color));
+            Cast hit = cast(&pos,&ray);
+            //printf("pos: %d,%d,%d color: %#x decoded color: %d,%d,%d\n",pos.x,pos.y,pos.z,hit.color,decodeR(hit.color),decodeG(hit.color),decodeB(hit.color));
+            points[x*100+y].color = glm::vec3(decodeR(hit.color)/255,decodeG(hit.color)/255,decodeB(hit.color)/255);
         }
     }
 
@@ -128,9 +131,6 @@ int main() {
     for (int i = 0; i < 64; i++)
         if (range(rng))
             bitmap |= (1 << i);
-
-    Node* children = new Node[64];
-    children[2*16+2*4+2].bitmap = bitmap;
 
     // for (int x = 0; x < 4; x++) {
     //     for (int y = 0; y < 4; y++) {
