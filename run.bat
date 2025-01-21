@@ -1,4 +1,4 @@
 @echo off
 
-build.bat && cd bin && echo running... && output.exe || echo crashed!
+build.bat && echo running... && cd bin && output.exe || echo crashed!
 cd ..
