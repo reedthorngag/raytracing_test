@@ -9,9 +9,10 @@
 #include "chunk.hpp"
 
 float vertices[] = {
-    -0.5f, -0.5f, 0.0f,
-     0.5f, -0.5f, 0.0f,
-     0.0f,  0.5f, 0.0f
+    -1, -1, 0.0,
+    -1,  1, 0.0,
+     1, -1, 0.0,
+     1,  1, 0.0,
 };  
 
 Global global;
@@ -23,12 +24,12 @@ Chunk* chunk;
 
 void render() {
 
-    glClearColor(0.001,0.001,0.05,1);
+    glClearColor(1,1,1,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(0);
 }
 
