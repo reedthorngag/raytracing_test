@@ -32,10 +32,12 @@ Chunk::Chunk() {
     for (int x = 0; x < w; x++) {
         for (int y = 0; y < h; y++) {
             for (int z = 0; z < l; z++) {
-                if (o1.eval(x*0.2,y*0.2,z*0.2) > 0.3) {
+                if (o1.eval(x*0.2,y*0.2,z*0.2) > 0.1) {
                     i++;
                     int index = (z * (w*h) + y * w + x) * 3;
                     this->texData[index] = 255;
+                    this->texData[index+1] = 255;
+                    this->texData[index+2] = 255;
                 }
             }
         }

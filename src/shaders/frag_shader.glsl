@@ -100,12 +100,13 @@ void main()
     pos.trueY = pos.y;
     pos.trueX = pos.z;
 
+    int scale = 100000;
     bool set = false;
-    for (int i = 0; i < 20; i++) {
-        if (texture(tex, vec3(pos.x/100,pos.y/100,pos.z/100)).xyz != vec3(0,0,0)) {
-            FragColor = texture(tex, vec3(pos.x/100,pos.y/100,pos.z/100));
+    for (int i = 0; i < 200; i++) {
+        if (texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale)).xyz != vec3(0,0,0)) {
+            FragColor = texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale));
             set = true;
-            break;
+        //    break;
         }
         nextIntersect(pos,ray,1);
     }
@@ -113,4 +114,6 @@ void main()
     if (!set) {
         FragColor = vec4(0,0,0,0);
     }
+
+    //FragColor = texture(tex, vec3())
 } 
