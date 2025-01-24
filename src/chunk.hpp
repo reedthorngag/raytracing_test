@@ -4,9 +4,9 @@
 #include <glm/ext.hpp>
 #include <stdio.h>
 
-const uint32_t w = 100;
-const uint32_t h = 100;
-const uint32_t l = 100;
+const int w = 100;
+const int h = 100;
+const int l = 100;
 
 class Chunk {
     
