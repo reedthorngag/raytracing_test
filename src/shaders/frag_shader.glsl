@@ -1,13 +1,18 @@
-#version 330 core
+#version 460 core
+
 out vec4 FragColor;
 
-uniform vec3 pos;
+uniform vec3 origin;
 uniform vec3 cameraDir;
 
 uniform sampler3D tex;
 
 in vec4 gl_FragCoord;
 
+int width = 800;
+int halfWidth = width/2;
+int height = 600;
+int halfHeight = height/2;
 
 struct Ray {
     float x;
@@ -40,15 +45,71 @@ Ray buildRay(float x, float y, float z) {
 }
 
 struct Pos {
-    int x;
-    int y;
-    int z;
+    float x;
+    float y;
+    float z;
     float trueX;
     float trueY;
     float trueZ;
 };
 
-void nextIntersect(Pos pos, Ray ray, int step) {
+Pos pos;
+Ray ray;
+
+void nextIntersect();
+
+void main()
+{
+
+    ray = buildRay(
+        cameraDir.x,// + ((gl_FragCoord.x-halfWidth)*0.0001),
+        cameraDir.y,// + ((gl_FragCoord.y-halfHeight)*0.0001),
+        cameraDir.z);
+
+    vec3 origin1 = origin;
+
+    //FragColor = vec4(min(abs((gl_FragCoord.x-halfWidth)*0.001),1),min(abs(((gl_FragCoord.y-halfHeight)*0.001)),1),0,1);
+    //return;
+
+    origin1.x += (gl_FragCoord.x-halfWidth);
+    origin1.y += (gl_FragCoord.y-halfHeight);
+
+    pos.x = origin1.x;
+    pos.y = origin1.y;
+    pos.z = origin1.z;
+    pos.trueX = origin1.x;
+    pos.trueY = origin1.y;
+    pos.trueX = origin1.z;
+
+    int scale = 100;
+    bool set = false;
+    for (int i = 0; i < 100; i++) {
+        if (texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale)).xyz != vec3(0,0,0)) {
+           FragColor = texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale));
+           set = true;
+           break;
+        }
+        nextIntersect();
+        // vec3 a = vec3(pos.trueX,pos.trueY,pos.trueZ);
+        // nextIntersect();
+        // if (vec3(pos.trueX,pos.trueY,pos.trueZ) == a) {
+        //     FragColor = vec4(1,0,0,1);
+        //     set = true;
+        //     break;
+        // }
+    }
+
+    if (!set) {
+        FragColor = vec4(0,0,0,0);
+    }
+    //}
+    //FragColor = texture(tex, vec3())
+}
+
+
+void nextIntersect() {
+
+    int step = 1;
 
     float xDst = (pos.x + step) - pos.trueX;
     float yDst = (pos.y + step) - pos.trueY;
@@ -80,40 +141,7 @@ void nextIntersect(Pos pos, Ray ray, int step) {
         }
     }
 
-    pos.x = int(floor(pos.trueX + 0.00000001));
-    pos.y = int(floor(pos.trueY + 0.00000001));
-    pos.z = int(floor(pos.trueZ + 0.00000001));
+    pos.x = floor(pos.trueX + 0.00000001);
+    pos.y = floor(pos.trueY + 0.00000001);
+    pos.z = floor(pos.trueZ + 0.00000001);
 }
-
-void main()
-{
-
-    Ray ray = buildRay(
-        cameraDir.x + ((gl_FragCoord.x-0.5)*2),
-        cameraDir.y + ((gl_FragCoord.y-0.5)),
-        cameraDir.z);
-    Pos pos;
-    pos.x = int(pos.x);
-    pos.y = int(pos.y);
-    pos.z = int(pos.z);
-    pos.trueX = pos.x;
-    pos.trueY = pos.y;
-    pos.trueX = pos.z;
-
-    int scale = 100000;
-    bool set = false;
-    for (int i = 0; i < 200; i++) {
-        if (texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale)).xyz != vec3(0,0,0)) {
-            FragColor = texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale));
-            set = true;
-        //    break;
-        }
-        nextIntersect(pos,ray,1);
-    }
-
-    if (!set) {
-        FragColor = vec4(0,0,0,0);
-    }
-
-    //FragColor = texture(tex, vec3())
-} 
