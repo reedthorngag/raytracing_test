@@ -19,6 +19,10 @@ struct Ray {
     float y;
     float z;
 
+    int stepX;
+    int stepY;
+    int stepZ;
+
     float ratioYtoX;
     float ratioYtoZ;
     float ratioXtoY;
@@ -33,6 +37,23 @@ Ray buildRay(float x, float y, float z) {
     ray.x = x;
     ray.y = y;
     ray.z = z;
+
+    ray.stepX = 0;
+    ray.stepY = 0;
+    ray.stepZ = 0;
+
+    if (x < 0)
+        ray.stepX = -1;
+    else if (x > 0)
+        ray.stepX = 1;
+    if (y < 0)
+        ray.stepY = -1;
+    else if (y > 0)
+        ray.stepY = 1;
+    if (z < 0)
+        ray.stepZ = -1;
+    else if (z > 0)
+        ray.stepZ = 1;
 
     ray.ratioYtoX = y / x;
     ray.ratioYtoZ = y / z;
@@ -58,21 +79,35 @@ Ray ray;
 
 void nextIntersect();
 
+vec4 r = vec4(1,0,0,1);
+vec4 g = vec4(0,1,0,1);
+vec4 b = vec4(0,0,1,1);
+
 void main()
 {
 
     ray = buildRay(
-        cameraDir.x,// + ((gl_FragCoord.x-halfWidth)*0.0001),
-        cameraDir.y,// + ((gl_FragCoord.y-halfHeight)*0.0001),
+        cameraDir.x,// + ((gl_FragCoord.x-halfWidth)*0.001),
+        cameraDir.y,// + ((gl_FragCoord.y-halfHeight)*0.001),
         cameraDir.z);
 
     vec3 origin1 = origin;
 
+    //FragColor = texture(tex,vec3(gl_FragCoord.x/800,gl_FragCoord.y/600, 0.5));
+    //return;
+
     //FragColor = vec4(min(abs((gl_FragCoord.x-halfWidth)*0.001),1),min(abs(((gl_FragCoord.y-halfHeight)*0.001)),1),0,1);
     //return;
 
-    origin1.x += (gl_FragCoord.x-halfWidth);
-    origin1.y += (gl_FragCoord.y-halfHeight);
+    // if (ray.stepX<0) {
+    //     FragColor = r;
+    // } else {
+    //     FragColor = g;
+    // }
+    // return;
+
+    //origin1.x += (gl_FragCoord.x-halfWidth);
+    //origin1.y += (gl_FragCoord.y-halfHeight);
 
     pos.x = origin1.x;
     pos.y = origin1.y;
@@ -87,9 +122,12 @@ void main()
         if (texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale)).xyz != vec3(0,0,0)) {
            FragColor = texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale));
            set = true;
-           break;
+           return;
         }
         nextIntersect();
+        FragColor = vec4(1,0,0,1);
+        set = true;
+        return;
         // vec3 a = vec3(pos.trueX,pos.trueY,pos.trueZ);
         // nextIntersect();
         // if (vec3(pos.trueX,pos.trueY,pos.trueZ) == a) {
@@ -109,33 +147,31 @@ void main()
 
 void nextIntersect() {
 
-    int step = 1;
+    float xDst = (pos.x + ray.stepX) - pos.trueX;
+    float yDst = (pos.y + ray.stepY) - pos.trueY;
+    float zDst = (pos.z + ray.stepZ) - pos.trueZ;
 
-    float xDst = (pos.x + step) - pos.trueX;
-    float yDst = (pos.y + step) - pos.trueY;
-    float zDst = (pos.z + step) - pos.trueZ;
-
-    if (pos.trueY + (xDst * ray.ratioYtoX) > pos.y + step) {
+    if (pos.trueY + (xDst * ray.ratioYtoX) > pos.y + ray.stepY) {
         // next intercept is with x,y+1
 
-        if (pos.trueZ + (yDst * ray.ratioZtoY) > pos.z + step) {
-            pos.trueZ = (pos.z += step);
+        if (pos.trueZ + (yDst * ray.ratioZtoY) > pos.z + ray.stepZ) {
+            pos.trueZ = (pos.z += ray.stepZ);
             pos.trueX += zDst * ray.ratioXtoZ;
             pos.trueY += zDst * ray.ratioYtoZ;
         } else {
-            pos.trueY = (pos.y += step);
+            pos.trueY = (pos.y += ray.stepY);
             pos.trueX += yDst * ray.ratioXtoY;
             pos.trueZ += yDst * ray.ratioZtoY;
         }
     } else {
         // next intercept is with x+1,y
         
-        if (pos.trueZ + (xDst * ray.ratioZtoX) > pos.z + step) {
-            pos.trueZ = (pos.z += step);
+        if (pos.trueZ + (xDst * ray.ratioZtoX) > pos.z + ray.stepZ) {
+            pos.trueZ = (pos.z += ray.stepZ);
             pos.trueX += zDst * ray.ratioXtoZ;
             pos.trueY += zDst * ray.ratioYtoZ;
         } else {
-            pos.trueX = (pos.x += step);
+            pos.trueX = (pos.x += ray.stepX);
             pos.trueY += xDst * ray.ratioYtoX;
             pos.trueZ += xDst * ray.ratioZtoX;
         }
