@@ -103,6 +103,9 @@ void main()
     //FragColor = texture(tex,vec3(gl_FragCoord.x/800,gl_FragCoord.y/600, 0.5));
     //return;
 
+    FragColor = texture(tex, vec3(0.5,0.5,0.99));
+    return;
+
     //FragColor = vec4(min(abs((gl_FragCoord.x-halfWidth)*0.001),1),min(abs(((gl_FragCoord.y-halfHeight)*0.001)),1),0,1);
     //return;
 
@@ -152,7 +155,7 @@ void main()
     }
 
     if (!set) {
-        if (pos.z == 0) {
+        if (pos.z == 100) {
             FragColor = g;
         } else
         FragColor = vec4(0,0,0,0);
@@ -183,14 +186,14 @@ void nextIntersect() {
     } else {
         // next intercept is with x+1,y
         
-        if (pos.trueZ + (xDst * ray.ratioZtoX) > pos.z + ray.stepZ) {
-            pos.trueZ = (pos.z += ray.stepZ);
-            pos.trueX += zDst * ray.ratioXtoZ;
-            pos.trueY += zDst * ray.ratioYtoZ;
-        } else {
+        if (pos.trueX + (zDst * ray.ratioXtoZ) > pos.x + ray.stepX) {
             pos.trueX = (pos.x += ray.stepX);
             pos.trueY += xDst * ray.ratioYtoX;
             pos.trueZ += xDst * ray.ratioZtoX;
+        } else {
+            pos.trueZ = (pos.z += ray.stepZ);
+            pos.trueX += zDst * ray.ratioXtoZ;
+            pos.trueY += zDst * ray.ratioYtoZ;
         }
     }
 
