@@ -15,23 +15,30 @@ int height = 600;
 int halfHeight = height/2;
 
 struct Ray {
-    float x;
-    float y;
-    float z;
+    double x;
+    double y;
+    double z;
 
     int stepX;
     int stepY;
     int stepZ;
 
-    float ratioYtoX;
-    float ratioYtoZ;
-    float ratioXtoY;
-    float ratioXtoZ;
-    float ratioZtoX;
-    float ratioZtoY;
+    double ratioYtoX;
+    double ratioYtoZ;
+    double ratioXtoY;
+    double ratioXtoZ;
+    double ratioZtoX;
+    double ratioZtoY;
 };
 
-Ray buildRay(float x, float y, float z) {
+double ifZeroMakeOne(double n) {
+    if (n == 0) {
+        return 1;
+    }
+    return n;
+}
+
+Ray buildRay(double x, double y, double z) {
     Ray ray;
 
     ray.x = x;
@@ -55,23 +62,23 @@ Ray buildRay(float x, float y, float z) {
     else if (z > 0)
         ray.stepZ = 1;
 
-    ray.ratioYtoX = y / x;
-    ray.ratioYtoZ = y / z;
-    ray.ratioXtoY = x / y;
-    ray.ratioXtoZ = x / z;
-    ray.ratioZtoX = z / x;
-    ray.ratioZtoY = z / y;
+    ray.ratioYtoX = abs(y) / abs(ifZeroMakeOne(x));
+    ray.ratioYtoZ = abs(y) / abs(ifZeroMakeOne(z));
+    ray.ratioXtoY = abs(x) / abs(ifZeroMakeOne(y));
+    ray.ratioXtoZ = abs(x) / abs(ifZeroMakeOne(z));
+    ray.ratioZtoX = abs(z) / abs(ifZeroMakeOne(x));
+    ray.ratioZtoY = abs(z) / abs(ifZeroMakeOne(y));
 
     return ray;
 }
 
 struct Pos {
-    float x;
-    float y;
-    float z;
-    float trueX;
-    float trueY;
-    float trueZ;
+    double x;
+    double y;
+    double z;
+    double trueX;
+    double trueY;
+    double trueZ;
 };
 
 Pos pos;
@@ -114,20 +121,27 @@ void main()
     pos.z = origin1.z;
     pos.trueX = origin1.x;
     pos.trueY = origin1.y;
-    pos.trueX = origin1.z;
+    pos.trueZ = origin1.z;
 
     int scale = 100;
     bool set = false;
     for (int i = 0; i < 100; i++) {
         if (texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale)).xyz != vec3(0,0,0)) {
            FragColor = texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale));
-           set = true;
            return;
         }
         nextIntersect();
-        FragColor = vec4(1,0,0,1);
-        set = true;
-        return;
+        // nextIntersect();
+        // nextIntersect();
+        // if (isnan(pos.z)) {
+        //     FragColor = r;
+        // } else if (pos.z >= 0) {
+        //     FragColor = g;
+        // } else {
+        //     FragColor = b;
+        // }
+        // set = true;
+        // return;
         // vec3 a = vec3(pos.trueX,pos.trueY,pos.trueZ);
         // nextIntersect();
         // if (vec3(pos.trueX,pos.trueY,pos.trueZ) == a) {
@@ -138,6 +152,9 @@ void main()
     }
 
     if (!set) {
+        if (pos.z == 0) {
+            FragColor = g;
+        } else
         FragColor = vec4(0,0,0,0);
     }
     //}
@@ -147,9 +164,9 @@ void main()
 
 void nextIntersect() {
 
-    float xDst = (pos.x + ray.stepX) - pos.trueX;
-    float yDst = (pos.y + ray.stepY) - pos.trueY;
-    float zDst = (pos.z + ray.stepZ) - pos.trueZ;
+    double xDst = (pos.x + ray.stepX) - pos.trueX;
+    double yDst = (pos.y + ray.stepY) - pos.trueY;
+    double zDst = (pos.z + ray.stepZ) - pos.trueZ;
 
     if (pos.trueY + (xDst * ray.ratioYtoX) > pos.y + ray.stepY) {
         // next intercept is with x,y+1
@@ -179,5 +196,5 @@ void nextIntersect() {
 
     pos.x = floor(pos.trueX + 0.00000001);
     pos.y = floor(pos.trueY + 0.00000001);
-    pos.z = floor(pos.trueZ + 0.00000001);
+    pos.z = pos.trueZ;//floor(pos.trueZ + 0.00000001);
 }
