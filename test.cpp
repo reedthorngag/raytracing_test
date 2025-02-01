@@ -33,6 +33,11 @@ double ifZeroMakeOne(double n) {
     return n;
 }
 
+double matchSign(double a, double sign) {
+    if ((a < 0 && sign < 0) || (a > 0 && sign > 0)) return a;
+    return -a;
+}
+
 Ray buildRay(double x, double y, double z) {
     Ray ray;
 
@@ -57,12 +62,12 @@ Ray buildRay(double x, double y, double z) {
     else if (z > 0)
         ray.stepZ = 1;
 
-    ray.ratioYtoX = abs(y) / abs(ifZeroMakeOne(x));
-    ray.ratioYtoZ = abs(y) / abs(ifZeroMakeOne(z));
-    ray.ratioXtoY = abs(x) / abs(ifZeroMakeOne(y));
-    ray.ratioXtoZ = abs(x) / abs(ifZeroMakeOne(z));
-    ray.ratioZtoX = abs(z) / abs(ifZeroMakeOne(x));
-    ray.ratioZtoY = abs(z) / abs(ifZeroMakeOne(y));
+    ray.ratioYtoX = matchSign(abs(y) / abs(ifZeroMakeOne(x)),ray.stepY);
+    ray.ratioYtoZ = matchSign(abs(y) / abs(ifZeroMakeOne(z)),ray.stepY);
+    ray.ratioXtoY = matchSign(abs(x) / abs(ifZeroMakeOne(y)),ray.stepX);
+    ray.ratioXtoZ = matchSign(abs(x) / abs(ifZeroMakeOne(z)),ray.stepX);
+    ray.ratioZtoX = matchSign(abs(z) / abs(ifZeroMakeOne(x)),ray.stepZ);
+    ray.ratioZtoY = matchSign(abs(z) / abs(ifZeroMakeOne(y)),ray.stepZ);
 
     return ray;
 }
@@ -79,48 +84,51 @@ struct Pos {
 Pos pos;
 Ray ray;
 
-void nextIntersect() {
+void nextIntersect(bool silent) {
 
-    double xDst = (pos.x + ray.stepX) - pos.trueX;
-    double yDst = (pos.y + ray.stepY) - pos.trueY;
-    double zDst = (pos.z + ray.stepZ) - pos.trueZ;
+    double xDst = abs((pos.x + ray.stepX) - pos.trueX);
+    double yDst = abs((pos.y + ray.stepY) - pos.trueY);
+    double zDst = abs((pos.z + ray.stepZ) - pos.trueZ);
 
-    if (pos.trueY + (xDst * ray.ratioYtoX) >= pos.y + ray.stepY) {
+    if (!silent) printf("Dsts: %lf, %lf, %lf\n",xDst,yDst,zDst);
+
+    if (abs(pos.trueY + (xDst * ray.ratioYtoX)) >= abs(pos.y + ray.stepY)) {
         // next intercept is with x,y+1
 
-        if (pos.trueZ + (yDst * ray.ratioZtoY) >= pos.z + ray.stepZ) {
+        if (abs(pos.trueZ + (yDst * ray.ratioZtoY)) >= abs(pos.z + ray.stepZ)) {
             pos.trueZ = (pos.z += ray.stepZ);
             pos.trueX += zDst * ray.ratioXtoZ;
             pos.trueY += zDst * ray.ratioYtoZ;
-            printf("Z, Y branch\n");
+            if (!silent) printf("Z, Y branch\n");
         } else {
             pos.trueY = (pos.y += ray.stepY);
             pos.trueX += yDst * ray.ratioXtoY;
             pos.trueZ += yDst * ray.ratioZtoY;
-            printf("Y\n");
+            if (!silent) printf("Y\n");
         }
     } else {
         // next intercept is with x+1,y
         
-        if (pos.trueX + (zDst * ray.ratioXtoZ) >= pos.x + ray.stepX) {
+        if (abs(pos.trueX + (zDst * ray.ratioXtoZ)) >= abs(pos.x + ray.stepX)) {
             pos.trueX = (pos.x += ray.stepX);
             pos.trueY += xDst * ray.ratioYtoX;
             pos.trueZ += xDst * ray.ratioZtoX;
-            printf("X\n");
+            if (!silent) printf("X\n");
         } else {
             pos.trueZ = (pos.z += ray.stepZ);
             pos.trueX += zDst * ray.ratioXtoZ;
             pos.trueY += zDst * ray.ratioYtoZ;
-            printf("Z, X branch\n");
+            if (!silent) printf("Z, X branch\n");
         }
     }
 
-    pos.x = floor(pos.trueX + 0.00000001);
-    pos.y = floor(pos.trueY + 0.00000001);
-    pos.z = floor(pos.trueZ + 0.00000001);
+    // trunc rather than floor so negative values round towards zero
+    pos.x = trunc(pos.trueX);
+    pos.y = trunc(pos.trueY);
+    pos.z = trunc(pos.trueZ);
 }
 
-bool test(double x, double y, double z, double newX, double newY, double newZ) {
+bool test(double x, double y, double z, double newX, double newY, double newZ, int interceptIterations) {
 
     ray = buildRay(x,y,z);
 
@@ -131,7 +139,8 @@ bool test(double x, double y, double z, double newX, double newY, double newZ) {
     pos.trueY = 0;
     pos.trueZ = 0;
 
-    nextIntersect();
+    while (interceptIterations--)
+        nextIntersect(true);
 
     bool result = pos.x == newX && pos.y == newY && pos.z == newZ;
 
@@ -141,12 +150,18 @@ bool test(double x, double y, double z, double newX, double newY, double newZ) {
     return result;
 }
 
+bool test(double x, double y, double z, double newX, double newY, double newZ) {
+    return test(x,y,z,newX,newY,newZ,1);
+}
+
+
 int main() {
 
-    ray = buildRay(1,0,0);
+    ray = buildRay(-1,0.6,0);
+    int iterations = 0;
 
     double x = 0;
-    double y = 50;
+    double y = 0;
     double z = 0;
 
     pos.x = x;
@@ -165,9 +180,13 @@ int main() {
 
     printf("%d,%d,%d\n",ray.stepX,ray.stepY,ray.stepZ);
 
-    nextIntersect();
+    while (iterations--) {
+        printf("\n");
+        nextIntersect(false);
+        printf("pos:      %lf %lf %lf\ntrue pos: %lf %lf %lf\n",pos.x,pos.y,pos.z,pos.trueX,pos.trueY,pos.trueZ);
+    }
 
-    printf("%lf %lf %lf\n%lf %lf %lf\n\n",pos.x,pos.y,pos.z,pos.trueX,pos.trueY,pos.trueZ);
+    //return 0;
 
     test(1,0,0, 1,0,0);
     test(0,1,0, 0,1,0);
@@ -180,8 +199,24 @@ int main() {
     test(1,.5,0, 1,0,0);
     test(-1,.5,0, -1,0,0);
     test(-1,-.5,0, -1,0,0);
-    test(1,-.5,0, -1,0,0);
+    test(1,-.5,0, 1,0,0);
 
-    test(1,0,0, 1,0,0);
+    test(0,1,.5, 0,1,0);
+    test(0,-1,.5, 0,-1,0);
+    test(0,-1,-.5, 0,-1,0);
+    test(0,1,-.5, 0,1,0);
+
+    test(0,.5,1, 0,0,1);
+    test(0,.5,-1, 0,0,-1);
+    test(0,-.5,-1, 0,0,-1);
+    test(0,-.5,1, 0,0,1);
+
+
+    test(1,.6,0, 1,1,0,2);
+    test(-1,.6,0, -1,1,0,2);
+    test(-1,-.6,0, -1,-1,0,2);
+    test(1,-.6,0, 1,-1,0,2);
+
+
 }
 
