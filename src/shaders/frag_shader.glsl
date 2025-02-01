@@ -38,6 +38,11 @@ double ifZeroMakeOne(double n) {
     return n;
 }
 
+double matchSign(double a, double sign) {
+    if ((a < 0 && sign < 0) || (a > 0 && sign > 0)) return a;
+    return -a;
+}
+
 Ray buildRay(double x, double y, double z) {
     Ray ray;
 
@@ -45,9 +50,9 @@ Ray buildRay(double x, double y, double z) {
     ray.y = y;
     ray.z = z;
 
-    ray.stepX = 0;
-    ray.stepY = 0;
-    ray.stepZ = 0;
+    ray.stepX = 1;
+    ray.stepY = 1;
+    ray.stepZ = 1;
 
     if (x < 0)
         ray.stepX = -1;
@@ -62,12 +67,12 @@ Ray buildRay(double x, double y, double z) {
     else if (z > 0)
         ray.stepZ = 1;
 
-    ray.ratioYtoX = abs(y) / abs(ifZeroMakeOne(x));
-    ray.ratioYtoZ = abs(y) / abs(ifZeroMakeOne(z));
-    ray.ratioXtoY = abs(x) / abs(ifZeroMakeOne(y));
-    ray.ratioXtoZ = abs(x) / abs(ifZeroMakeOne(z));
-    ray.ratioZtoX = abs(z) / abs(ifZeroMakeOne(x));
-    ray.ratioZtoY = abs(z) / abs(ifZeroMakeOne(y));
+    ray.ratioYtoX = matchSign(abs(y) / abs(ifZeroMakeOne(x)),ray.stepY);
+    ray.ratioYtoZ = matchSign(abs(y) / abs(ifZeroMakeOne(z)),ray.stepY);
+    ray.ratioXtoY = matchSign(abs(x) / abs(ifZeroMakeOne(y)),ray.stepX);
+    ray.ratioXtoZ = matchSign(abs(x) / abs(ifZeroMakeOne(z)),ray.stepX);
+    ray.ratioZtoX = matchSign(abs(z) / abs(ifZeroMakeOne(x)),ray.stepZ);
+    ray.ratioZtoY = matchSign(abs(z) / abs(ifZeroMakeOne(y)),ray.stepZ);
 
     return ray;
 }
@@ -84,7 +89,7 @@ struct Pos {
 Pos pos;
 Ray ray;
 
-void nextIntersect();
+bool nextIntersect();
 
 vec4 r = vec4(1,0,0,1);
 vec4 g = vec4(0,1,0,1);
@@ -94,27 +99,14 @@ void main()
 {
 
     ray = buildRay(
-        cameraDir.x,// + ((gl_FragCoord.x-halfWidth)*0.001),
-        cameraDir.y,// + ((gl_FragCoord.y-halfHeight)*0.001),
+        cameraDir.x + ((gl_FragCoord.x-halfWidth)*0.001),
+        cameraDir.y + ((gl_FragCoord.y-halfHeight)*0.001),
         cameraDir.z);
 
     vec3 origin1 = origin;
 
-    //FragColor = texture(tex,vec3(gl_FragCoord.x/800,gl_FragCoord.y/600, 0.5));
-    //return;
-
-    FragColor = texture(tex, vec3(0.5,0.5,0.99));
-    return;
-
     //FragColor = vec4(min(abs((gl_FragCoord.x-halfWidth)*0.001),1),min(abs(((gl_FragCoord.y-halfHeight)*0.001)),1),0,1);
     //return;
-
-    // if (ray.stepX<0) {
-    //     FragColor = r;
-    // } else {
-    //     FragColor = g;
-    // }
-    // return;
 
     //origin1.x += (gl_FragCoord.x-halfWidth);
     //origin1.y += (gl_FragCoord.y-halfHeight);
@@ -133,31 +125,10 @@ void main()
            FragColor = texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale));
            return;
         }
-        nextIntersect();
-        // nextIntersect();
-        // nextIntersect();
-        // if (isnan(pos.z)) {
-        //     FragColor = r;
-        // } else if (pos.z >= 0) {
-        //     FragColor = g;
-        // } else {
-        //     FragColor = b;
-        // }
-        // set = true;
-        // return;
-        // vec3 a = vec3(pos.trueX,pos.trueY,pos.trueZ);
-        // nextIntersect();
-        // if (vec3(pos.trueX,pos.trueY,pos.trueZ) == a) {
-        //     FragColor = vec4(1,0,0,1);
-        //     set = true;
-        //     break;
-        // }
+        if (nextIntersect()) return;
     }
 
     if (!set) {
-        if (pos.z == 100) {
-            FragColor = g;
-        } else
         FragColor = vec4(0,0,0,0);
     }
     //}
@@ -165,16 +136,16 @@ void main()
 }
 
 
-void nextIntersect() {
+bool nextIntersect() {
 
-    double xDst = (pos.x + ray.stepX) - pos.trueX;
-    double yDst = (pos.y + ray.stepY) - pos.trueY;
-    double zDst = (pos.z + ray.stepZ) - pos.trueZ;
+    double xDst = abs((pos.x + ray.stepX) - pos.trueX);
+    double yDst = abs((pos.y + ray.stepY) - pos.trueY);
+    double zDst = abs((pos.z + ray.stepZ) - pos.trueZ);
 
-    if (pos.trueY + (xDst * ray.ratioYtoX) > pos.y + ray.stepY) {
+    if (abs(pos.trueY + (xDst * ray.ratioYtoX)) >= abs(pos.y + ray.stepY)) {
         // next intercept is with x,y+1
 
-        if (pos.trueZ + (yDst * ray.ratioZtoY) > pos.z + ray.stepZ) {
+        if (abs(pos.trueZ + (yDst * ray.ratioZtoY)) >= abs(pos.z + ray.stepZ)) {
             pos.trueZ = (pos.z += ray.stepZ);
             pos.trueX += zDst * ray.ratioXtoZ;
             pos.trueY += zDst * ray.ratioYtoZ;
@@ -183,10 +154,10 @@ void nextIntersect() {
             pos.trueX += yDst * ray.ratioXtoY;
             pos.trueZ += yDst * ray.ratioZtoY;
         }
-    } else {
+    } else if (abs(pos.trueX + (yDst * ray.ratioXtoY)) >= abs(pos.x + ray.stepX)) {
         // next intercept is with x+1,y
         
-        if (pos.trueX + (zDst * ray.ratioXtoZ) > pos.x + ray.stepX) {
+        if (abs(pos.trueX + (zDst * ray.ratioXtoZ)) >= abs(pos.x + ray.stepX)) {
             pos.trueX = (pos.x += ray.stepX);
             pos.trueY += xDst * ray.ratioYtoX;
             pos.trueZ += xDst * ray.ratioZtoX;
@@ -195,9 +166,14 @@ void nextIntersect() {
             pos.trueX += zDst * ray.ratioXtoZ;
             pos.trueY += zDst * ray.ratioYtoZ;
         }
+    } else {
+        FragColor = g;
+        return true;
     }
 
-    pos.x = floor(pos.trueX + 0.00000001);
-    pos.y = floor(pos.trueY + 0.00000001);
-    pos.z = pos.trueZ;//floor(pos.trueZ + 0.00000001);
+    // trunc rather than floor so negative values round towards zero
+    pos.x = trunc(pos.trueX);
+    pos.y = trunc(pos.trueY);
+    pos.z = trunc(pos.trueZ);
+    return false;
 }

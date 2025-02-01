@@ -27,7 +27,7 @@ void render() {
     glClearColor(1,1,1,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUniform3f(glGetUniformLocation(global.program, "origin"), 0,50,0);
+    glUniform3f(glGetUniformLocation(global.program, "origin"), 50,50,0);
     glUniform3f(glGetUniformLocation(global.program, "cameraDir"), 0,0,1);
 
     glBindVertexArray(VAO);
