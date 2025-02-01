@@ -166,6 +166,14 @@ bool nextIntersect() {
             pos.trueX += zDst * ray.ratioXtoZ;
             pos.trueY += zDst * ray.ratioYtoZ;
         }
+    } else if (abs(pos.trueZ + (yDst * ray.ratioZtoY)) >= abs(pos.z + ray.stepZ)) {
+        pos.trueZ = (pos.z += ray.stepZ);
+        pos.trueX += zDst * ray.ratioXtoZ;
+        pos.trueY += zDst * ray.ratioYtoZ;
+    } else if (abs(pos.trueZ + (xDst * ray.ratioZtoX)) >= abs(pos.z + ray.stepZ)) {
+        pos.trueZ = (pos.z += ray.stepZ);
+        pos.trueX += zDst * ray.ratioXtoZ;
+        pos.trueY += zDst * ray.ratioYtoZ;
     } else {
         FragColor = g;
         return true;
