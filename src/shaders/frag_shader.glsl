@@ -46,6 +46,13 @@ double matchSign(double a, double sign) {
     return -a;
 }
 
+double makeRatio(double a, double b) {
+    if ((a < 0 && b > 0) || (a > 0 && b < 0)) {
+        //a += -b;b = 0;//return abs(a + -b);
+    }
+    return abs(a) / abs(ifZeroMakeOne(b));
+}
+
 Ray buildRay(double x, double y, double z) {
     Ray ray;
 
@@ -70,12 +77,12 @@ Ray buildRay(double x, double y, double z) {
     else if (z > 0)
         ray.stepZ = 1;
 
-    ray.ratioYtoX = matchSign(abs(y) / abs(ifZeroMakeOne(x)),ray.stepY);
-    ray.ratioYtoZ = matchSign(abs(y) / abs(ifZeroMakeOne(z)),ray.stepY);
-    ray.ratioXtoY = matchSign(abs(x) / abs(ifZeroMakeOne(y)),ray.stepX);
-    ray.ratioXtoZ = matchSign(abs(x) / abs(ifZeroMakeOne(z)),ray.stepX);
-    ray.ratioZtoX = matchSign(abs(z) / abs(ifZeroMakeOne(x)),ray.stepZ);
-    ray.ratioZtoY = matchSign(abs(z) / abs(ifZeroMakeOne(y)),ray.stepZ);
+    ray.ratioYtoX = matchSign(makeRatio(y,x),ray.stepY);
+    ray.ratioYtoZ = matchSign(makeRatio(y,z),ray.stepY);
+    ray.ratioXtoY = matchSign(makeRatio(x,y),ray.stepX);
+    ray.ratioXtoZ = matchSign(makeRatio(x,z),ray.stepX);
+    ray.ratioZtoX = matchSign(makeRatio(z,x),ray.stepZ);
+    ray.ratioZtoY = matchSign(makeRatio(z,y),ray.stepZ);
 
     return ray;
 }
@@ -101,7 +108,7 @@ vec4 b = vec4(0,0,1,1);
 void main()
 {
 
-    if (distance(gl_FragCoord.xy, mousePos) < 3) {
+    if (renderPosData == 0 && distance(gl_FragCoord.xy, mousePos) < 3) {
         FragColor = vec4(1,1,1,1);
         return;
     }
@@ -144,7 +151,8 @@ void main()
             FragColor = vec4(0,0,0,0);
     }
     if (renderPosData == 1) {
-        FragColor = vec4(pos.x,pos.y,pos.z,double(set));
+        //FragColor = vec4(pos.x,pos.y,pos.z,double(set));
+        FragColor = vec4(ray.x,ray.y,ray.z,double(set));
     }
 }
 
@@ -167,29 +175,17 @@ bool nextIntersect() {
             pos.trueX += yDst * ray.ratioXtoY;
             pos.trueZ += yDst * ray.ratioZtoY;
         }
-    } else if (abs(pos.trueX + (yDst * ray.ratioXtoY)) >= abs(pos.x + ray.stepX)) {
-        // next intercept is with x+1,y
-        
-        if (abs(pos.trueX + (zDst * ray.ratioXtoZ)) >= abs(pos.x + ray.stepX)) {
-            pos.trueX = (pos.x += ray.stepX);
-            pos.trueY += xDst * ray.ratioYtoX;
-            pos.trueZ += xDst * ray.ratioZtoX;
-        } else {
-            pos.trueZ = (pos.z += ray.stepZ);
-            pos.trueX += zDst * ray.ratioXtoZ;
-            pos.trueY += zDst * ray.ratioYtoZ;
-        }
     } else {
         // next intercept is with x+1,y
         
-        if (abs(pos.trueX + (zDst * ray.ratioXtoZ)) >= abs(pos.x + ray.stepX)) {
-            pos.trueX = (pos.x += ray.stepX);
-            pos.trueY += xDst * ray.ratioYtoX;
-            pos.trueZ += xDst * ray.ratioZtoX;
-        } else {
+        if (abs(pos.trueZ + (xDst * ray.ratioZtoX)) >= abs(pos.z + ray.stepZ)) {
             pos.trueZ = (pos.z += ray.stepZ);
             pos.trueX += zDst * ray.ratioXtoZ;
             pos.trueY += zDst * ray.ratioYtoZ;
+        } else {
+            pos.trueX = (pos.x += ray.stepX);
+            pos.trueY += xDst * ray.ratioYtoX;
+            pos.trueZ += xDst * ray.ratioZtoX;
         }
     }
 

@@ -109,16 +109,16 @@ void nextIntersect(bool silent) {
     } else {
         // next intercept is with x+1,y
         
-        if (abs(pos.trueX + (zDst * ray.ratioXtoZ)) >= abs(pos.x + ray.stepX)) {
-            pos.trueX = (pos.x += ray.stepX);
-            pos.trueY += xDst * ray.ratioYtoX;
-            pos.trueZ += xDst * ray.ratioZtoX;
-            if (!silent) printf("X\n");
-        } else {
+        if (abs(pos.trueZ + (yDst * ray.ratioZtoX)) >= abs(pos.z + ray.stepZ)) {
             pos.trueZ = (pos.z += ray.stepZ);
             pos.trueX += zDst * ray.ratioXtoZ;
             pos.trueY += zDst * ray.ratioYtoZ;
             if (!silent) printf("Z, X branch\n");
+        } else {
+            pos.trueX = (pos.x += ray.stepX);
+            pos.trueY += xDst * ray.ratioYtoX;
+            pos.trueZ += xDst * ray.ratioZtoX;
+            if (!silent) printf("X\n");
         }
     }
 
@@ -157,7 +157,7 @@ bool test(double x, double y, double z, double newX, double newY, double newZ) {
 
 int main() {
 
-    ray = buildRay(-5  * 0.00001,-2 * 0.00001,1);
+    ray = buildRay(-0.004500,-0.022500,1);
     int iterations = 10;
 
     double x = 50;

@@ -29,9 +29,11 @@ GLuint mouseHitPosFBO;
 Chunk* chunk;
 
 struct Mouse {
-    unsigned int x = 0;
-    unsigned int y = 0;
+    double x = 0;
+    double y = 0;
 } mouse;
+
+double lastMouseUpdate = 0;
 
 bool getPixelData = false;
 
@@ -40,7 +42,7 @@ void dumpPixelData() {
 
     glReadPixels(mouse.x,mouse.y,1,1,GL_RGBA,GL_FLOAT,&buffer);
 
-    printf("\rpixel data: %f %f %f %f (mouse pos: %d, %d)\n",buffer[0],buffer[1],buffer[2],buffer[3],mouse.x,mouse.y);
+    printf("\rpixel data: %f %f %f %f (mouse pos: %lf, %lf)\n",buffer[0],buffer[1],buffer[2],buffer[3],mouse.x,mouse.y);
 }
 
 void render() {
@@ -54,7 +56,7 @@ void render() {
 
     glUniform3f(glGetUniformLocation(global.program, "origin"), 50,50,0);
     glUniform3f(glGetUniformLocation(global.program, "cameraDir"), 0,0,1);
-    glUniform2f(glGetUniformLocation(global.program,"mousePos"), (float)mouse.x, (float)mouse.y);
+    glUniform2f(glGetUniformLocation(global.program,"mousePos"), mouse.x, mouse.y);
     glUniform1i(glGetUniformLocation(global.program,"renderPosData"), getPixelData);
 
     glBindVertexArray(VAO);
@@ -97,7 +99,7 @@ inline void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, 
                 break;
             
             case GLFW_MOUSE_BUTTON_2:
-                printf("\rMouse pos: %d, %d\n",mouse.x,mouse.y);
+                printf("\rMouse pos: %lf, %lf\n",mouse.x,mouse.y);
                 break;
             
             default:
@@ -109,8 +111,11 @@ inline void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, 
 }
 
 inline void glfwMousePosCallback(GLFWwindow* window, double x, double y) {
-    mouse.x = (int)round(x);
-    mouse.y = HEIGHT-(int)round(y);
+    mouse.x = x;
+    mouse.y = HEIGHT-y;
+    printf("\rmouse pos: %lf,%lf last update: %lf    ",mouse.x,mouse.y,((glfwGetTime()-lastMouseUpdate)));
+    fflush(stdout);
+    lastMouseUpdate = glfwGetTime();
 }
 
 int main() {
@@ -156,23 +161,26 @@ int main() {
     glfwSetCursorPosCallback(global.window,glfwMousePosCallback);
     glfwSetMouseButtonCallback(global.window, glfwMouseButtonCallback);
 
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
     double times[5]{};
     int i = 0;
 
     while (!glfwWindowShouldClose(global.window)) {
-        glfwPollEvents();
 
         start = glfwGetTime();
+
+        glfwWaitEvents();
         render();
+
         times[i++] = glfwGetTime()-start;
         i %= 5;
         double out = 0;
         for (int n = 0; n < 5 && times[n]; n++) out += times[n];
-        printf("\rrender time: %dms    ",(int)(out/5.0*100000));
+        //printf("\rrender time: %dms    ",(int)(out/5.0*100000));
 
         glfwSwapBuffers(global.window);
+        glFinish();
     }
 
     glfwDestroyWindow(global.window);
