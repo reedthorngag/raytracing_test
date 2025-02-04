@@ -7,6 +7,7 @@
 #include "globals.hpp"
 #include "setup.hpp"
 #include "chunk.hpp"
+#include "input.hpp"
 
 float vertices[] = {
     -1, -1, 0.0,
@@ -28,15 +29,6 @@ GLuint mouseHitPosFBO;
 
 Chunk* chunk;
 
-struct Mouse {
-    double x = 0;
-    double y = 0;
-} mouse;
-
-double lastMouseUpdate = 0;
-
-bool getPixelData = false;
-
 void dumpPixelData() {
     float buffer[4];
 
@@ -54,8 +46,8 @@ void render() {
     glClearColor(1,1,1,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUniform3f(glGetUniformLocation(global.program, "origin"), 50,50,0);
-    glUniform3f(glGetUniformLocation(global.program, "cameraDir"), 0,0,1);
+    glUniform3f(glGetUniformLocation(global.program, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
+    glUniform3f(glGetUniformLocation(global.program, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
     glUniform2f(glGetUniformLocation(global.program,"mousePos"), mouse.x, mouse.y);
     glUniform1i(glGetUniformLocation(global.program,"renderPosData"), getPixelData);
 
@@ -68,54 +60,6 @@ void render() {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         getPixelData = false;
     }
-}
-
-inline void glfwCharCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (action) {
-        // pressed
-    } else {
-        switch (key) {
-            case GLFW_KEY_ESCAPE:
-                glfwSetWindowShouldClose(window,true);
-                break;
-            
-            default:
-                // released
-                printf("\rKey pressed: %d scancode: %d mods: %d   ",key, scancode, mods);
-                fflush(stdout);
-                break;
-        }
-    }
-}
-
-inline void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-    if (action) {
-        // pressed
-    } else {
-        // released
-        switch (button) {
-            case GLFW_MOUSE_BUTTON_1:
-                getPixelData = true;
-                break;
-            
-            case GLFW_MOUSE_BUTTON_2:
-                printf("\rMouse pos: %lf, %lf\n",mouse.x,mouse.y);
-                break;
-            
-            default:
-                // released
-                printf("\rButton pressed: %d mods: %d   \n",button, mods);
-                break;
-        }
-    }
-}
-
-inline void glfwMousePosCallback(GLFWwindow* window, double x, double y) {
-    mouse.x = x;
-    mouse.y = HEIGHT-y;
-    printf("\rmouse pos: %lf,%lf last update: %lf    ",mouse.x,mouse.y,((glfwGetTime()-lastMouseUpdate)));
-    fflush(stdout);
-    lastMouseUpdate = glfwGetTime();
 }
 
 int main() {

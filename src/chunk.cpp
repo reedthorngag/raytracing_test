@@ -29,21 +29,24 @@ Chunk::Chunk() {
     printf("\nmin: %lf, max: %lf \n",min,max);
     
     int i = 0;
-    for (int x = 45; x < 55; x++) {
-        for (int y = 45; y < 55; y++) {
-            for (int z = 30; z < 31; z++) {
-                //if (o1.eval(x*0.2,y*0.2,z*0.2) > 0.1) {
-                    i++;
-                    int index = (z * (w*h) + y * w + x) * 3;
-                    if ((y) % 6 < 3)
-                        this->texData[index] = 255;
-                    else
-                        this->texData[index+1] = 255;
-                    //this->texData[index] = 255;
-                    //this->texData[index+1] = 255;
-                    //this->texData[index+2] = 255;
-                //}
+    for (int x = 0; x < w; x++) {
+        for (int z = 0; z < l; z++) {
+            
+            int height = round((o1.eval(x*0.01,z*0.01)+1)*10+4);
+
+            int y = 0;
+            for (; y < height-1; y++) {
+                int index = (z * (w*h) + y * w + x) * 3;
+                this->texData[index] = 82;
+                this->texData[index+1] = 37;
+                this->texData[index+2] = 3;
             }
+            
+            y++;
+            int index = (z * (w*h) + y * w + x) * 3;
+            this->texData[index] = 6;
+            this->texData[index+1] = 125;
+            this->texData[index+2] = 4;
         }
     }
 

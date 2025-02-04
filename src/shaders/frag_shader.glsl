@@ -114,8 +114,8 @@ void main()
     }
 
     ray = buildRay(
-        cameraDir.x + ((gl_FragCoord.x-halfWidth)*0.001),
-        cameraDir.y + ((gl_FragCoord.y-halfHeight)*0.001),
+        cameraDir.x + ((gl_FragCoord.x-halfWidth)*0.01),
+        cameraDir.y + ((gl_FragCoord.y-halfHeight)*0.01),
         cameraDir.z);
 
     vec3 origin1 = origin;
@@ -151,8 +151,8 @@ void main()
             FragColor = vec4(0,0,0,0);
     }
     if (renderPosData == 1) {
-        //FragColor = vec4(pos.x,pos.y,pos.z,double(set));
-        FragColor = vec4(ray.x,ray.y,ray.z,double(set));
+        FragColor = vec4(pos.x,pos.y,pos.z,double(set));
+        //FragColor = vec4(ray.x,ray.y,ray.z,double(set));
     }
 }
 

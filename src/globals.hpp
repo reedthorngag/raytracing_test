@@ -17,10 +17,22 @@ struct Global {
     GLuint program;
 };
 
-const glm::vec3 startPos(0);
-
 const float speed = 0.05;
 const float speed_scale = 5;
+
+struct Mouse {
+    double x = 0;
+    double y = 0;
+};
+
+extern Mouse mouse;
+
+extern double lastMouseUpdate;
+
+extern bool getPixelData;
+
+extern glm::vec3 cameraDir;
+extern glm::vec3 cameraPos;
 
 #endif
 
