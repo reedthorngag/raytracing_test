@@ -31,7 +31,7 @@ Chunk::Chunk() {
     int i = 0;
     for (int x = 45; x < 55; x++) {
         for (int y = 45; y < 55; y++) {
-            for (int z = 50; z < 60; z++) {
+            for (int z = 30; z < 31; z++) {
                 //if (o1.eval(x*0.2,y*0.2,z*0.2) > 0.1) {
                     i++;
                     int index = (z * (w*h) + y * w + x) * 3;

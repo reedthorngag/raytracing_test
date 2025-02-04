@@ -4,8 +4,11 @@ out vec4 FragColor;
 
 uniform vec3 origin;
 uniform vec3 cameraDir;
+uniform vec2 mousePos;
+uniform int renderPosData;
 
 uniform sampler3D tex;
+uniform sampler2D pixelTex;
 
 in vec4 gl_FragCoord;
 
@@ -98,6 +101,11 @@ vec4 b = vec4(0,0,1,1);
 void main()
 {
 
+    if (distance(gl_FragCoord.xy, mousePos) < 3) {
+        FragColor = vec4(1,1,1,1);
+        return;
+    }
+
     ray = buildRay(
         cameraDir.x + ((gl_FragCoord.x-halfWidth)*0.001),
         cameraDir.y + ((gl_FragCoord.y-halfHeight)*0.001),
@@ -123,13 +131,20 @@ void main()
     for (int i = 0; i < 100; i++) {
         if (texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale)).xyz != vec3(0,0,0)) {
            FragColor = texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale));
-           return;
+           set = true;
+           break;
         }
         if (nextIntersect()) return;
     }
 
     if (!set) {
-        FragColor = vec4(0,0,0,0);
+        if (pos.x > 55 || pos.x < 45 || pos.y > 55 || pos.y < 45) {
+            FragColor = vec4(0,0,( abs(pos.y - 50))/100,0);
+        } else
+            FragColor = vec4(0,0,0,0);
+    }
+    if (renderPosData == 1) {
+        FragColor = vec4(pos.x,pos.y,pos.z,double(set));
     }
 }
 
