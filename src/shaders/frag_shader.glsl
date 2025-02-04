@@ -131,8 +131,6 @@ void main()
     if (!set) {
         FragColor = vec4(0,0,0,0);
     }
-    //}
-    //FragColor = texture(tex, vec3())
 }
 
 
@@ -166,17 +164,18 @@ bool nextIntersect() {
             pos.trueX += zDst * ray.ratioXtoZ;
             pos.trueY += zDst * ray.ratioYtoZ;
         }
-    } else if (abs(pos.trueZ + (yDst * ray.ratioZtoY)) >= abs(pos.z + ray.stepZ)) {
-        pos.trueZ = (pos.z += ray.stepZ);
-        pos.trueX += zDst * ray.ratioXtoZ;
-        pos.trueY += zDst * ray.ratioYtoZ;
-    } else if (abs(pos.trueZ + (xDst * ray.ratioZtoX)) >= abs(pos.z + ray.stepZ)) {
-        pos.trueZ = (pos.z += ray.stepZ);
-        pos.trueX += zDst * ray.ratioXtoZ;
-        pos.trueY += zDst * ray.ratioYtoZ;
     } else {
-        FragColor = g;
-        return true;
+        // next intercept is with x+1,y
+        
+        if (abs(pos.trueX + (zDst * ray.ratioXtoZ)) >= abs(pos.x + ray.stepX)) {
+            pos.trueX = (pos.x += ray.stepX);
+            pos.trueY += xDst * ray.ratioYtoX;
+            pos.trueZ += xDst * ray.ratioZtoX;
+        } else {
+            pos.trueZ = (pos.z += ray.stepZ);
+            pos.trueX += zDst * ray.ratioXtoZ;
+            pos.trueY += zDst * ray.ratioYtoZ;
+        }
     }
 
     // trunc rather than floor so negative values round towards zero

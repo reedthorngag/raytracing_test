@@ -157,11 +157,11 @@ bool test(double x, double y, double z, double newX, double newY, double newZ) {
 
 int main() {
 
-    ray = buildRay(-1,0.6,0);
-    int iterations = 0;
+    ray = buildRay(-5  * 0.00001,-2 * 0.00001,1);
+    int iterations = 10;
 
-    double x = 0;
-    double y = 0;
+    double x = 50;
+    double y = 50;
     double z = 0;
 
     pos.x = x;
@@ -184,6 +184,10 @@ int main() {
         printf("\n");
         nextIntersect(false);
         printf("pos:      %lf %lf %lf\ntrue pos: %lf %lf %lf\n",pos.x,pos.y,pos.z,pos.trueX,pos.trueY,pos.trueZ);
+        if (pos.x > 45 && pos.x < 55 && pos.y > 45 && pos.y < 55 && pos.z > 5 && pos.z <= 6) {
+            printf("Hit!");
+            break;
+        }
     }
 
     //return 0;
