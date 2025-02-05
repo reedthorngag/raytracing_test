@@ -12,10 +12,8 @@ const int HEIGHT = 600;
 const double HALF_WIDTH = WIDTH/2.0;
 const double HALF_HEIGHT = HEIGHT/2.0;
 
-struct Global {
-    GLFWwindow* window;
-    GLuint program;
-};
+extern GLFWwindow* window;
+extern GLuint program;
 
 const float speed = 0.05;
 const float speed_scale = 5;
@@ -28,6 +26,8 @@ struct Mouse {
 extern Mouse mouse;
 
 extern double lastMouseUpdate;
+
+extern bool mouseLocked;
 
 extern bool getPixelData;
 

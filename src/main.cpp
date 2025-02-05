@@ -14,9 +14,7 @@ float vertices[] = {
     -1,  1, 0.0,
      1, -1, 0.0,
      1,  1, 0.0,
-};  
-
-Global global;
+};
 
 GLuint VAO;
 GLuint VBO;
@@ -46,10 +44,10 @@ void render() {
     glClearColor(1,1,1,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUniform3f(glGetUniformLocation(global.program, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
-    glUniform3f(glGetUniformLocation(global.program, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
-    glUniform2f(glGetUniformLocation(global.program,"mousePos"), mouse.x, mouse.y);
-    glUniform1i(glGetUniformLocation(global.program,"renderPosData"), getPixelData);
+    glUniform3f(glGetUniformLocation(program, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
+    glUniform3f(glGetUniformLocation(program, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
+    glUniform2f(glGetUniformLocation(program,"mousePos"), mouse.x, mouse.y);
+    glUniform1i(glGetUniformLocation(program,"renderPosData"), getPixelData);
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -68,7 +66,7 @@ int main() {
     createWindow();
     setupOpenGl();
 
-    glUseProgram(global.program);
+    glUseProgram(program);
 
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -101,17 +99,18 @@ int main() {
     printf("generated chunk! time: %lf  \n",glfwGetTime()-start);
 
 
-    glfwSetKeyCallback(global.window,glfwCharCallback);
-    glfwSetCursorPosCallback(global.window,glfwMousePosCallback);
-    glfwSetMouseButtonCallback(global.window, glfwMouseButtonCallback);
+    glfwSetKeyCallback(window,glfwCharCallback);
+    glfwSetCursorPosCallback(window,glfwMousePosCallback);
+    glfwSetMouseButtonCallback(window, glfwMouseButtonCallback);
 
     glfwSwapInterval(0);
 
     double times[5]{};
     int i = 0;
 
-    while (!glfwWindowShouldClose(global.window)) {
+    while (!glfwWindowShouldClose(window)) {
 
+        doInputUpdates(glfwGetTime() - start);
         start = glfwGetTime();
 
         glfwWaitEvents();
@@ -123,11 +122,11 @@ int main() {
         for (int n = 0; n < 5 && times[n]; n++) out += times[n];
         //printf("\rrender time: %dms    ",(int)(out/5.0*100000));
 
-        glfwSwapBuffers(global.window);
+        glfwSwapBuffers(window);
         glFinish();
     }
 
-    glfwDestroyWindow(global.window);
+    glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
 }
