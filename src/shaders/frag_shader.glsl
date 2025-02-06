@@ -150,10 +150,10 @@ void main()
         } else
             FragColor = vec4(0,0,0,0);
     }
-    if (renderPosData == 1) {
+    if (renderPosData == 1)
         FragColor = vec4(pos.x,pos.y,pos.z,double(set));
-        //FragColor = vec4(ray.x,ray.y,ray.z,double(set));
-    }
+    else if (renderPosData == 2)
+        FragColor = vec4(ray.x,ray.y,ray.z,double(set));
 }
 
 

@@ -42,7 +42,7 @@ void dumpPixelData() {
 
 void render() {
 
-    if (getPixelData) {
+    if (sendDebugFrame) {
         glBindFramebuffer(GL_FRAMEBUFFER, pixelsDataFBO);
     }
 
@@ -52,16 +52,16 @@ void render() {
     glUniform3f(glGetUniformLocation(program, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
     glUniform3f(glGetUniformLocation(program, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
     glUniform2f(glGetUniformLocation(program,"mousePos"), mouse.x, mouse.y);
-    glUniform1i(glGetUniformLocation(program,"renderPosData"), getPixelData);
+    glUniform1i(glGetUniformLocation(program,"renderPosData"), sendDebugFrame);
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    if (getPixelData) {
+    if (sendDebugFrame) {
         dumpPixelData();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        getPixelData = false;
+        sendDebugFrame = 0;
     }
 }
 

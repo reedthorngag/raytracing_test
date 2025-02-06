@@ -67,6 +67,14 @@ void glfwCharCallback(GLFWwindow* window, int key, int scancode, int action, int
             case GLFW_KEY_TAB:
                 cameraPos = glm::vec3(50,50,0);
                 break;
+
+            case GLFW_KEY_1:
+                sendDebugFrame = 1;
+                break;
+            
+            case GLFW_KEY_2:
+                sendDebugFrame = 2;
+                break;
             
             default:
                 // released
@@ -84,7 +92,6 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mod
         // released
         switch (button) {
             case GLFW_MOUSE_BUTTON_1:
-                getPixelData = true;
                 break;
             
             case GLFW_MOUSE_BUTTON_2:

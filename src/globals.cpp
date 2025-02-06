@@ -7,7 +7,7 @@ double lastMouseUpdate = 0;
 
 bool mouseLocked = false;
 
-bool getPixelData = false;
+unsigned int sendDebugFrame = 0;
 
 glm::vec3 cameraDir(0,0,1);
 glm::vec3 cameraPos(50,50,0);

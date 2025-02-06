@@ -28,7 +28,7 @@ extern double lastMouseUpdate;
 
 extern bool mouseLocked;
 
-extern bool getPixelData;
+extern unsigned int sendDebugFrame;
 
 extern glm::vec3 cameraDir;
 extern glm::vec3 cameraPos;
