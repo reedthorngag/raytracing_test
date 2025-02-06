@@ -51,8 +51,8 @@ void render() {
 
     glUniform3f(glGetUniformLocation(program, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
     glUniform3f(glGetUniformLocation(program, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
-    glUniform2f(glGetUniformLocation(program,"mousePos"), mouse.x, mouse.y);
-    glUniform1i(glGetUniformLocation(program,"renderPosData"), sendDebugFrame);
+    glUniform2f(glGetUniformLocation(program, "mousePos"), mouse.x, mouse.y);
+    glUniform1i(glGetUniformLocation(program, "renderPosData"), sendDebugFrame);
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);

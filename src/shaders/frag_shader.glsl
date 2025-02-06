@@ -154,6 +154,11 @@ void main()
         FragColor = vec4(pos.x,pos.y,pos.z,double(set));
     else if (renderPosData == 2)
         FragColor = vec4(ray.x,ray.y,ray.z,double(set));
+    else if (renderPosData == 3)
+        FragColor = vec4(ray.ratioYtoX,ray.ratioYtoZ,ray.ratioXtoY,double(set));
+    else if (renderPosData == 4)
+        FragColor = vec4(ray.ratioXtoZ,ray.ratioZtoX,ray.ratioZtoY,double(set));
+    
 }
 
 
