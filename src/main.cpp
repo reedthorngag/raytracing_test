@@ -9,6 +9,11 @@
 #include "chunk.hpp"
 #include "input.hpp"
 
+// extern "C" {
+//     __declspec(dllexport) unsigned int NvOptimusEnablement = 1;
+//     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+// }
+
 float vertices[] = {
     -1, -1, 0.0,
     -1,  1, 0.0,
@@ -120,7 +125,7 @@ int main() {
         i %= 5;
         double out = 0;
         for (int n = 0; n < 5 && times[n]; n++) out += times[n];
-        //printf("\rrender time: %dms    ",(int)(out/5.0*100000));
+        printf("\rrender time: %dms rotationXY: %lf, %lf camPos: %lf, %lf, %lf    ",(int)(out/5.0*100000),rotationX,rotationY,cameraPos.x,cameraPos.y,cameraPos.z);
 
         glfwSwapBuffers(window);
         glFinish();

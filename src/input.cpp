@@ -31,8 +31,8 @@ void doInputUpdates(double timeSinceLast) {
 
     if (keys[GLFW_KEY_LEFT]) xDelta -= 10;
     if (keys[GLFW_KEY_RIGHT]) xDelta += 10;
-    if (keys[GLFW_KEY_DOWN]) yDelta -= 10;
-    if (keys[GLFW_KEY_UP]) yDelta += 10;
+    if (keys[GLFW_KEY_DOWN]) yDelta += 10;
+    if (keys[GLFW_KEY_UP]) yDelta -= 10;
     if (keys[GLFW_KEY_W]) zMove += 2;
     if (keys[GLFW_KEY_A]) xMove -= 2;
     if (keys[GLFW_KEY_S]) zMove -= 2;
@@ -40,17 +40,17 @@ void doInputUpdates(double timeSinceLast) {
     if (keys[GLFW_KEY_LEFT_SHIFT]) yMove -= 2;
     if (keys[GLFW_KEY_SPACE]) yMove += 2;
 
-    timeSinceLast *= 5;
+    if (xDelta || yDelta) rotateCamera(xDelta*timeSinceLast*0.5, yDelta*timeSinceLast*0.5);
 
-    if (xDelta || yDelta) rotateCamera(xDelta*timeSinceLast, yDelta*timeSinceLast);
+    double ms = timeSinceLast / 100000;
 
-    timeSinceLast *= 5;
+    glm::vec3 moveSpeed = glm::vec3(speed) * glm::vec3(ms);
 
-    if (zMove) cameraPos += cameraDir * glm::vec3(zMove) * glm::vec3(timeSinceLast);
+    if (zMove) cameraPos += cameraDir * glm::vec3(zMove) * moveSpeed;
 
-    if (xMove) cameraPos += glm::cross(glm::vec3(0,1,0),cameraDir) * glm::vec3(xMove) * glm::vec3(timeSinceLast);
+    if (xMove) cameraPos += glm::cross(glm::vec3(0,1,0),cameraDir) * glm::vec3(xMove) * moveSpeed;
 
-    if (yMove) cameraPos += glm::cross(glm::vec3(1,0,0),cameraDir) * glm::vec3(yMove) * glm::vec3(timeSinceLast);
+    if (yMove) cameraPos += glm::cross(glm::vec3(-1,0,0),cameraDir) * glm::vec3(yMove) * moveSpeed;
 
 }
 
@@ -62,6 +62,10 @@ void glfwCharCallback(GLFWwindow* window, int key, int scancode, int action, int
         switch (key) {
             case GLFW_KEY_ESCAPE:
                 glfwSetWindowShouldClose(window,true);
+                break;
+
+            case GLFW_KEY_TAB:
+                cameraPos = glm::vec3(50,50,0);
                 break;
             
             default:

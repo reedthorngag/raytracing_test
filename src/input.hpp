@@ -3,6 +3,9 @@
 
 extern bool keys[512];
 
+extern double rotationX;
+extern double rotationY;
+
 void doInputUpdates(double timeSinceLast);
 
 void glfwCharCallback(GLFWwindow* window, int key, int scancode, int action, int mods);

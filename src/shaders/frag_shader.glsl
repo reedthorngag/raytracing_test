@@ -135,7 +135,7 @@ void main()
 
     int scale = 100;
     bool set = false;
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 200; i++) {
         if (texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale)).xyz != vec3(0,0,0)) {
            FragColor = texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale));
            set = true;

@@ -16,7 +16,6 @@ extern GLFWwindow* window;
 extern GLuint program;
 
 const float speed = 0.05;
-const float speed_scale = 5;
 
 struct Mouse {
     double x = 0;
