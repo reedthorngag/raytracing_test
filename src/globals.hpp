@@ -15,7 +15,7 @@ const double HALF_HEIGHT = HEIGHT/2.0;
 extern GLFWwindow* window;
 extern GLuint program;
 
-const float speed = 0.05;
+const float moveSpeed = 100000;
 
 struct Mouse {
     double x = 0;

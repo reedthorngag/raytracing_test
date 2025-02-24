@@ -19,7 +19,7 @@ struct Global {
 
 const glm::vec3 startPos(0);
 
-const float speed = 0.05;
+const float moveSpeed = 0.05;
 const float speed_scale = 5;
 
 #endif

@@ -9,8 +9,8 @@ bool mouseLocked = false;
 
 unsigned int sendDebugFrame = 0;
 
-glm::vec3 cameraDir(0,0,1);
-glm::vec3 cameraPos(50,50,0);
+glm::vec3 cameraDir(1,0,1);
+glm::vec3 cameraPos(35,50,35);
 
 GLFWwindow* window;
 GLuint program;

@@ -100,6 +100,7 @@ Pos pos;
 Ray ray;
 
 bool nextIntersect();
+bool nextIntersect2();
 
 vec4 r = vec4(1,0,0,1);
 vec4 g = vec4(0,1,0,1);
@@ -141,7 +142,7 @@ void main()
            set = true;
            break;
         }
-        if (nextIntersect()) return;
+        if (nextIntersect2()) return;
     }
 
     if (!set) {
@@ -191,6 +192,46 @@ bool nextIntersect() {
             pos.trueX = (pos.x += ray.stepX);
             pos.trueY += xDst * ray.ratioYtoX;
             pos.trueZ += xDst * ray.ratioZtoX;
+        }
+    }
+
+    // trunc rather than floor so negative values round towards zero
+    pos.x = trunc(pos.trueX);
+    pos.y = trunc(pos.trueY);
+    pos.z = trunc(pos.trueZ);
+    return false;
+}
+
+bool nextIntersect2() {
+
+    double xDst = abs((pos.x + ray.stepX) - pos.trueX);
+    double yDst = abs((pos.y + ray.stepY) - pos.trueY);
+    double zDst = abs((pos.z + ray.stepZ) - pos.trueZ);
+
+    if (abs(pos.trueX + (yDst * ray.ratioXtoY)) >= abs(pos.x + ray.stepX)) {
+        // next intercept is with x+1,y
+        
+        if (abs(pos.trueZ + (xDst * ray.ratioZtoX)) >= abs(pos.z + ray.stepZ)) {
+            pos.trueZ = (pos.z += ray.stepZ);
+            pos.trueX += zDst * ray.ratioXtoZ;
+            pos.trueY += zDst * ray.ratioYtoZ;
+        } else {
+            pos.trueX = (pos.x += ray.stepX);
+            pos.trueY += xDst * ray.ratioYtoX;
+            pos.trueZ += xDst * ray.ratioZtoX;
+        }
+
+    } else {
+        // next intercept is with x,y+1
+
+        if (abs(pos.trueZ + (yDst * ray.ratioZtoY)) >= abs(pos.z + ray.stepZ)) {
+            pos.trueZ = (pos.z += ray.stepZ);
+            pos.trueX += zDst * ray.ratioXtoZ;
+            pos.trueY += zDst * ray.ratioYtoZ;
+        } else {
+            pos.trueY = (pos.y += ray.stepY);
+            pos.trueX += yDst * ray.ratioXtoY;
+            pos.trueZ += yDst * ray.ratioZtoY;
         }
     }
 

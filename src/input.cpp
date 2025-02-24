@@ -29,10 +29,10 @@ void doInputUpdates(double timeSinceLast) {
     int yMove = 0;
     int zMove = 0;
 
-    if (keys[GLFW_KEY_LEFT]) xDelta -= 10;
-    if (keys[GLFW_KEY_RIGHT]) xDelta += 10;
-    if (keys[GLFW_KEY_DOWN]) yDelta += 10;
-    if (keys[GLFW_KEY_UP]) yDelta -= 10;
+    if (keys[GLFW_KEY_LEFT]) xDelta -= 25;
+    if (keys[GLFW_KEY_RIGHT]) xDelta += 25;
+    if (keys[GLFW_KEY_DOWN]) yDelta += 25;
+    if (keys[GLFW_KEY_UP]) yDelta -= 25;
     if (keys[GLFW_KEY_W]) zMove += 2;
     if (keys[GLFW_KEY_A]) xMove -= 2;
     if (keys[GLFW_KEY_S]) zMove -= 2;
@@ -44,13 +44,13 @@ void doInputUpdates(double timeSinceLast) {
 
     double ms = timeSinceLast / 100000;
 
-    glm::vec3 moveSpeed = glm::vec3(speed) * glm::vec3(ms);
+    glm::vec3 speed = glm::vec3(moveSpeed) * glm::vec3(ms);
 
-    if (zMove) cameraPos += cameraDir * glm::vec3(zMove) * moveSpeed;
+    if (zMove) cameraPos += cameraDir * glm::vec3(zMove) * speed;
 
-    if (xMove) cameraPos += glm::cross(glm::vec3(0,1,0),cameraDir) * glm::vec3(xMove) * moveSpeed;
+    if (xMove) cameraPos += glm::cross(glm::vec3(0,1,0),cameraDir) * glm::vec3(xMove) * speed;
 
-    if (yMove) cameraPos += glm::cross(glm::vec3(-1,0,0),cameraDir) * glm::vec3(yMove) * moveSpeed;
+    if (yMove) cameraPos += glm::cross(glm::vec3(-1,0,0),cameraDir) * glm::vec3(yMove) * speed;
 
 }
 
@@ -76,6 +76,14 @@ void glfwCharCallback(GLFWwindow* window, int key, int scancode, int action, int
                 sendDebugFrame = 2;
                 break;
             
+            case GLFW_KEY_3:
+                sendDebugFrame = 3;
+                break;
+            
+            case GLFW_KEY_4:
+                sendDebugFrame = 4;
+                break;
+            
             default:
                 // released
                 printf("\rKey pressed: %d scancode: %d mods: %d   ",key, scancode, mods);
@@ -92,10 +100,11 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mod
         // released
         switch (button) {
             case GLFW_MOUSE_BUTTON_1:
+                mouseLocked = !mouseLocked;
+                glfwSetCursorPos(window,HALF_WIDTH,HALF_HEIGHT);
                 break;
             
             case GLFW_MOUSE_BUTTON_2:
-                mouseLocked = !mouseLocked;
                 printf("\rMouse pos: %lf, %lf\n",mouse.x,mouse.y);
                 break;
             
@@ -111,7 +120,7 @@ void glfwMousePosCallback(GLFWwindow* window, double x, double y) {
     if (mouseLocked) {
         double xDelta = HALF_WIDTH - x;
         double yDelta = HALF_HEIGHT - y;
-        rotateCamera(xDelta,yDelta);
+        rotateCamera(xDelta * -0.1, yDelta * -0.1); // invert x
         glfwSetCursorPos(window,HALF_WIDTH,HALF_HEIGHT);
     }
     mouse.x = x;
