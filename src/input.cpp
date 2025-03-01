@@ -83,6 +83,10 @@ void glfwCharCallback(GLFWwindow* window, int key, int scancode, int action, int
             case GLFW_KEY_4:
                 sendDebugFrame = 4;
                 break;
+
+            case GLFW_KEY_5:
+                sendDebugFrame = 5;
+                break;
             
             default:
                 // released

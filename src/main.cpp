@@ -32,12 +32,21 @@ GLuint mouseHitPosFBO;
 
 Chunk* chunk;
 
+const char* debugFrameTypeString[] {
+    "Null",
+    "ray hit pos",
+    "ray direction",
+    "ray ratios Y/X, Y/Z X/Y",
+    "ray ratios X/Z, Z/X Z/Y",
+    "ray deltas"
+};
+
 void dumpPixelData() {
     float buffer[4];
 
     glReadPixels(mouse.x,mouse.y,1,1,GL_RGBA,GL_FLOAT,&buffer);
 
-    printf("\rpixel data: %f %f %f %f (mouse pos: %lf, %lf)\n",buffer[0],buffer[1],buffer[2],buffer[3],mouse.x,mouse.y);
+    printf("\rdebug frame: %s: %f %f %f %f (mouse pos: %lf, %lf)\n",debugFrameTypeString[sendDebugFrame],buffer[0],buffer[1],buffer[2],buffer[3],mouse.x,mouse.y);
 }
 
 void render() {

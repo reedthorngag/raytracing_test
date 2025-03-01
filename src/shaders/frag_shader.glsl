@@ -32,6 +32,10 @@ struct Ray {
     double ratioXtoZ;
     double ratioZtoX;
     double ratioZtoY;
+
+    double deltaX;
+    double deltaY;
+    double deltaZ;
 };
 
 double ifZeroMakeOne(double n) {
@@ -83,6 +87,10 @@ Ray buildRay(double x, double y, double z) {
     ray.ratioXtoZ = matchSign(makeRatio(x,z),ray.stepX);
     ray.ratioZtoX = matchSign(makeRatio(z,x),ray.stepZ);
     ray.ratioZtoY = matchSign(makeRatio(z,y),ray.stepZ);
+
+    ray.deltaX = 1/x;
+    ray.deltaY = 1/y;
+    ray.deltaZ = 1/z;
 
     return ray;
 }
@@ -136,7 +144,7 @@ void main()
 
     int scale = 100;
     bool set = false;
-    for (int i = 0; i < 200; i++) {
+    for (int i = 0; i < 100; i++) {
         if (texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale)).xyz != vec3(0,0,0)) {
            FragColor = texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale));
            set = true;
@@ -159,9 +167,11 @@ void main()
         FragColor = vec4(ray.ratioYtoX,ray.ratioYtoZ,ray.ratioXtoY,double(set));
     else if (renderPosData == 4)
         FragColor = vec4(ray.ratioXtoZ,ray.ratioZtoX,ray.ratioZtoY,double(set));
+    else if (renderPosData == 5)
+        FragColor = vec4(ray.deltaX,ray.deltaY,ray.deltaZ,double(set));
+        
     
 }
-
 
 bool nextIntersect() {
 
@@ -169,22 +179,14 @@ bool nextIntersect() {
     double yDst = abs((pos.y + ray.stepY) - pos.trueY);
     double zDst = abs((pos.z + ray.stepZ) - pos.trueZ);
 
-    if (abs(pos.trueY + (xDst * ray.ratioYtoX)) >= abs(pos.y + ray.stepY)) {
-        // next intercept is with x,y+1
+    double xAbsDst = abs(xDst * ray.deltaX);
+    double yAbsDst = abs(yDst * ray.deltaY);
+    double zAbsDst = abs(zDst * ray.deltaZ);
 
-        if (abs(pos.trueZ + (yDst * ray.ratioZtoY)) >= abs(pos.z + ray.stepZ)) {
-            pos.trueZ = (pos.z += ray.stepZ);
-            pos.trueX += zDst * ray.ratioXtoZ;
-            pos.trueY += zDst * ray.ratioYtoZ;
-        } else {
-            pos.trueY = (pos.y += ray.stepY);
-            pos.trueX += yDst * ray.ratioXtoY;
-            pos.trueZ += yDst * ray.ratioZtoY;
-        }
-    } else {
+    if (xAbsDst < yAbsDst) {
         // next intercept is with x+1,y
         
-        if (abs(pos.trueZ + (xDst * ray.ratioZtoX)) >= abs(pos.z + ray.stepZ)) {
+        if (zAbsDst < xAbsDst) {
             pos.trueZ = (pos.z += ray.stepZ);
             pos.trueX += zDst * ray.ratioXtoZ;
             pos.trueY += zDst * ray.ratioYtoZ;
@@ -192,6 +194,19 @@ bool nextIntersect() {
             pos.trueX = (pos.x += ray.stepX);
             pos.trueY += xDst * ray.ratioYtoX;
             pos.trueZ += xDst * ray.ratioZtoX;
+        }
+
+    } else {
+        // next intercept is with x,y+1
+
+        if (zAbsDst < yAbsDst) {
+            pos.trueZ = (pos.z += ray.stepZ);
+            pos.trueX += zDst * ray.ratioXtoZ;
+            pos.trueY += zDst * ray.ratioYtoZ;
+        } else {
+            pos.trueY = (pos.y += ray.stepY);
+            pos.trueX += yDst * ray.ratioXtoY;
+            pos.trueZ += yDst * ray.ratioZtoY;
         }
     }
 
@@ -208,13 +223,16 @@ bool nextIntersect2() {
     double yDst = abs((pos.y + ray.stepY) - pos.trueY);
     double zDst = abs((pos.z + ray.stepZ) - pos.trueZ);
 
-    if (abs(pos.trueX + (yDst * ray.ratioXtoY)) >= abs(pos.x + ray.stepX)) {
+    double xAbsDst = abs(xDst * ray.deltaX);
+    double yAbsDst = abs(yDst * ray.deltaY);
+    double zAbsDst = abs(zDst * ray.deltaZ);
+
+    if (xAbsDst < yAbsDst) {
         // next intercept is with x+1,y
         
-        if (abs(pos.trueZ + (xDst * ray.ratioZtoX)) >= abs(pos.z + ray.stepZ)) {
-            pos.trueZ = (pos.z += ray.stepZ);
-            pos.trueX += zDst * ray.ratioXtoZ;
-            pos.trueY += zDst * ray.ratioYtoZ;
+        if (zAbsDst < xAbsDst) {
+            pos.trueZ += ray.deltaZ;
+            pos.z += ray.stepZ
         } else {
             pos.trueX = (pos.x += ray.stepX);
             pos.trueY += xDst * ray.ratioYtoX;
@@ -224,7 +242,7 @@ bool nextIntersect2() {
     } else {
         // next intercept is with x,y+1
 
-        if (abs(pos.trueZ + (yDst * ray.ratioZtoY)) >= abs(pos.z + ray.stepZ)) {
+        if (zAbsDst < yAbsDst) {
             pos.trueZ = (pos.z += ray.stepZ);
             pos.trueX += zDst * ray.ratioXtoZ;
             pos.trueY += zDst * ray.ratioYtoZ;
