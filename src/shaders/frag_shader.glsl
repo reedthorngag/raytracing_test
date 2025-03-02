@@ -114,6 +114,23 @@ vec4 r = vec4(1,0,0,1);
 vec4 g = vec4(0,1,0,1);
 vec4 b = vec4(0,0,1,1);
 
+mat4 rotationMatrix(vec3 axis, float angle)
+{
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+    
+    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+                0.0,                                0.0,                                0.0,                                1.0);
+}
+
+void setFragToVec(vec3 vec, bool set) {
+    FragColor = vec4(vec.x,vec.y,vec.z,double(set));
+}
+
 void main()
 {
 
@@ -122,12 +139,37 @@ void main()
         return;
     }
 
-    ray = buildRay(
-        cameraDir.x + ((gl_FragCoord.x-halfWidth)*0.01),
-        cameraDir.y + ((gl_FragCoord.y-halfHeight)*0.01),
-        cameraDir.z);
+    float pixelX = ((gl_FragCoord.x / width) - 0.5) * 10;
+    float pixelY = ((gl_FragCoord.y / height) - 0.5) * 10;
 
-    vec3 origin1 = origin;
+    float x = (gl_FragCoord.x-halfWidth)*0.003;
+    float y = (halfHeight-gl_FragCoord.y)*0.003;
+
+    //y -= y * (abs(x) * 0.25);
+    //x -= x * (abs(y) * 0.25);
+
+    vec3 camLeft = cross(cameraDir,vec3(0,1,0));
+    vec3 camUp = cross(cameraDir,camLeft);
+
+    vec3 rayDir = (
+        rotationMatrix(camLeft,y) * 
+        vec4(cameraDir,1)
+    ).xyz;
+
+    rayDir += (
+        rotationMatrix(camUp,x) * 
+        vec4(cameraDir,1)
+    ).xyz * 0.9;
+
+    rayDir = normalize(rayDir);
+
+    ray = buildRay(
+        rayDir.x,
+        rayDir.y,
+        rayDir.z);
+
+    vec3 origin1 = origin - camLeft * pixelX * 2;
+    origin1 -= camUp * pixelY * 2;
 
     //FragColor = vec4(min(abs((gl_FragCoord.x-halfWidth)*0.001),1),min(abs(((gl_FragCoord.y-halfHeight)*0.001)),1),0,1);
     //return;
@@ -169,6 +211,14 @@ void main()
         FragColor = vec4(ray.ratioXtoZ,ray.ratioZtoX,ray.ratioZtoY,double(set));
     else if (renderPosData == 5)
         FragColor = vec4(ray.deltaX,ray.deltaY,ray.deltaZ,double(set));
+    else if (renderPosData == 6)
+        FragColor = vec4(origin1.x,origin1.y,origin1.z,double(set));
+    else if (renderPosData == 6)
+        setFragToVec(rayDir);
+    else if (renderPosData == 8)
+        setFragToVec(camLeft);
+    else if (renderPosData == 9)
+        setFragToVec(camUp);
         
     
 }
@@ -231,8 +281,9 @@ bool nextIntersect2() {
         // next intercept is with x+1,y
         
         if (zAbsDst < xAbsDst) {
-            pos.trueZ += ray.deltaZ;
-            pos.z += ray.stepZ
+            pos.trueZ = (pos.z += ray.stepZ);
+            pos.trueX += zDst * ray.ratioXtoZ;
+            pos.trueY += zDst * ray.ratioYtoZ;
         } else {
             pos.trueX = (pos.x += ray.stepX);
             pos.trueY += xDst * ray.ratioYtoX;

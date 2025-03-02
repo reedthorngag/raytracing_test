@@ -38,7 +38,8 @@ const char* debugFrameTypeString[] {
     "ray direction",
     "ray ratios Y/X, Y/Z X/Y",
     "ray ratios X/Z, Z/X Z/Y",
-    "ray deltas"
+    "ray deltas",
+    "ray origin"
 };
 
 void dumpPixelData() {

@@ -37,12 +37,12 @@ Chunk::Chunk() {
             int y = 45;
             for (; y < 54; y++) {
                 int index = (z * (w*h) + y * w + x) * 3;
-                this->texData[index] = 82;
-                this->texData[index+1] = 37;
-                this->texData[index+2] = 3;
+                this->texData[index] = (x % 9) * (255.0/9.0);
+                this->texData[index+1] = (y % 9) * (255.0/9.0);
+                this->texData[index+2] = (z % 9) * (255.0/9.0);
             }
             
-            y++;
+            
             int index = (z * (w*h) + y * w + x) * 3;
             this->texData[index] = 6;
             this->texData[index+1] = 125;

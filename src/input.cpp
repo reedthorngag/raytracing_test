@@ -17,6 +17,8 @@ void rotateCamera(double xDelta, double yDelta) {
     if (rotationX+yDelta <= -90 || rotationX+yDelta >= 90) yDelta = 0;
     rotationX += yDelta; // because its around, not along, that axis
     rotationY += xDelta;
+    if (rotationY > 360) rotationY -= 360;
+    if (rotationY < -360) rotationY += 360;
     cameraDir = glm::rotateX(glm::vec3(0,0,1),(float)glm::radians(rotationX));
     cameraDir = glm::rotateY(cameraDir,(float)glm::radians(rotationY));
 }
@@ -71,21 +73,29 @@ void glfwCharCallback(GLFWwindow* window, int key, int scancode, int action, int
             case GLFW_KEY_1:
                 sendDebugFrame = 1;
                 break;
-            
             case GLFW_KEY_2:
                 sendDebugFrame = 2;
                 break;
-            
             case GLFW_KEY_3:
                 sendDebugFrame = 3;
                 break;
-            
             case GLFW_KEY_4:
                 sendDebugFrame = 4;
                 break;
-
             case GLFW_KEY_5:
                 sendDebugFrame = 5;
+                break;
+            case GLFW_KEY_6:
+                sendDebugFrame = 6;
+                break;
+            case GLFW_KEY_7:
+                sendDebugFrame = 7;
+                break;
+            case GLFW_KEY_8:
+                sendDebugFrame = 8;
+                break;
+            case GLFW_KEY_9:
+                sendDebugFrame = 9;
                 break;
             
             default:
