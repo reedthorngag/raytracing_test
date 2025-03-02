@@ -34,12 +34,16 @@ Chunk* chunk;
 
 const char* debugFrameTypeString[] {
     "Null",
-    "ray hit pos",
-    "ray direction",
-    "ray ratios Y/X, Y/Z X/Y",
-    "ray ratios X/Z, Z/X Z/Y",
-    "ray deltas",
-    "ray origin"
+    "ray hit pos", // 1
+    "ray dir", // 2
+    "ray ratios Y/X, Y/Z X/Y", // 3
+    "ray ratios X/Z, Z/X Z/Y", // 4
+    "ray deltas", // 5
+    "ray origin", // 6
+    "camDir", // 7
+    "camLeft", // 8
+    "camUp", // 9
+    "camOrigin", // 0
 };
 
 void dumpPixelData() {

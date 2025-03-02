@@ -97,6 +97,9 @@ void glfwCharCallback(GLFWwindow* window, int key, int scancode, int action, int
             case GLFW_KEY_9:
                 sendDebugFrame = 9;
                 break;
+            case GLFW_KEY_0:
+                sendDebugFrame = 10;
+                break;
             
             default:
                 // released

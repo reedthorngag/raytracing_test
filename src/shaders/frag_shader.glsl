@@ -127,8 +127,8 @@ mat4 rotationMatrix(vec3 axis, float angle)
                 0.0,                                0.0,                                0.0,                                1.0);
 }
 
-void setFragToVec(vec3 vec, bool set) {
-    FragColor = vec4(vec.x,vec.y,vec.z,double(set));
+void setFragToVec(vec3 vec) {
+    FragColor = vec4(vec.x,vec.y,vec.z,0);
 }
 
 void main()
@@ -202,23 +202,25 @@ void main()
             FragColor = vec4(0,0,0,0);
     }
     if (renderPosData == 1)
-        FragColor = vec4(pos.x,pos.y,pos.z,double(set));
+        FragColor = vec4(pos.x,pos.y,pos.z,0);
     else if (renderPosData == 2)
-        FragColor = vec4(ray.x,ray.y,ray.z,double(set));
+        FragColor = vec4(ray.x,ray.y,ray.z,0);
     else if (renderPosData == 3)
-        FragColor = vec4(ray.ratioYtoX,ray.ratioYtoZ,ray.ratioXtoY,double(set));
+        FragColor = vec4(ray.ratioYtoX,ray.ratioYtoZ,ray.ratioXtoY,0);
     else if (renderPosData == 4)
-        FragColor = vec4(ray.ratioXtoZ,ray.ratioZtoX,ray.ratioZtoY,double(set));
+        FragColor = vec4(ray.ratioXtoZ,ray.ratioZtoX,ray.ratioZtoY,0);
     else if (renderPosData == 5)
-        FragColor = vec4(ray.deltaX,ray.deltaY,ray.deltaZ,double(set));
+        FragColor = vec4(ray.deltaX,ray.deltaY,ray.deltaZ,0);
     else if (renderPosData == 6)
-        FragColor = vec4(origin1.x,origin1.y,origin1.z,double(set));
-    else if (renderPosData == 6)
-        setFragToVec(rayDir);
+        FragColor = vec4(origin1.xyz,0);
+    else if (renderPosData == 7)
+        setFragToVec(cameraDir);
     else if (renderPosData == 8)
         setFragToVec(camLeft);
     else if (renderPosData == 9)
         setFragToVec(camUp);
+    else if (renderPosData == 10)
+        setFragToVec(origin);
         
     
 }
