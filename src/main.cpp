@@ -41,8 +41,8 @@ const char* debugFrameTypeString[] {
     "ray deltas", // 5
     "ray origin", // 6
     "camDir", // 7
-    "camLeft", // 8
-    "camUp", // 9
+    "proj_pln_inter", // 8
+    "x vec", // 9
     "camOrigin", // 0
 };
 
