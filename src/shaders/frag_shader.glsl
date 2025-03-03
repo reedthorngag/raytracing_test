@@ -142,8 +142,8 @@ void main()
     float pixelX = ((gl_FragCoord.x / width) - 0.5) * 10;
     float pixelY = ((gl_FragCoord.y / height) - 0.5) * 10;
 
-    float x = (gl_FragCoord.x-halfWidth)*0.003;
-    float y = (halfHeight-gl_FragCoord.y)*0.003;
+    float x = (gl_FragCoord.x-halfWidth)*0.001;
+    float y = (halfHeight-gl_FragCoord.y)*0.001;
 
     //y -= y * (abs(x) * 0.25);
     //x -= x * (abs(y) * 0.25);
@@ -168,8 +168,8 @@ void main()
         rayDir.y,
         rayDir.z);
 
-    vec3 origin1 = origin - camLeft * pixelX * 2;
-    origin1 -= camUp * pixelY * 2;
+    vec3 origin1 = origin - camLeft * pixelX;
+    origin1 -= camUp * pixelY;
 
     //FragColor = vec4(min(abs((gl_FragCoord.x-halfWidth)*0.001),1),min(abs(((gl_FragCoord.y-halfHeight)*0.001)),1),0,1);
     //return;
@@ -185,6 +185,12 @@ void main()
     pos.trueZ = origin1.z;
 
     int scale = 100;
+
+    if (texture(tex, vec3(origin.x/scale,origin.y/scale,origin.z/scale)).xyz != vec3(0,0,0)) {
+        FragColor = texture(tex, vec3(origin.x/scale,origin.y/scale,origin.z/scale));
+        return;
+    }
+
     bool set = false;
     for (int i = 0; i < 100; i++) {
         if (texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale)).xyz != vec3(0,0,0)) {
@@ -192,7 +198,7 @@ void main()
            set = true;
            break;
         }
-        if (nextIntersect2()) return;
+        if (nextIntersect()) return;
     }
 
     if (!set) {
@@ -226,50 +232,6 @@ void main()
 }
 
 bool nextIntersect() {
-
-    double xDst = abs((pos.x + ray.stepX) - pos.trueX);
-    double yDst = abs((pos.y + ray.stepY) - pos.trueY);
-    double zDst = abs((pos.z + ray.stepZ) - pos.trueZ);
-
-    double xAbsDst = abs(xDst * ray.deltaX);
-    double yAbsDst = abs(yDst * ray.deltaY);
-    double zAbsDst = abs(zDst * ray.deltaZ);
-
-    if (xAbsDst < yAbsDst) {
-        // next intercept is with x+1,y
-        
-        if (zAbsDst < xAbsDst) {
-            pos.trueZ = (pos.z += ray.stepZ);
-            pos.trueX += zDst * ray.ratioXtoZ;
-            pos.trueY += zDst * ray.ratioYtoZ;
-        } else {
-            pos.trueX = (pos.x += ray.stepX);
-            pos.trueY += xDst * ray.ratioYtoX;
-            pos.trueZ += xDst * ray.ratioZtoX;
-        }
-
-    } else {
-        // next intercept is with x,y+1
-
-        if (zAbsDst < yAbsDst) {
-            pos.trueZ = (pos.z += ray.stepZ);
-            pos.trueX += zDst * ray.ratioXtoZ;
-            pos.trueY += zDst * ray.ratioYtoZ;
-        } else {
-            pos.trueY = (pos.y += ray.stepY);
-            pos.trueX += yDst * ray.ratioXtoY;
-            pos.trueZ += yDst * ray.ratioZtoY;
-        }
-    }
-
-    // trunc rather than floor so negative values round towards zero
-    pos.x = trunc(pos.trueX);
-    pos.y = trunc(pos.trueY);
-    pos.z = trunc(pos.trueZ);
-    return false;
-}
-
-bool nextIntersect2() {
 
     double xDst = abs((pos.x + ray.stepX) - pos.trueX);
     double yDst = abs((pos.y + ray.stepY) - pos.trueY);

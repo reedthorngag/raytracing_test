@@ -130,9 +130,9 @@ int main() {
     while (!glfwWindowShouldClose(window)) {
 
         doInputUpdates(glfwGetTime() - start);
-        start = glfwGetTime();
 
         glfwWaitEvents();
+        start = glfwGetTime();
         render();
 
         times[i++] = glfwGetTime()-start;
