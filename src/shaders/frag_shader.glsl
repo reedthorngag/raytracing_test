@@ -230,31 +230,22 @@ bool nextIntersect() {
     double yAbsDst = abs(yDst * ray.deltaY);
     double zAbsDst = abs(zDst * ray.deltaZ);
 
-    if (xAbsDst < yAbsDst) {
-        // next intercept is with x+1,y
+    if (xAbsDst < yAbsDst && xAbsDst < zAbsDst) {
+
+        pos.trueX = (pos.x += ray.stepX * 0.999999);
+        pos.trueY += xDst * ray.ratioYtoX;
+        pos.trueZ += xDst * ray.ratioZtoX;
+
+    else if (yAbsDst < zAbsDst) {
         
-        if (zAbsDst < xAbsDst) {
-            pos.trueZ = (pos.z += ray.stepZ);
-            pos.trueX += zDst * ray.ratioXtoZ;
-            pos.trueY += zDst * ray.ratioYtoZ;
-        } else {
-            pos.trueX = (pos.x += ray.stepX);
-            pos.trueY += xDst * ray.ratioYtoX;
-            pos.trueZ += xDst * ray.ratioZtoX;
-        }
+        pos.trueY = (pos.y += ray.stepY * 0.999999);
+        pos.trueX += yDst * ray.ratioXtoY;
+        pos.trueZ += yDst * ray.ratioZtoY;
 
     } else {
-        // next intercept is with x,y+1
-
-        if (zAbsDst < yAbsDst) {
-            pos.trueZ = (pos.z += ray.stepZ);
-            pos.trueX += zDst * ray.ratioXtoZ;
-            pos.trueY += zDst * ray.ratioYtoZ;
-        } else {
-            pos.trueY = (pos.y += ray.stepY);
-            pos.trueX += yDst * ray.ratioXtoY;
-            pos.trueZ += yDst * ray.ratioZtoY;
-        }
+        pos.trueZ = (pos.z += ray.stepZ * 0.999999);
+        pos.trueX += zDst * ray.ratioXtoZ;
+        pos.trueY += zDst * ray.ratioYtoZ;
     }
 
     // trunc rather than floor so negative values round towards zero
