@@ -96,7 +96,6 @@ int main() {
     glEnableVertexAttribArray(0);
 
 
-
     glGenTextures(1,&pixelsDataTex);
     glBindTexture(GL_TEXTURE_2D, pixelsDataTex);
     // Allocate the storage.
@@ -117,6 +116,7 @@ int main() {
 
     printf("generated chunk! time: %lf  \n",glfwGetTime()-start);
 
+    cameraDir = glm::normalize(cameraDir);
 
     glfwSetKeyCallback(window,glfwCharCallback);
     glfwSetCursorPosCallback(window,glfwMousePosCallback);

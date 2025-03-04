@@ -145,44 +145,20 @@ void main()
     float FragCoordX = (gl_FragCoord.x / width) - 0.5;
     float FragCoordY = (gl_FragCoord.y / height) - 0.5;
 
-    float projection_plane_width = 2 * tan(radians(45));
+    float projection_plane_width = 1 * tan(radians(45));
     
-    vec3 projection_plane_center = origin + normalize(cameraDir) * 2;
+    vec3 projection_plane_center = cameraDir;
     vec3 projection_plane_left = normalize(cross(projection_plane_center, vec3(0,1,0)));
-    vec3 projection_plane_intersect = projection_plane_center + (projection_plane_left * projection_plane_width * FragCoordX);
-
-    vec3 x_vec = normalize(cameraDir + projection_plane_intersect);
-
-    float x = normalize(cameraDir + projection_plane_intersect).x;
-
-    float pixelX = FragCoordX * 0;
-    float pixelY = FragCoordY * 0;
-
-    //float x = FragCoordX * radians(45);
-    float y = FragCoordY * radians(45);
-
-    //y -= y * (abs(x) * 0.25);
-    //x -= x * (abs(y) * 0.25);
-
-    vec3 rayDir = (
-        rotationMatrix(camLeft,y) * 
-        vec4(cameraDir,1)
-    ).xyz;
-
-    rayDir += (
-        rotationMatrix(camUp,x) * 
-        vec4(cameraDir,1)
-    ).xyz * 0.9;
-
-    rayDir = normalize(rayDir);
+    vec3 projection_plane_intersect = projection_plane_center + (projection_plane_left * -(projection_plane_width * FragCoordX)) + cross(projection_plane_center,projection_plane_left) * -FragCoordY;
+    
+    vec3 rayDir = normalize(projection_plane_intersect);
 
     ray = buildRay(
         rayDir.x,
         rayDir.y,
         rayDir.z);
 
-    vec3 origin1 = origin - camLeft * pixelX;
-    origin1 -= camUp * pixelY;
+    vec3 origin1 = origin;
 
     //FragColor = vec4(min(abs((gl_FragCoord.x-halfWidth)*0.001),1),min(abs(((gl_FragCoord.y-halfHeight)*0.001)),1),0,1);
     //return;
@@ -237,7 +213,7 @@ void main()
     else if (renderPosData == 8)
         setFragToVec(projection_plane_intersect);
     else if (renderPosData == 9)
-        setFragToVec(x_vec);
+        setFragToVec(vec3(0));
     else if (renderPosData == 10)
         setFragToVec(origin);
         
