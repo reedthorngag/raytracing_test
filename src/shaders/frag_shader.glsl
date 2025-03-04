@@ -166,9 +166,9 @@ void main()
     //origin1.x += (gl_FragCoord.x-halfWidth);
     //origin1.y += (gl_FragCoord.y-halfHeight);
 
-    pos.x = origin1.x;
-    pos.y = origin1.y;
-    pos.z = origin1.z;
+    pos.x = trunc(origin1.x) + matchSign(0.5,origin1.x);
+    pos.y = trunc(origin1.y) + matchSign(0.5,origin1.y);
+    pos.z = trunc(origin1.z) + matchSign(0.5,origin1.z);
     pos.trueX = origin1.x;
     pos.trueY = origin1.y;
     pos.trueZ = origin1.z;
@@ -232,25 +232,24 @@ bool nextIntersect() {
 
     if (xAbsDst < yAbsDst && xAbsDst < zAbsDst) {
 
-        pos.trueX = (pos.x += ray.stepX * 0.999999);
+        pos.trueX += (pos.x + ray.stepX) - pos.trueX;
+        pos.x += ray.stepX;
         pos.trueY += xDst * ray.ratioYtoX;
         pos.trueZ += xDst * ray.ratioZtoX;
 
-    else if (yAbsDst < zAbsDst) {
+    } else if (yAbsDst < zAbsDst) {
         
-        pos.trueY = (pos.y += ray.stepY * 0.999999);
+        pos.trueY += (pos.y + ray.stepY) - pos.trueY;
+        pos.y += ray.stepY;
         pos.trueX += yDst * ray.ratioXtoY;
         pos.trueZ += yDst * ray.ratioZtoY;
 
     } else {
-        pos.trueZ = (pos.z += ray.stepZ * 0.999999);
+        pos.trueZ += (pos.z + ray.stepZ) - pos.trueZ;
+        pos.z += ray.stepZ;
         pos.trueX += zDst * ray.ratioXtoZ;
         pos.trueY += zDst * ray.ratioYtoZ;
     }
 
-    // trunc rather than floor so negative values round towards zero
-    pos.x = trunc(pos.trueX);
-    pos.y = trunc(pos.trueY);
-    pos.z = trunc(pos.trueZ);
     return false;
 }

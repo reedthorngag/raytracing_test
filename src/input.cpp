@@ -44,17 +44,18 @@ void doInputUpdates(double timeSinceLast) {
 
     if (xDelta || yDelta) rotateCamera(xDelta*timeSinceLast*0.5, yDelta*timeSinceLast*0.5);
 
-    double ms = timeSinceLast / 100000;
+    double ms = timeSinceLast / 100000.0;
 
     glm::vec3 speed = glm::vec3(moveSpeed) * glm::vec3(ms);
-
     if (keys[GLFW_KEY_LEFT_SHIFT]) speed *= 2;
+
+    glm::vec3 cameraLeft = glm::cross(cameraDir,glm::vec3(0,1,0));
 
     if (zMove) cameraPos += cameraDir * glm::vec3(zMove) * speed;
 
-    if (xMove) cameraPos += glm::cross(glm::vec3(0,1,0),cameraDir) * glm::vec3(xMove) * speed;
+    if (xMove) cameraPos += cameraLeft * glm::vec3(-xMove) * speed;
 
-    if (yMove) cameraPos += glm::cross(glm::vec3(-1,0,0),cameraDir) * glm::vec3(yMove) * speed;
+    if (yMove) cameraPos += glm::cross(cameraDir,cameraLeft) * glm::vec3(-yMove) * speed;
 
 }
 

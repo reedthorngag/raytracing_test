@@ -129,9 +129,10 @@ int main() {
 
     while (!glfwWindowShouldClose(window)) {
 
+        glfwPollEvents();
         doInputUpdates(glfwGetTime() - start);
 
-        glfwWaitEvents();
+        //glfwWaitEvents();
         start = glfwGetTime();
         render();
 
@@ -139,7 +140,7 @@ int main() {
         i %= 5;
         double out = 0;
         for (int n = 0; n < 5 && times[n]; n++) out += times[n];
-        printf("\rrender time: %dms rotationXY: %lf, %lf camPos: %lf, %lf, %lf    ",(int)(out/5.0*100000),rotationX,rotationY,cameraPos.x,cameraPos.y,cameraPos.z);
+        printf("\rrender time: %dms (%d fps) rotationXY: %lf, %lf camPos: %lf, %lf, %lf    ",(int)(out/5.0*1000000),(int)(1000/(out/5.0 * 1000000)),rotationX,rotationY,cameraPos.x,cameraPos.y,cameraPos.z);
 
         glfwSwapBuffers(window);
         glFinish();
