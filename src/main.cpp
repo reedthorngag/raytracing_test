@@ -9,10 +9,11 @@
 #include "chunk.hpp"
 #include "input.hpp"
 
-// extern "C" {
-//     __declspec(dllexport) unsigned int NvOptimusEnablement = 1;
-//     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-// }
+
+extern "C" {
+    __declspec(dllexport) unsigned int NvOptimusEnablement = 1;
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
 
 float vertices[] = {
     -1, -1, 0.0,
@@ -51,6 +52,8 @@ void dumpPixelData() {
 
     glReadPixels(mouse.x,mouse.y,1,1,GL_RGBA,GL_FLOAT,&buffer);
 
+    checkGlError("glReadPixels");
+
     printf("\rdebug frame: %s: %f %f %f %f (mouse pos: %lf, %lf)\n",debugFrameTypeString[sendDebugFrame],buffer[0],buffer[1],buffer[2],buffer[3],mouse.x,mouse.y);
 }
 
@@ -72,6 +75,8 @@ void render() {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
+    checkGlError("glDrawArrays");
+
     if (sendDebugFrame) {
         dumpPixelData();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -85,7 +90,14 @@ int main() {
     createWindow();
     setupOpenGl();
 
+    checkGlError("setupOpenGl");
+
     glUseProgram(program);
+
+    checkGlError("glUseProgram");
+
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
 
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -95,9 +107,14 @@ int main() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
+    checkGlError("glEnableVertexAttribArray");
+
 
     glGenTextures(1,&pixelsDataTex);
     glBindTexture(GL_TEXTURE_2D, pixelsDataTex);
+  
+    checkGlError("glBindTexture");
+
     // Allocate the storage.
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, WIDTH, HEIGHT);
 
@@ -124,7 +141,8 @@ int main() {
 
     glfwSwapInterval(0);
 
-    double times[5]{};
+    const int averageSize = 20;
+    double times[averageSize]{};
     int i = 0;
 
     while (!glfwWindowShouldClose(window)) {
@@ -137,13 +155,13 @@ int main() {
         render();
 
         times[i++] = glfwGetTime()-start;
-        i %= 5;
+        i %= averageSize;
         double out = 0;
-        for (int n = 0; n < 5 && times[n]; n++) out += times[n];
-        printf("\rrender time: %dms (%d fps) rotationXY: %lf, %lf camPos: %lf, %lf, %lf    ",(int)(out/5.0*1000000),(int)(1000/(out/5.0 * 1000000)),rotationX,rotationY,cameraPos.x,cameraPos.y,cameraPos.z);
+        for (int n = 0; n < averageSize && times[n]; n++) out += times[n];
+        printf("\rrender time: %dms (%d fps) rotationXY: %lf, %lf camPos: %lf, %lf, %lf    ",(int)(out/(double)averageSize*1000),(int)(1000/(out/(double)averageSize * 1000)),rotationX,rotationY,cameraPos.x,cameraPos.y,cameraPos.z);
 
         glfwSwapBuffers(window);
-        glFinish();
+        //glFinish();
     }
 
     glfwDestroyWindow(window);

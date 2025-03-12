@@ -1,10 +1,10 @@
 #include <glm/glm.hpp>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <stdio.h>
 
 #ifndef _GLOBALS
 #define _GLOBALS
-
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
@@ -14,6 +14,24 @@ const double HALF_HEIGHT = HEIGHT/2.0;
 
 extern GLFWwindow* window;
 extern GLuint program;
+
+inline void checkGlErrorFunc(const char* id) {
+    int error = glGetError();
+    if (error != GL_NO_ERROR) {
+        GLint maxLength = 0;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+
+        char* infoLog = new char[maxLength];
+        glGetProgramInfoLog(program, maxLength, &maxLength, infoLog);
+        printf("GL Error: %s: %d: %s\n",id, error, infoLog);
+        exit(1);
+    }
+}
+
+// so it is easy to disable/effectively remove later
+#define checkGlError(id) checkGlErrorFunc(id)
+
+
 
 const float moveSpeed = 100000;
 
