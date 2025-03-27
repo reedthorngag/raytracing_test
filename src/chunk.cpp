@@ -35,7 +35,7 @@ Chunk::Chunk() {
             int height = round((o1.eval(x*0.01,z*0.01)+1)*10+4);
 
             int y = 45;
-            for (; y < 54; y++) {
+            for (; y < 51; y++) {
                 int index = (z * (w*h) + y * w + x) * 3;
                 this->texData[index] = (x % 9) * (255.0/9.0);
                 this->texData[index+1] = (y % 9) * (255.0/9.0);

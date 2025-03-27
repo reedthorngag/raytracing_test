@@ -16,8 +16,8 @@ int halfWidth = width/2;
 int height = 600;
 int halfHeight = height/2;
 
-double pixelWidth = 1/width;
-double pixelHeight = 1/height;
+double pixelWidth = 1.0/width;
+double pixelHeight = 1.0/height;
 
 struct Ray {
     double x;
@@ -121,9 +121,9 @@ struct Pos {
 Pos pos;
 Ray ray;
 
-bool nextIntersect();
-bool nextIntersect2();
-bool nextIntersectDDA();
+void nextIntersect();
+void nextIntersect2();
+void nextIntersectDDA();
 
 vec4 r = vec4(1,0,0,1);
 vec4 g = vec4(0,1,0,1);
@@ -157,8 +157,8 @@ void main()
     vec3 camLeft = cross(cameraDir,vec3(0,1,0));
     vec3 camUp = cross(cameraDir,camLeft);
 
-    float FragCoordX = (gl_FragCoord.x * pixelWidth) - 0.5;
-    float FragCoordY = (gl_FragCoord.y * pixelHeight) - 0.5;
+    float FragCoordX = float(gl_FragCoord.x * pixelWidth) - 0.5;
+    float FragCoordY = float(gl_FragCoord.y * pixelHeight) - 0.5;
 
     float projection_plane_width = 1 * tan(radians(45));
     
@@ -177,21 +177,21 @@ void main()
 
     vec3 origin1 = origin;
 
-    //FragColor = vec4(min(abs((gl_FragCoord.x-halfWidth)*0.001),1),min(abs(((gl_FragCoord.y-halfHeight)*0.001)),1),0,1);
-    //return;
+    pos.x = floor(origin1.x);
+    pos.y = floor(origin1.y);
+    pos.z = floor(origin1.z);
 
-    //origin1.x += (gl_FragCoord.x-halfWidth);
-    //origin1.y += (gl_FragCoord.y-halfHeight);
-
-    pos.x = trunc(origin1.x);//+ matchSign(0.5,origin1.x);
-    pos.y = trunc(origin1.y);//+ matchSign(0.5,origin1.y);
-    pos.z = trunc(origin1.z);//+ matchSign(0.5,origin1.z);
     pos.trueX = origin1.x;
     pos.trueY = origin1.y;
     pos.trueZ = origin1.z;
-    pos.xDeltaPos = mod(origin1.x, 1) + ray.absDeltaX;
-    pos.yDeltaPos = mod(origin1.y, 1) + ray.absDeltaY;
-    pos.zDeltaPos = mod(origin1.z, 1) + ray.absDeltaZ;
+    
+    if (ray.stepX < 0) pos.trueX -= 1;
+    if (ray.stepY < 0) pos.trueY -= 1;
+    if (ray.stepZ < 0) pos.trueZ -= 1;
+
+    pos.xDeltaPos = ray.absDeltaX - (pos.trueX - pos.x) * ray.deltaX;
+    pos.yDeltaPos = ray.absDeltaY - (pos.trueY - pos.y) * ray.deltaY;
+    pos.zDeltaPos = ray.absDeltaZ - (pos.trueZ - pos.z) * ray.deltaZ;
 
     int scale = 100;
 
@@ -208,7 +208,7 @@ void main()
            break;
         }
         nextIntersectDDA();
-        //if (nextIntersect()) return;
+        //nextIntersect();
     }
 
     if (!set) {
@@ -232,7 +232,7 @@ void main()
     else if (renderPosData == 7)
         setFragToVec(cameraDir);
     else if (renderPosData == 8)
-        setFragToVec(projection_plane_intersect);
+        setFragToVec(trunc(origin1.xyz));
     else if (renderPosData == 9)
         setFragToVec(vec3(0));
     else if (renderPosData == 10)
@@ -241,23 +241,21 @@ void main()
     
 }
 
-bool nextIntersectDDA() {
+void nextIntersectDDA() {
 
     if (pos.xDeltaPos < pos.yDeltaPos && pos.xDeltaPos < pos.zDeltaPos) {
         pos.x += ray.stepX;
         pos.xDeltaPos += ray.absDeltaX;
     } else if (pos.yDeltaPos < pos.zDeltaPos) {
         pos.y += ray.stepY;
-        pos.xDeltaPos += ray.absDeltaY;
+        pos.yDeltaPos += ray.absDeltaY;
     } else {
         pos.z += ray.stepZ;
         pos.zDeltaPos += ray.absDeltaZ;
     }
-
-    return false;
 }
 
-bool nextIntersect() {
+void nextIntersect() {
 
     double xDst = abs((pos.x + ray.stepX) - pos.trueX);
     double yDst = abs((pos.y + ray.stepY) - pos.trueY);
@@ -287,6 +285,4 @@ bool nextIntersect() {
         pos.trueX += zDst * ray.ratioXtoZ;
         pos.trueY += zDst * ray.ratioYtoZ;
     }
-
-    return false;
 }
