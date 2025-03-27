@@ -1,4 +1,5 @@
 #version 460 core
+#extension GL_ARB_gpu_shader_int64 : enable
 
 out vec4 FragColor;
 
@@ -30,6 +31,8 @@ struct Ray {
     vec3 dir;
 
     ivec3 step;
+
+    ivec3 sign;
 
     double ratioYtoX;
     double ratioYtoZ;
@@ -68,12 +71,17 @@ Ray buildRay(vec3 dir) {
     ray.step.y = 1;
     ray.step.z = 1;
 
+    //ray.sign = dvec3(0);
+
     if (dir.x < 0)
         ray.step.x = -1;
+        //ray.sign.x = 1 << 31;
     if (dir.y < 0)
         ray.step.y = -1;
+        //ray.sign.y = 1 << 31;
     if (dir.z < 0)
         ray.step.z = -1;
+        //ray.sign.z = 1 << 31;
 
     ray.ratioYtoX = matchSign(makeRatio(dir.y,dir.x),ray.step.y);
     ray.ratioYtoZ = matchSign(makeRatio(dir.y,dir.z),ray.step.y);
@@ -104,8 +112,7 @@ struct Pos {
 Pos pos;
 Ray ray;
 
-void nextIntersect();
-void nextIntersect2();
+void nextIntersect(int step);
 void nextIntersectDDA();
 
 vec4 r = vec4(1,0,0,1);
@@ -165,6 +172,9 @@ void main()
     if (ray.step.y < 0) pos.exact.y -= 1;
     if (ray.step.z < 0) pos.exact.z -= 1;
 
+    int step = 1;
+    if (pos.exact.x > 100) step = 2;
+
     pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
     pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
     pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
@@ -176,9 +186,11 @@ void main()
            set = true;
            break;
         }
-        nextIntersectDDA();
-        //nextIntersect();
+        //nextIntersectDDA();
+        nextIntersect(step);
     }
+
+    nextIntersectDDA();
 
     if (!set) {
         FragColor = vec4(0,0,( abs(double(pos.round.y) - 50))/100,0);
@@ -202,9 +214,8 @@ void main()
     else if (renderPosData == 9)
         setFragToVec(vec3(0));
     else if (renderPosData == 10)
-        setFragToVec(origin);
+        setFragToVec(vec3(0));
         
-    
 }
 
 void nextIntersectDDA() {
@@ -221,35 +232,41 @@ void nextIntersectDDA() {
     }
 }
 
+// need to work out how to update pos.deltaPos more efficiently if possible
+void nextIntersect(int step) {
 
-void nextIntersect() {
+    ivec3 steps = ray.step * step;
 
-    double xDst = abs((pos.round.x + ray.step.x) - pos.exact.x);
-    double yDst = abs((pos.round.y + ray.step.y) - pos.exact.y);
-    double zDst = abs((pos.round.z + ray.step.z) - pos.exact.z);
+    double xDst = (pos.round.x + steps.x) - pos.exact.x;
+    double yDst = (pos.round.y + steps.y) - pos.exact.y;
+    double zDst = (pos.round.z + steps.z) - pos.exact.z;
 
-    double xAbsDst = abs(xDst * ray.delta.x);
-    double yAbsDst = abs(yDst * ray.delta.y);
-    double zAbsDst = abs(zDst * ray.delta.z);
 
-    if (xAbsDst < yAbsDst && xAbsDst < zAbsDst) {
+    if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
 
-        pos.exact.x += (pos.round.x + ray.step.x) - pos.exact.x;
-        pos.round.x += ray.step.x;
+        pos.exact.x += xDst;
+        pos.round.x += steps.x;
+        xDst = abs(xDst);
         pos.exact.y += xDst * ray.ratioYtoX;
         pos.exact.z += xDst * ray.ratioZtoX;
 
-    } else if (yAbsDst < zAbsDst) {
+    } else if (pos.deltaPos.y < pos.deltaPos.z) {
         
-        pos.exact.y += (pos.round.y + ray.step.y) - pos.exact.y;
-        pos.round.y += ray.step.y;
+        pos.exact.y += yDst;
+        pos.round.y += steps.y;
+        yDst = abs(yDst);
         pos.exact.x += yDst * ray.ratioXtoY;
         pos.exact.z += yDst * ray.ratioZtoY;
 
     } else {
-        pos.exact.z += (pos.round.z + ray.step.z) - pos.exact.z;
-        pos.round.z += ray.step.z;
+        pos.exact.z += zDst;
+        pos.round.z += steps.z;
+        zDst = abs(zDst);
         pos.exact.x += zDst * ray.ratioXtoZ;
         pos.exact.y += zDst * ray.ratioYtoZ;
     }
+
+    pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
+    pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
+    pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
 }
