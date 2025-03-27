@@ -16,17 +16,20 @@ int halfWidth = width/2;
 int height = 600;
 int halfHeight = height/2;
 
+float aspect_ratio = float(height) / width;
+
 double pixelWidth = 1.0/width;
 double pixelHeight = 1.0/height;
 
-struct Ray {
-    double x;
-    double y;
-    double z;
+double scale = 1.0/100;
 
-    int stepX;
-    int stepY;
-    int stepZ;
+float projection_plane_width = 1 * tan(radians(45));
+float projection_plane_height = projection_plane_width * aspect_ratio;
+
+struct Ray {
+    vec3 dir;
+
+    ivec3 step;
 
     double ratioYtoX;
     double ratioYtoZ;
@@ -35,20 +38,13 @@ struct Ray {
     double ratioZtoX;
     double ratioZtoY;
 
-    double deltaX;
-    double deltaY;
-    double deltaZ;
+    dvec3 delta;
 
-    double absDeltaX;
-    double absDeltaY;
-    double absDeltaZ;
+    dvec3 absDelta;
 };
 
 double ifZeroMakeOne(double n) {
-    if (n == 0) {
-        return 1;
-    }
-    return n;
+    return n == 0 ? 1 : n;
 }
 
 double matchSign(double a, double sign) {
@@ -63,59 +59,46 @@ double makeRatio(double a, double b) {
     return abs(a) / abs(ifZeroMakeOne(b));
 }
 
-Ray buildRay(double x, double y, double z) {
+Ray buildRay(vec3 dir) {
     Ray ray;
 
-    ray.x = x;
-    ray.y = y;
-    ray.z = z;
+    ray.dir = dir;
 
-    ray.stepX = 1;
-    ray.stepY = 1;
-    ray.stepZ = 1;
+    ray.step.x = 1;
+    ray.step.y = 1;
+    ray.step.z = 1;
 
-    if (x < 0)
-        ray.stepX = -1;
-    else if (x > 0)
-        ray.stepX = 1;
-    if (y < 0)
-        ray.stepY = -1;
-    else if (y > 0)
-        ray.stepY = 1;
-    if (z < 0)
-        ray.stepZ = -1;
-    else if (z > 0)
-        ray.stepZ = 1;
+    if (dir.x < 0)
+        ray.step.x = -1;
+    if (dir.y < 0)
+        ray.step.y = -1;
+    if (dir.z < 0)
+        ray.step.z = -1;
 
-    ray.ratioYtoX = matchSign(makeRatio(y,x),ray.stepY);
-    ray.ratioYtoZ = matchSign(makeRatio(y,z),ray.stepY);
-    ray.ratioXtoY = matchSign(makeRatio(x,y),ray.stepX);
-    ray.ratioXtoZ = matchSign(makeRatio(x,z),ray.stepX);
-    ray.ratioZtoX = matchSign(makeRatio(z,x),ray.stepZ);
-    ray.ratioZtoY = matchSign(makeRatio(z,y),ray.stepZ);
+    ray.ratioYtoX = matchSign(makeRatio(dir.y,dir.x),ray.step.y);
+    ray.ratioYtoZ = matchSign(makeRatio(dir.y,dir.z),ray.step.y);
+    ray.ratioXtoY = matchSign(makeRatio(dir.x,dir.y),ray.step.x);
+    ray.ratioXtoZ = matchSign(makeRatio(dir.x,dir.z),ray.step.x);
+    ray.ratioZtoX = matchSign(makeRatio(dir.z,dir.x),ray.step.z);
+    ray.ratioZtoY = matchSign(makeRatio(dir.z,dir.y),ray.step.z);
 
-    ray.deltaX = 1/x;
-    ray.deltaY = 1/y;
-    ray.deltaZ = 1/z;
+    ray.delta.x = 1/dir.x;
+    ray.delta.y = 1/dir.y;
+    ray.delta.z = 1/dir.z;
 
-    ray.absDeltaX = abs(ray.deltaX);
-    ray.absDeltaY = abs(ray.deltaY);
-    ray.absDeltaZ = abs(ray.deltaZ);
+    ray.absDelta.x = abs(ray.delta.x);
+    ray.absDelta.y = abs(ray.delta.y);
+    ray.absDelta.z = abs(ray.delta.z);
 
     return ray;
 }
 
 struct Pos {
-    double x;
-    double y;
-    double z;
-    double trueX;
-    double trueY;
-    double trueZ;
+    ivec3 round;
+    
+    dvec3 exact;
 
-    double xDeltaPos;
-    double yDeltaPos;
-    double zDeltaPos;
+    dvec3 deltaPos;
 };
 
 Pos pos;
@@ -143,7 +126,7 @@ mat4 rotationMatrix(vec3 axis, float angle)
 }
 
 void setFragToVec(vec3 vec) {
-    FragColor = vec4(vec.x,vec.y,vec.z,0);
+    FragColor = vec4(vec.xyz,0);
 }
 
 void main()
@@ -154,56 +137,42 @@ void main()
         return;
     }
 
+    if (texture(tex, vec3(origin.x*scale,origin.y*scale,origin.z*scale)).xyz != 0) {
+        FragColor = texture(tex, vec3(origin.x*scale,origin.y*scale,origin.z*scale));
+        return;
+    }
+
     vec3 camLeft = cross(cameraDir,vec3(0,1,0));
     vec3 camUp = cross(cameraDir,camLeft);
 
     float FragCoordX = float(gl_FragCoord.x * pixelWidth) - 0.5;
     float FragCoordY = float(gl_FragCoord.y * pixelHeight) - 0.5;
-
-    float projection_plane_width = 1 * tan(radians(45));
     
     vec3 projection_plane_center = cameraDir;
     vec3 projection_plane_left = normalize(cross(projection_plane_center, vec3(0,1,0)));
-    vec3 projection_plane_intersect = projection_plane_center + 
+    vec3 projection_plane_intersect = normalize(projection_plane_center + 
         (projection_plane_left * -(projection_plane_width * FragCoordX)) + 
-        cross(projection_plane_center,projection_plane_left) * -FragCoordY;
+        cross(projection_plane_center, projection_plane_left) * -FragCoordY * projection_plane_height);
     
-    vec3 rayDir = normalize(projection_plane_intersect);
 
-    ray = buildRay(
-        rayDir.x,
-        rayDir.y,
-        rayDir.z);
+    ray = buildRay(projection_plane_intersect);
 
-    vec3 origin1 = origin;
+    pos.round = ivec3(floor(origin));
 
-    pos.x = floor(origin1.x);
-    pos.y = floor(origin1.y);
-    pos.z = floor(origin1.z);
-
-    pos.trueX = origin1.x;
-    pos.trueY = origin1.y;
-    pos.trueZ = origin1.z;
+    pos.exact = origin;
     
-    if (ray.stepX < 0) pos.trueX -= 1;
-    if (ray.stepY < 0) pos.trueY -= 1;
-    if (ray.stepZ < 0) pos.trueZ -= 1;
+    if (ray.step.x < 0) pos.exact.x -= 1;
+    if (ray.step.y < 0) pos.exact.y -= 1;
+    if (ray.step.z < 0) pos.exact.z -= 1;
 
-    pos.xDeltaPos = ray.absDeltaX - (pos.trueX - pos.x) * ray.deltaX;
-    pos.yDeltaPos = ray.absDeltaY - (pos.trueY - pos.y) * ray.deltaY;
-    pos.zDeltaPos = ray.absDeltaZ - (pos.trueZ - pos.z) * ray.deltaZ;
-
-    int scale = 100;
-
-    if (texture(tex, vec3(origin.x/scale,origin.y/scale,origin.z/scale)).xyz != vec3(0,0,0)) {
-        FragColor = texture(tex, vec3(origin.x/scale,origin.y/scale,origin.z/scale));
-        return;
-    }
+    pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
+    pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
+    pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
 
     bool set = false;
     for (int i = 0; i < 100; i++) {
-        if (texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale)).xyz != vec3(0,0,0)) {
-           FragColor = texture(tex, vec3(pos.x/scale,pos.y/scale,pos.z/scale));
+        if (texture(tex, vec3(pos.round.x*scale,pos.round.y*scale,pos.round.z*scale)).xyz != 0) {
+           FragColor = texture(tex, vec3(pos.round.x*scale,pos.round.y*scale,pos.round.z*scale));
            set = true;
            break;
         }
@@ -212,27 +181,24 @@ void main()
     }
 
     if (!set) {
-        if (pos.x > 55 || pos.x < 45 || pos.y > 55 || pos.y < 45) {
-            FragColor = vec4(0,0,( abs(pos.y - 50))/100,0);
-        } else
-            FragColor = vec4(0,0,0,0);
+        FragColor = vec4(0,0,( abs(double(pos.round.y) - 50))/100,0);
     }
     if (renderPosData == 1)
-        FragColor = vec4(pos.x,pos.y,pos.z,0);
+        FragColor = vec4(pos.round.x,pos.round.y,pos.round.z,0);
     else if (renderPosData == 2)
-        FragColor = vec4(ray.x,ray.y,ray.z,0);
+        FragColor = vec4(ray.dir.x,ray.dir.y,ray.dir.z,0);
     else if (renderPosData == 3)
         setFragToVec(projection_plane_center);
     else if (renderPosData == 4)
         FragColor = vec4(projection_plane_left,projection_plane_width);
     else if (renderPosData == 5)
-        FragColor = vec4(ray.deltaX,ray.deltaY,ray.deltaZ,0);
+        FragColor = vec4(ray.delta.x,ray.delta.y,ray.delta.z,0);
     else if (renderPosData == 6)
-        FragColor = vec4(origin1.xyz,0);
+        FragColor = vec4(origin.xyz,0);
     else if (renderPosData == 7)
         setFragToVec(cameraDir);
     else if (renderPosData == 8)
-        setFragToVec(trunc(origin1.xyz));
+        setFragToVec(trunc(origin.xyz));
     else if (renderPosData == 9)
         setFragToVec(vec3(0));
     else if (renderPosData == 10)
@@ -243,46 +209,47 @@ void main()
 
 void nextIntersectDDA() {
 
-    if (pos.xDeltaPos < pos.yDeltaPos && pos.xDeltaPos < pos.zDeltaPos) {
-        pos.x += ray.stepX;
-        pos.xDeltaPos += ray.absDeltaX;
-    } else if (pos.yDeltaPos < pos.zDeltaPos) {
-        pos.y += ray.stepY;
-        pos.yDeltaPos += ray.absDeltaY;
+    if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
+        pos.round.x += ray.step.x;
+        pos.deltaPos.x += ray.absDelta.x;
+    } else if (pos.deltaPos.y < pos.deltaPos.z) {
+        pos.round.y += ray.step.y;
+        pos.deltaPos.y += ray.absDelta.y;
     } else {
-        pos.z += ray.stepZ;
-        pos.zDeltaPos += ray.absDeltaZ;
+        pos.round.z += ray.step.z;
+        pos.deltaPos.z += ray.absDelta.z;
     }
 }
 
+
 void nextIntersect() {
 
-    double xDst = abs((pos.x + ray.stepX) - pos.trueX);
-    double yDst = abs((pos.y + ray.stepY) - pos.trueY);
-    double zDst = abs((pos.z + ray.stepZ) - pos.trueZ);
+    double xDst = abs((pos.round.x + ray.step.x) - pos.exact.x);
+    double yDst = abs((pos.round.y + ray.step.y) - pos.exact.y);
+    double zDst = abs((pos.round.z + ray.step.z) - pos.exact.z);
 
-    double xAbsDst = abs(xDst * ray.deltaX);
-    double yAbsDst = abs(yDst * ray.deltaY);
-    double zAbsDst = abs(zDst * ray.deltaZ);
+    double xAbsDst = abs(xDst * ray.delta.x);
+    double yAbsDst = abs(yDst * ray.delta.y);
+    double zAbsDst = abs(zDst * ray.delta.z);
 
     if (xAbsDst < yAbsDst && xAbsDst < zAbsDst) {
 
-        pos.trueX += (pos.x + ray.stepX) - pos.trueX;
-        pos.x += ray.stepX;
-        pos.trueY += xDst * ray.ratioYtoX;
-        pos.trueZ += xDst * ray.ratioZtoX;
+        pos.exact.x += (pos.round.x + ray.step.x) - pos.exact.x;
+        pos.round.x += ray.step.x;
+        pos.exact.y += xDst * ray.ratioYtoX;
+        pos.exact.z += xDst * ray.ratioZtoX;
 
     } else if (yAbsDst < zAbsDst) {
         
-        pos.trueY += (pos.y + ray.stepY) - pos.trueY;
-        pos.y += ray.stepY;
-        pos.trueX += yDst * ray.ratioXtoY;
-        pos.trueZ += yDst * ray.ratioZtoY;
+        pos.exact.y += (pos.round.y + ray.step.y) - pos.exact.y;
+        pos.round.y += ray.step.y;
+        pos.exact.x += yDst * ray.ratioXtoY;
+        pos.exact.z += yDst * ray.ratioZtoY;
 
     } else {
-        pos.trueZ += (pos.z + ray.stepZ) - pos.trueZ;
-        pos.z += ray.stepZ;
-        pos.trueX += zDst * ray.ratioXtoZ;
-        pos.trueY += zDst * ray.ratioYtoZ;
+        pos.exact.z += (pos.round.z + ray.step.z) - pos.exact.z;
+        pos.round.z += ray.step.z;
+        pos.exact.x += zDst * ray.ratioXtoZ;
+        pos.exact.y += zDst * ray.ratioYtoZ;
     }
 }

@@ -141,7 +141,7 @@ int main() {
 
     glfwSwapInterval(0);
 
-    const int averageSize = 20;
+    const int averageSize = 40;
     double times[averageSize]{};
     int i = 0;
 
