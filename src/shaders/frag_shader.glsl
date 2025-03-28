@@ -1,6 +1,8 @@
 #version 460 core
 #extension GL_ARB_gpu_shader_int64 : enable
 
+#define u64 uint64_t
+
 out vec4 FragColor;
 
 uniform vec3 origin;
@@ -240,7 +242,6 @@ void nextIntersect(int step) {
     double xDst = (pos.round.x + steps.x) - pos.exact.x;
     double yDst = (pos.round.y + steps.y) - pos.exact.y;
     double zDst = (pos.round.z + steps.z) - pos.exact.z;
-
 
     if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
 

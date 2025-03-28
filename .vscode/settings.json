@@ -65,5 +65,6 @@
         "forward_list": "cpp",
         "ratio": "cpp",
         "sstream": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }
