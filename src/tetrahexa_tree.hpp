@@ -30,22 +30,25 @@ struct Pos {
     }
 };
 
+// don't store children directly in the branch
+// because the performance impact is likely minimal
+// and it means branches can be easily turned into leafs or vice versa
 struct Branch {
     u64 bitmap;
-    Node* children;
+    Node** children;
 };
 
 struct Leaf {
-    u64 packed_color;
-    u32 spare;
+    u64 packedColor;
+    u64 spare; // u32 on gpu
 };
 
 // lowest bit in flags is set in leaf
 struct Node {
     u32 flags;
     union {
-        branch branch;
-        leaf leaf;
+        Branch branch;
+        Leaf leaf;
     };
 };
 
