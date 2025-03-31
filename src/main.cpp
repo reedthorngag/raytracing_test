@@ -8,6 +8,7 @@
 #include "setup.hpp"
 #include "chunk.hpp"
 #include "input.hpp"
+#include "tetrahexa_tree.hpp"
 
 
 extern "C" {
@@ -86,6 +87,11 @@ void render() {
 
 int main() {
     printf("Hello world!\n");
+
+    init();
+
+    return 0;
+
 
     createWindow();
     setupOpenGl();

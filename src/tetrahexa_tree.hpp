@@ -18,7 +18,7 @@ struct Pos {
             x >> n,
             y >> n,
             z >> n
-        }
+        };
     }
 
     Pos operator &(int n) {
@@ -26,29 +26,23 @@ struct Pos {
             x & n,
             y & n,
             z & n
-        }
+        };
     }
 };
 
-// don't store children directly in the branch
-// because the performance impact is likely minimal
-// and it means branches can be easily turned into leafs or vice versa
-struct Branch {
-    u64 bitmap;
-    Node** children;
-};
-
-struct Leaf {
-    u64 packedColor;
-    u64 spare; // u32 on gpu
-};
 
 // lowest bit in flags is set in leaf
 struct Node {
     u32 flags;
     union {
-        Branch branch;
-        Leaf leaf;
+        struct {
+            u64 bitmap;
+            Node** children;
+        } branch;
+        struct {
+            u64 packedColor;
+            u64 spare; // u32 on gpu
+        } leaf;
     };
 };
 
@@ -56,6 +50,13 @@ extern int numNodes;
 
 extern Node* root;
 
+void init();
+
+void putBlock(Pos pos, u64 color, int targetDepth);
+
+void deleteChildren(Node* node);
+
+u64 getBlock(Pos pos);
 
 
 

@@ -6,6 +6,9 @@
 #ifndef _GLOBALS
 #define _GLOBALS
 
+const bool debug = true;
+#define DEBUG if (debug) 
+
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
