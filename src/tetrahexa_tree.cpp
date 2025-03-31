@@ -54,7 +54,7 @@ void traverseTree(Pos* pos, int count) {
         // find last common node and then jump to it and start search for the target
 
         int n = 0;
-        int mask = 0b11 << (maxDepth * 2 - 2);
+        int mask = 0b11 << ((maxDepth-1) * 2 - 2);
         while (depth && (target.x & mask) == (current.x & mask) &&
                 (target.y & mask) == (current.y & mask) &&
                 (target.z & mask) == (current.z & mask)) {
@@ -67,16 +67,14 @@ void traverseTree(Pos* pos, int count) {
             depth = n;
         }
 
-        posOffset = (maxDepth-2 - depth) * 2;
+        posOffset = (maxDepth-1 - depth) * 2;
 
         while (depth < maxDepth) {
             posOffset -= 2;
 
             Pos curr = (target >> posOffset) & 0b11;
 
-            // not ideal, but it looks like it may be impossible to use bitshifts
-            // to construct the index :(
-            int index = curr.x + (4 * curr.y) + (16 * curr.z);
+            int index = curr.z << 4 | curr.y << 2 | curr.x;
 
             DEBUG printf("depth: %d, index: %d, pos: %d,%d,%d\n",depth, index, curr.x, curr.y, curr.z);
 
@@ -118,9 +116,7 @@ u64 getBlock(Pos pos) {
 
         Pos curr = (pos >> posOffset) & 0b11;
 
-        // not ideal, but it looks like it may be impossible to use bitshifts
-        // to construct the index :(
-        int index = curr.x + (4 * curr.y) + (16 * curr.z);
+        int index = curr.z << 4 | curr.y << 2 | curr.x;
 
         //DEBUG printf("depth: %d, index: %d\n",depth, index);
         DEBUG printf("depth: %d, index: %d, pos: %d,%d,%d\n",depth, index, curr.x, curr.y, curr.z);
@@ -178,9 +174,7 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
 
         Pos curr = (pos >> posOffset) & 0b11;
 
-        // not ideal, but it looks like it may be impossible to use bitshifts
-        // to construct the index :(
-        int index = curr.x + (4 * curr.y) + (16 * curr.z);
+        int index = curr.z << 4 | curr.y << 2 | curr.x;
 
         //DEBUG printf("depth: %d, index: %d\n",depth, index);
  
