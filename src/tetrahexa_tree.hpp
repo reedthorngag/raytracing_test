@@ -52,6 +52,8 @@ extern Node* root;
 
 void init();
 
+void traverseTree(Pos* pos, int count);
+
 void putBlock(Pos pos, u64 color, int targetDepth);
 
 void deleteChildren(Node* node);

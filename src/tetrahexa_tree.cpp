@@ -11,14 +11,101 @@ Node* root;
 void init() {
     root = new Node{0,{.branch = {0,new Node*[64]{}}}};
 
-    putBlock(Pos{1000,1000,1000}, 1234, 5);
-    printf("block at 0,0,0 = %lld\n",getBlock({1002,1002,1003}));
+    putBlock(Pos{1000,1000,1000}, 1, 5);
+    putBlock(Pos{10,100,10}, 2, 6);
+    putBlock(Pos{100,10,100}, 3, 6);
+    putBlock(Pos{20,10,200}, 4, 5);
+    putBlock(Pos{1,10,10}, 5, 6);
+    putBlock(Pos{2,10,10}, 6, 6);
+    putBlock(Pos{3,10,10}, 7, 6);
+    putBlock(Pos{4,10,10}, 8, 6);
+
+    printf("block at somewhere = %lld\n",getBlock({1002,1002,1003}));
+
+    Pos* pos = new Pos[3]{
+        {1,10,10},
+        {2,10,10},
+        {4,10,10}
+    };
+
+    traverseTree(pos, 3);
+
+}
+
+void traverseTree(Pos* pos, int count) {
+    DEBUG printf("running traverseTree on %d targets...\n",count);
+
+    int posOffset;
+
+    int depth = 0;
+
+    Node* stack[maxDepth];
+
+    stack[0] = root;
+
+    Pos target = *pos;
+
+    Pos current = {};
+
+    while (count--) {
+
+        DEBUG printf("finding (%d,%d,%d) from (%d,%d,%d)...\n",target.x,target.y,target.z,current.x,current.y,current.z);
+
+        // find last common node and then jump to it and start search for the target
+
+        int n = 0;
+        int mask = 0b11 << (maxDepth * 2 - 2);
+        while (depth && (target.x & mask) == (current.x & mask) &&
+                (target.y & mask) == (current.y & mask) &&
+                (target.z & mask) == (current.z & mask)) {
+            n++;
+            mask >>= 2;
+        }
+
+        if (n < depth) {
+            DEBUG printf("Retreating to depth %d from depth %d...\n",n,depth);
+            depth = n;
+        }
+
+        posOffset = (maxDepth-2 - depth) * 2;
+
+        while (depth < maxDepth) {
+            posOffset -= 2;
+
+            Pos curr = (target >> posOffset) & 0b11;
+
+            // not ideal, but it looks like it may be impossible to use bitshifts
+            // to construct the index :(
+            int index = curr.x + (4 * curr.y) + (16 * curr.z);
+
+            DEBUG printf("depth: %d, index: %d, pos: %d,%d,%d\n",depth, index, curr.x, curr.y, curr.z);
+
+            if (stack[depth]->flags & 1) {
+                DEBUG printf("Found leaf at depth %d, color: %lld\n\n",depth,stack[depth]->leaf.packedColor);
+                break;
+
+            } else if (!((stack[depth]->branch.bitmap >> index) & 1)) {
+                DEBUG printf("Found empty node at depth %d, index %d, returning -1\n",depth+1,index);
+                break;
+            }
+
+            // this might be used in future, its a tradeoff between memory and speed though
+            //index = std::popcount(stack[depth].branch.bitmap << (64 - index));
+
+            stack[depth+1] = stack[depth]->branch.children[index];
+
+            depth++;
+        }
+
+        current = target;
+        target = *++pos;
+    }
 }
 
 u64 getBlock(Pos pos) {
-    DEBUG printf("Getting block at {%d,%d,%d}...\n",pos.x,pos.y,pos.z);
+    DEBUG printf("Getting block at (%d,%d,%d)...\n",pos.x,pos.y,pos.z);
 
-    int posOffset = maxDepth * 2;
+    int posOffset = (maxDepth-1) * 2;
 
     int depth = 0;
 
@@ -35,7 +122,8 @@ u64 getBlock(Pos pos) {
         // to construct the index :(
         int index = curr.x + (4 * curr.y) + (16 * curr.z);
 
-        DEBUG printf("depth: %d, index: %d\n",depth, index);
+        //DEBUG printf("depth: %d, index: %d\n",depth, index);
+        DEBUG printf("depth: %d, index: %d, pos: %d,%d,%d\n",depth, index, curr.x, curr.y, curr.z);
 
         if (stack[depth]->flags & 1) {
             DEBUG printf("Found leaf at depth %d, returning color\n",depth);
@@ -43,10 +131,6 @@ u64 getBlock(Pos pos) {
 
         } else if (!((stack[depth]->branch.bitmap >> index) & 1)) {
             DEBUG printf("Found empty node at depth %d, index %d, returning -1\n",depth+1,index);
-            int n = -1;
-            while (++n < 64)
-                if ((stack[depth]->branch.bitmap >> n) & 1)
-                    printf("bit set at index %d\n",n);
             return -1;
         }
 
@@ -76,10 +160,10 @@ void deleteChildren(Node* node) {
 }
 
 void putBlock(Pos pos, u64 color, int targetDepth) {
-    DEBUG printf("Putting block at {%d,%d,%d} (size: %d) with color %lld...\n",pos.x,pos.y,pos.z,1<<((maxDepth-targetDepth)*2),color);
+    DEBUG printf("Putting block at (%d,%d,%d) (size: %d) with color %lld...\n",pos.x,pos.y,pos.z,1<<((maxDepth-targetDepth)*2),color);
     targetDepth--; // convert to zero based index
 
-    int posOffset = maxDepth * 2;
+    int posOffset = (maxDepth-1) * 2;
 
     int depth = 0;
 
@@ -98,8 +182,8 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
         // to construct the index :(
         int index = curr.x + (4 * curr.y) + (16 * curr.z);
 
-        DEBUG printf("depth: %d, index: %d\n",depth, index);
-
+        //DEBUG printf("depth: %d, index: %d\n",depth, index);
+ 
         if (depth == targetDepth) {
 
             // if leaf
