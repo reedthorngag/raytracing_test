@@ -11,8 +11,8 @@ Node* root;
 void init() {
     root = new Node{0,{.branch = {0,new Node*[64]{}}}};
 
-    putBlock(Pos{1000,1000,1000}, 1234, 6);
-    printf("block at 0,0,0 = %lld\n",getBlock({1000,1000,1000}));
+    putBlock(Pos{1000,1000,1000}, 1234, 5);
+    printf("block at 0,0,0 = %lld\n",getBlock({1002,1002,1003}));
 }
 
 u64 getBlock(Pos pos) {
@@ -40,10 +40,13 @@ u64 getBlock(Pos pos) {
         if (stack[depth]->flags & 1) {
             DEBUG printf("Found leaf at depth %d, returning color\n",depth);
             return stack[depth]->leaf.packedColor;
-        }
 
-        if (!((stack[depth]->branch.bitmap >> index) & 1)) {
-            DEBUG printf("Found empty node at depth %d, index %d, returning -1\n",depth,index);
+        } else if (!((stack[depth]->branch.bitmap >> index) & 1)) {
+            DEBUG printf("Found empty node at depth %d, index %d, returning -1\n",depth+1,index);
+            int n = -1;
+            while (++n < 64)
+                if ((stack[depth]->branch.bitmap >> n) & 1)
+                    printf("bit set at index %d\n",n);
             return -1;
         }
 
@@ -84,6 +87,8 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
 
     stack[0] = root;
 
+    Node* tmp;
+
     while (depth < maxDepth) {
         posOffset -= 2;
 
@@ -99,13 +104,13 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
 
             // if leaf
             if (stack[depth]->flags & 1) {
-                DEBUG printf("Found leaf at target depth (%d), setting color...\n",depth);
+                DEBUG printf("Found leaf at target depth %d, setting color...\n",depth);
                 stack[depth]->leaf.packedColor = color;
                 return;
 
             // else branch
             } else {
-                DEBUG printf("Found branch at target depth (%d), converting to leaf...\n", depth);
+                DEBUG printf("Found branch at target depth %d, converting to leaf...\n", depth);
                 deleteChildren(stack[depth]);
                 stack[depth]->leaf.packedColor = color;
                 stack[depth]->flags = 1;
@@ -141,10 +146,14 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
 
             Node* child = new Node{0,{.branch = {0, new Node*[64]{}}}};
 
-            stack[depth]->branch.bitmap |= 1 << index;
+            stack[depth]->branch.bitmap |= 1ull << index;
             stack[depth]->branch.children[index] = child;
 
             stack[++depth] = child;
+
+            if (depth == 4) {
+                tmp = child;
+            }
 
         } else {
             stack[depth+1] = stack[depth]->branch.children[index];
