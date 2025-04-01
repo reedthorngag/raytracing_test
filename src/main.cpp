@@ -8,7 +8,7 @@
 #include "setup.hpp"
 #include "chunk.hpp"
 #include "input.hpp"
-#include "tetrahexa_tree.hpp"
+#include "voxel_data/tetrahexa_tree.hpp"
 
 
 extern "C" {
@@ -88,9 +88,9 @@ void render() {
 int main() {
     printf("Hello world!\n");
 
-    //init();
+    init();
 
-    //return 0;
+    return 0;
 
 
     createWindow();

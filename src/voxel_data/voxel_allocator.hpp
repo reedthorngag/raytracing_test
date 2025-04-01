@@ -1,0 +1,47 @@
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "../globals.hpp"
+#include "../types.hpp"
+
+const int BLOCK_SIZE_BITS = 22;
+const int BLOCK_SIZE = 1 << BLOCK_SIZE_BITS; // 4194304
+const int BLOCK_SIZE_MASK = BLOCK_SIZE - 1;
+
+extern u32* blocks[]; // 1024
+
+const int FREE_LIST_SIZE = 1 << 12; // 4096
+extern u32 freeList[];
+
+extern u32 nextAllocIndex;
+
+extern int freeListPop;
+extern int nextFreeListIndex;
+extern int firstFreeIndex;
+
+inline void* convertToPtr(u32 index) {
+    return (void*)(blocks[index >> BLOCK_SIZE_BITS] + (index & BLOCK_SIZE_MASK));
+}
+
+inline void mallocBlock(int n) {
+    blocks[n] = (u32*)malloc(BLOCK_SIZE);
+}
+
+u32 allocNode();
+
+// number of bytes to alloc (must be multiple of 16)
+u32 allocConsecNodes(int n);
+
+inline void freeNode(u32 index) {
+    if (freeListPop >= 1024) {
+        DEBUG fprintf(stderr, "Free list is full!\n");
+        return;
+    }
+
+    freeList[firstFreeIndex++] = index;
+    firstFreeIndex ^= FREE_LIST_SIZE; // same as % 1024 but faster
+    freeListPop++;
+}
+
+void freeConsecNodes(u32 startIndex, int n);
+

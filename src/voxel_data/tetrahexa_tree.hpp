@@ -1,12 +1,9 @@
-#include <stdint.h>
 
-#define u64 uint64_t
-#define u32 uint32_t
-#define u16 uint16_t
-#define u8 uint8_t
+
+#include "../types.hpp"
+
 
 const int maxDepth = 6;
-
 
 struct Pos {
     int x;
@@ -37,18 +34,18 @@ struct Node {
     union {
         struct {
             u64 bitmap;
-            Node** children;
+            u32 children;
         } branch;
         struct {
             u64 packedColor;
-            u64 spare; // u32 on gpu
+            u32 spare;
         } leaf;
     };
 };
 
 extern int numNodes;
 
-extern Node* root;
+extern u32 root;
 
 void init();
 

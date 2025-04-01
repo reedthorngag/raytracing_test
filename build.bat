@@ -12,6 +12,7 @@ g++ -Wall -g -W -Werror ^
     -L C:\lib\glfw\lib-mingw-w64 ^
     src/*.cpp ^
     include/*.cpp ^
+    src/voxel_data/*.cpp ^
     -lopengl32 -lglew32 -lglfw3 -lgdi32 ^
     -o bin/output.exe || echo compile failed!
 

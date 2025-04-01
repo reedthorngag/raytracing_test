@@ -39,12 +39,16 @@ void createWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_MAXIMIZED, true);
+    glfwWindowHint(GLFW_DECORATED, false);
+    glfwWindowHint(GLFW_FLOATING, true);
 
-    window = glfwCreateWindow(mode->width, mode->height, "Voxel engine v2", monitor, NULL);
+    window = glfwCreateWindow(mode->width, mode->height, "Voxel engine v2", NULL, NULL);
     if (!window) {
         printf("Window creation failed!\n");
         exit(1);
     }
+
+    glfwSetWindowPos(window,0,0);
 
     glfwMakeContextCurrent(window);
 
