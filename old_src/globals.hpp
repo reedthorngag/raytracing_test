@@ -9,8 +9,8 @@
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
-const double HALF_WIDTH = WIDTH/2.0;
-const double HALF_HEIGHT = HEIGHT/2.0;
+const double halfWidth = WIDTH/2.0;
+const double halfWidth = HEIGHT/2.0;
 
 struct Global {
     GLFWwindow* window;

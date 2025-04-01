@@ -88,9 +88,9 @@ void render() {
 int main() {
     printf("Hello world!\n");
 
-    init();
+    //init();
 
-    return 0;
+    //return 0;
 
 
     createWindow();
@@ -122,7 +122,7 @@ int main() {
     checkGlError("glBindTexture");
 
     // Allocate the storage.
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, WIDTH, HEIGHT);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
 
     glGenFramebuffers(1, &pixelsDataFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, pixelsDataFBO);

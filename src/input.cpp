@@ -121,7 +121,7 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mod
         switch (button) {
             case GLFW_MOUSE_BUTTON_1:
                 mouseLocked = !mouseLocked;
-                glfwSetCursorPos(window,HALF_WIDTH,HALF_HEIGHT);
+                glfwSetCursorPos(window,halfWidth,halfWidth);
                 break;
             
             case GLFW_MOUSE_BUTTON_2:
@@ -138,13 +138,13 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mod
 
 void glfwMousePosCallback(GLFWwindow* window, double x, double y) {
     if (mouseLocked) {
-        double xDelta = HALF_WIDTH - x;
-        double yDelta = HALF_HEIGHT - y;
+        double xDelta = halfWidth - x;
+        double yDelta = halfWidth - y;
         rotateCamera(xDelta * -0.1, yDelta * -0.1); // invert x
-        glfwSetCursorPos(window,HALF_WIDTH,HALF_HEIGHT);
+        glfwSetCursorPos(window,halfWidth,halfWidth);
     }
     mouse.x = x;
-    mouse.y = HEIGHT-y;
+    mouse.y = height-y;
     //printf("\rmouse pos: %lf,%lf last update: %lf    ",mouse.x,mouse.y,((glfwGetTime()-lastMouseUpdate)));
     fflush(stdout);
     lastMouseUpdate = glfwGetTime();

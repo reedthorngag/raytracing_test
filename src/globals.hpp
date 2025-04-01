@@ -9,11 +9,11 @@
 const bool debug = true;
 #define DEBUG if (debug) 
 
-const int WIDTH = 800;
-const int HEIGHT = 600;
+extern int width;
+extern int height;
 
-const double HALF_WIDTH = WIDTH/2.0;
-const double HALF_HEIGHT = HEIGHT/2.0;
+extern double halfWidth;
+extern double halfHeight;
 
 extern GLFWwindow* window;
 extern GLuint program;

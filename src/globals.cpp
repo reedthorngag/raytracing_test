@@ -1,6 +1,12 @@
 #include <glm/glm.hpp>
 #include "globals.hpp"
 
+int width;
+int height;
+
+double halfWidth;
+double halfHeight;
+
 Mouse mouse;
 
 double lastMouseUpdate = 0;

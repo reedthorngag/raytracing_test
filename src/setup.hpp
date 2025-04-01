@@ -10,6 +10,18 @@ void glfwErrorCallback(int errorCode, const char* errorMessage) {
     printf("glfw error: %d %s\n", errorCode, errorMessage);
 }
 
+void glfwMonitorCallback(GLFWmonitor* monitor, int event)
+{
+    if (event == GLFW_CONNECTED)
+    {
+        printf("Monitor connected!\n");
+    }
+    else if (event == GLFW_DISCONNECTED)
+    {
+        printf("Monitor disconnected!\n");
+    }
+}
+
 void createWindow() {
     if (!glfwInit()) {
         printf("GLFW init failed!\n");
@@ -18,9 +30,17 @@ void createWindow() {
 
     glfwSetErrorCallback(glfwErrorCallback);
 
+    glfwSetMonitorCallback(glfwMonitorCallback);
+
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    window = glfwCreateWindow(WIDTH, HEIGHT, "Voxel engine v2", NULL, NULL);
+    glfwWindowHint(GLFW_MAXIMIZED, true);
+
+    window = glfwCreateWindow(mode->width, mode->height, "Voxel engine v2", monitor, NULL);
     if (!window) {
         printf("Window creation failed!\n");
         exit(1);
@@ -33,9 +53,13 @@ void createWindow() {
         exit(1);
     }
 
-    int width,height;
     glfwGetFramebufferSize(window,&width,&height);
     glViewport(0,0,width,height);
+
+    printf("width: %d, height: %d\n",width, height);
+
+    halfWidth = (double)width/2.0;
+    halfHeight = (double)height/2.0;
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 }

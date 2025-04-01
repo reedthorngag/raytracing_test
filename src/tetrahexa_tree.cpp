@@ -9,6 +9,9 @@ int numNodes = 0;
 Node* root;
 
 void init() {
+
+    
+
     root = new Node{0,{.branch = {0,new Node*[64]{}}}};
 
     putBlock(Pos{1000,1000,1000}, 1, 5);

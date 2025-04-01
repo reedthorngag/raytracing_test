@@ -14,9 +14,9 @@ uniform sampler3D tex;
 
 in vec4 gl_FragCoord;
 
-int width = 800;
+int width = 1920;
 int halfWidth = width/2;
-int height = 600;
+int height = 991;
 int halfHeight = height/2;
 
 float aspect_ratio = float(height) / width;
@@ -188,8 +188,8 @@ void main()
            set = true;
            break;
         }
-        //nextIntersectDDA();
-        nextIntersect(step);
+        nextIntersectDDA();
+        //nextIntersect(step);
     }
 
     nextIntersectDDA();
