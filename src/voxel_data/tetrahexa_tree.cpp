@@ -8,12 +8,12 @@
 #include "voxel_allocator.hpp"
 
 int numNodes = 0;
-u32 root;
+Ptr root;
 
 void init() {
 
     root = allocNode();
-    *((Node*)convertToPtr(root)) = {0,{.branch = {0,allocConsecNodes((sizeof(u32) * 64) >> 4)}}};
+    *root.ptr = {0,{.branch = {0,allocConsecNodes((sizeof(u32) * 64) >> 4).index}}};
 
     putBlock(Pos{1000,1000,1000}, 1, 5);
     putBlock(Pos{10,100,10}, 2, 6);
@@ -43,7 +43,7 @@ void traverseTree(Pos* pos, int count) {
 
     int depth = 0;
 
-    u32 stack[maxDepth];
+    Ptr stack[maxDepth];
 
     stack[0] = root;
 
@@ -82,19 +82,19 @@ void traverseTree(Pos* pos, int count) {
 
             DEBUG printf("depth: %d, index: %d, pos: %d,%d,%d\n",depth, index, curr.x, curr.y, curr.z);
 
-            if (((Node*)convertToPtr(stack[depth]))->flags & 1) {
-                DEBUG printf("Found leaf at depth %d, color: %lld\n\n",depth,((Node*)convertToPtr(stack[depth]))->leaf.packedColor);
+            if (stack[depth].ptr->flags & 1) {
+                DEBUG printf("Found leaf at depth %d, color: %lld\n\n",depth,stack[depth].ptr->leaf.packedColor);
                 break;
 
-            } else if (!((((Node*)convertToPtr(stack[depth]))->branch.bitmap >> index) & 1)) {
+            } else if (!((stack[depth].ptr->branch.bitmap >> index) & 1)) {
                 DEBUG printf("Found empty node at depth %d, index %d, returning -1\n",depth+1,index);
                 break;
             }
 
             // this might be used in future, its a tradeoff between memory and speed though
-            //index = std::popcount(((Node*)convertToPtr(stack[depth])).branch.bitmap << (64 - index));
+            //index = std::popcount(stack[depth].ptr.branch.bitmap << (64 - index));
 
-            stack[depth+1] = ((u32*)convertToPtr(((Node*)convertToPtr(stack[depth]))->branch.children))[index];
+            stack[depth+1] = convertToPtr(((u32*)convertToPtr(stack[depth].ptr->branch.children).ptr)[index]);
 
             depth++;
         }
@@ -111,7 +111,7 @@ u64 getBlock(Pos pos) {
 
     int depth = 0;
 
-    u32 stack[maxDepth];
+    Ptr stack[maxDepth];
 
     stack[0] = root;
 
@@ -125,19 +125,19 @@ u64 getBlock(Pos pos) {
         //DEBUG printf("depth: %d, index: %d\n",depth, index);
         DEBUG printf("depth: %d, index: %d, pos: %d,%d,%d\n",depth, index, curr.x, curr.y, curr.z);
 
-        if (((Node*)convertToPtr(stack[depth]))->flags & 1) {
+        if (stack[depth].ptr->flags & 1) {
             DEBUG printf("Found leaf at depth %d, returning color\n",depth);
-            return ((Node*)convertToPtr(stack[depth]))->leaf.packedColor;
+            return stack[depth].ptr->leaf.packedColor;
 
-        } else if (!((((Node*)convertToPtr(stack[depth]))->branch.bitmap >> index) & 1)) {
+        } else if (!((stack[depth].ptr->branch.bitmap >> index) & 1)) {
             DEBUG printf("Found empty node at depth %d, index %d, returning -1\n",depth+1,index);
             return -1;
         }
 
         // this might be used in future, its a tradeoff between memory and speed though
-        //index = std::popcount(((Node*)convertToPtr(stack[depth])).branch.bitmap << (64 - index));
+        //index = std::popcount(stack[depth].ptr.branch.bitmap << (64 - index));
 
-        stack[depth+1] = ((u32*)convertToPtr(((Node*)convertToPtr(stack[depth]))->branch.children))[index];
+        stack[depth+1] = convertToPtr(((u32*)convertToPtr(stack[depth].ptr->branch.children).ptr)[index]);
 
         depth++; 
     }
@@ -147,17 +147,19 @@ u64 getBlock(Pos pos) {
 
 }
 
-void deleteChildren(u32 node) {
+void deleteChildren(Ptr node) {
+    if (node.ptr->flags & 1)
+        return;
 
-    u32* children = (u32*)convertToPtr(((Node*)convertToPtr(node))->branch.children);
+    u32* children = (u32*)convertToPtr(node.ptr->branch.children).ptr;
     for (int i = 0; i < 64; i++) {
         if (children[i]) {
-            deleteChildren(children[i]);
+            deleteChildren(convertToPtr(children[i]));
             freeNode(children[i]);
         }
     }
 
-    freeConsecNodes(((Node*)convertToPtr(node))->branch.children, (sizeof(u32) * 64) >> 4);
+    freeConsecNodes(node.ptr->branch.children, (sizeof(u32) * 64) >> 4);
 }
 
 void putBlock(Pos pos, u64 color, int targetDepth) {
@@ -168,7 +170,7 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
 
     int depth = 0;
 
-    u32 stack[maxDepth];
+    Ptr stack[maxDepth];
 
     stack[0] = root;
 
@@ -184,62 +186,60 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
         if (depth == targetDepth) {
 
             // if leaf
-            if (((Node*)convertToPtr(stack[depth]))->flags & 1) {
+            if (stack[depth].ptr->flags & 1) {
                 DEBUG printf("Found leaf at target depth %d, setting color...\n",depth);
-                ((Node*)convertToPtr(stack[depth]))->leaf.packedColor = color;
+                stack[depth].ptr->leaf.packedColor = color;
                 return;
 
             // else branch
             } else {
                 DEBUG printf("Found branch at target depth %d, converting to leaf...\n", depth);
                 deleteChildren(stack[depth]);
-                ((Node*)convertToPtr(stack[depth]))->leaf.packedColor = color;
-                ((Node*)convertToPtr(stack[depth]))->flags = 1;
+                stack[depth].ptr->leaf.packedColor = color;
+                stack[depth].ptr->flags = 1;
                 return;
             }
         
 
         // if leaf
-        } else if (((Node*)convertToPtr(stack[depth]))->flags & 1) {
+        } else if (stack[depth].ptr->flags & 1) {
 
-            u32 leafFlags = ((Node*)convertToPtr(stack[depth]))->flags;
-            u64 leafColor = ((Node*)convertToPtr(stack[depth]))->leaf.packedColor;
+            u32 leafFlags = stack[depth].ptr->flags;
+            u64 leafColor = stack[depth].ptr->leaf.packedColor;
 
-            u32 childPtrArray = allocConsecNodes((sizeof(u32) * 64) >> 4);
-            u32* childPtrArrayPtr = (u32*)convertToPtr(childPtrArray);
-            memset(childPtrArrayPtr, 0, sizeof(u32) * 64);
+            Ptr childPtrArray = allocConsecNodes((sizeof(u32) * 64) >> 4);
+            memset(childPtrArray.ptr, 0, sizeof(u32) * 64);
 
-            u32 childNodes = allocConsecNodes(64);
-            Node* childNodesPtr = (Node*)convertToPtr(childNodes);
-            memset(childNodesPtr, 0, sizeof(Node) * 64);
+            Ptr childNodes = allocConsecNodes(64);
+            memset(childNodes.ptr, 0, sizeof(Node) * 64);
 
             for (int i = 0; i < 64; i++) {
-                childPtrArrayPtr[i] = childNodes + (i << 4);
-                childNodesPtr[i].flags = leafFlags;
-                childNodesPtr[i].leaf.packedColor = leafColor;
+                ((u32*)childPtrArray.ptr)[i] = childNodes.index + (i << 4);
+                childNodes.ptr[i].flags = leafFlags;
+                childNodes.ptr[i].leaf.packedColor = leafColor;
             }
 
-            ((Node*)convertToPtr(stack[depth]))->flags = 0;
-            ((Node*)convertToPtr(stack[depth]))->branch.bitmap = -1; // all set
-            ((Node*)convertToPtr(stack[depth]))->branch.children = childPtrArray;
+            stack[depth].ptr->flags = 0;
+            stack[depth].ptr->branch.bitmap = -1; // all set
+            stack[depth].ptr->branch.children = childPtrArray.index;
 
-            stack[depth++] = childPtrArrayPtr[index];
+            stack[depth++] = Ptr{((u32*)childPtrArray.ptr)[index], &childNodes.ptr[index]};
 
         // else if air/empty
-        } else if (!((((Node*)convertToPtr(stack[depth]))->branch.bitmap >> index) & 1)) {
+        } else if (!((stack[depth].ptr->branch.bitmap >> index) & 1)) {
 
             DEBUG printf("Adding child node at depth %d, child index: %d\n",depth+1,index);
 
-            u32 child = allocNode();
-            *((Node*)convertToPtr(child)) = {0,{.branch = {0, allocConsecNodes((sizeof(u32) * 64) >> 32)}}};
+            Ptr child = allocNode();
+            *child.ptr = {0,{.branch = {0, allocConsecNodes((sizeof(u32) * 64) >> 32).index}}};
 
-            ((Node*)convertToPtr(stack[depth]))->branch.bitmap |= 1ull << index;
-            ((u32*)convertToPtr(((Node*)convertToPtr(stack[depth]))->branch.children))[index] = child;
+            stack[depth].ptr->branch.bitmap |= 1ull << index;
+            ((u32*)convertToPtr(stack[depth].ptr->branch.children).ptr)[index] = child.index;
 
             stack[++depth] = child;
 
         } else {
-            stack[depth+1] = ((u32*)convertToPtr(((Node*)convertToPtr(stack[depth]))->branch.children))[index];
+            stack[depth+1] = convertToPtr(((u32*)convertToPtr(stack[depth].ptr->branch.children).ptr)[index]);
             depth++;
         }
     }
