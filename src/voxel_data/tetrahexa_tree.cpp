@@ -13,7 +13,9 @@ Ptr root;
 void init() {
 
     root = allocNode();
-    *root.ptr = {0,{.branch = {0,allocConsecNodes((sizeof(u32) * 64) >> 4).index}}};
+    Ptr array = allocConsecNodes((sizeof(u32) * 64) / 16);
+    memset(array.ptr, 0, sizeof(u32) * 64);
+    *root.ptr = {0,{.branch = {0, array.index}}};
 
     putBlock(Pos{1000,1000,1000}, 1, 5);
     putBlock(Pos{10,100,10}, 2, 6);
@@ -154,6 +156,8 @@ void deleteChildren(Ptr node) {
     u32* children = (u32*)convertToPtr(node.ptr->branch.children).ptr;
     for (int i = 0; i < 64; i++) {
         if (children[i]) {
+            printf("hi %d\n",children[i]);
+            return;
             deleteChildren(convertToPtr(children[i]));
             freeNode(children[i]);
         }
@@ -207,7 +211,7 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
             u32 leafFlags = stack[depth].ptr->flags;
             u64 leafColor = stack[depth].ptr->leaf.packedColor;
 
-            Ptr childPtrArray = allocConsecNodes((sizeof(u32) * 64) >> 4);
+            Ptr childPtrArray = allocConsecNodes((sizeof(u32) * 64) / 16);
             memset(childPtrArray.ptr, 0, sizeof(u32) * 64);
 
             Ptr childNodes = allocConsecNodes(64);
@@ -231,7 +235,9 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
             DEBUG printf("Adding child node at depth %d, child index: %d\n",depth+1,index);
 
             Ptr child = allocNode();
-            *child.ptr = {0,{.branch = {0, allocConsecNodes((sizeof(u32) * 64) >> 32).index}}};
+            Ptr array = allocConsecNodes((sizeof(u32) * 64) / 16);
+            memset(array.ptr, 0, sizeof(u32) * 64);
+            *child.ptr = {0,{.branch = {0, array.index}}};
 
             stack[depth].ptr->branch.bitmap |= 1ull << index;
             ((u32*)convertToPtr(stack[depth].ptr->branch.children).ptr)[index] = child.index;

@@ -12,7 +12,7 @@ const int BLOCK_SIZE_BITS = 22;
 const int BLOCK_SIZE = 1 << BLOCK_SIZE_BITS; // 4194304
 const int BLOCK_SIZE_MASK = BLOCK_SIZE - 1;
 
-extern u32* blocks[]; // 1024
+extern u8* blocks[]; // 1024
 
 const int FREE_LIST_SIZE = 1 << 12; // 4096
 extern u32 freeList[];
@@ -28,7 +28,7 @@ inline Ptr convertToPtr(u32 index) {
 }
 
 inline void mallocBlock(int n) {
-    blocks[n] = (u32*)malloc(BLOCK_SIZE);
+    blocks[n] = (u8*)malloc(BLOCK_SIZE);
 }
 
 Ptr allocNode();
