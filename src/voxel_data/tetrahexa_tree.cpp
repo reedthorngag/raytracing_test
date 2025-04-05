@@ -39,7 +39,7 @@ void init() {
 }
 
 void traverseTree(Pos* pos, int count) {
-    DEBUG printf("running traverseTree on %d targets...\n",count);
+    DEBUG(2) printf("running traverseTree on %d targets...\n",count);
 
     int posOffset;
 
@@ -55,7 +55,7 @@ void traverseTree(Pos* pos, int count) {
 
     while (count--) {
 
-        DEBUG printf("finding (%d,%d,%d) from (%d,%d,%d)...\n",target.x,target.y,target.z,current.x,current.y,current.z);
+        DEBUG(2) printf("finding (%d,%d,%d) from (%d,%d,%d)...\n",target.x,target.y,target.z,current.x,current.y,current.z);
 
         // find last common node and then jump to it and start search for the target
 
@@ -69,7 +69,7 @@ void traverseTree(Pos* pos, int count) {
         }
 
         if (n < depth) {
-            DEBUG printf("Retreating to depth %d from depth %d...\n",n,depth);
+            DEBUG(3) printf("Retreating to depth %d from depth %d...\n",n,depth);
             depth = n;
         }
 
@@ -82,14 +82,14 @@ void traverseTree(Pos* pos, int count) {
 
             int index = curr.z << 4 | curr.y << 2 | curr.x;
 
-            DEBUG printf("depth: %d, index: %d, pos: %d,%d,%d\n",depth, index, curr.x, curr.y, curr.z);
+            DEBUG(3) printf("depth: %d, index: %d, pos: %d,%d,%d\n",depth, index, curr.x, curr.y, curr.z);
 
             if (stack[depth].ptr->flags & 1) {
-                DEBUG printf("Found leaf at depth %d, color: %lld\n\n",depth,stack[depth].ptr->leaf.packedColor);
+                DEBUG(2) printf("Found leaf at depth %d, color: %lld\n\n",depth,stack[depth].ptr->leaf.packedColor);
                 break;
 
             } else if (!((stack[depth].ptr->branch.bitmap >> index) & 1)) {
-                DEBUG printf("Found empty node at depth %d, index %d, returning -1\n",depth+1,index);
+                DEBUG(2) printf("Found empty node at depth %d, index %d, returning -1\n",depth+1,index);
                 break;
             }
 
@@ -107,7 +107,7 @@ void traverseTree(Pos* pos, int count) {
 }
 
 u64 getBlock(Pos pos) {
-    DEBUG printf("Getting block at (%d,%d,%d)...\n",pos.x,pos.y,pos.z);
+    DEBUG(2) printf("Getting block at (%d,%d,%d)...\n",pos.x,pos.y,pos.z);
 
     int posOffset = (maxDepth-1) * 2;
 
@@ -125,14 +125,14 @@ u64 getBlock(Pos pos) {
         int index = curr.z << 4 | curr.y << 2 | curr.x;
 
         //DEBUG printf("depth: %d, index: %d\n",depth, index);
-        DEBUG printf("depth: %d, index: %d, pos: %d,%d,%d\n",depth, index, curr.x, curr.y, curr.z);
+        DEBUG(3) printf("depth: %d, index: %d, pos: %d,%d,%d\n",depth, index, curr.x, curr.y, curr.z);
 
         if (stack[depth].ptr->flags & 1) {
-            DEBUG printf("Found leaf at depth %d, returning color\n",depth);
+            DEBUG(2) printf("Found leaf at depth %d, returning color\n",depth);
             return stack[depth].ptr->leaf.packedColor;
 
         } else if (!((stack[depth].ptr->branch.bitmap >> index) & 1)) {
-            DEBUG printf("Found empty node at depth %d, index %d, returning -1\n",depth+1,index);
+            DEBUG(2) printf("Found empty node at depth %d, index %d, returning -1\n",depth+1,index);
             return -1;
         }
 
@@ -156,18 +156,16 @@ void deleteChildren(Ptr node) {
     u32* children = (u32*)convertToPtr(node.ptr->branch.children).ptr;
     for (int i = 0; i < 64; i++) {
         if (children[i]) {
-            printf("hi %d\n",children[i]);
-            return;
             deleteChildren(convertToPtr(children[i]));
             freeNode(children[i]);
         }
     }
 
-    freeConsecNodes(node.ptr->branch.children, (sizeof(u32) * 64) >> 4);
+    freeConsecNodes(node.ptr->branch.children, (sizeof(u32) * 64) / 16);
 }
 
 void putBlock(Pos pos, u64 color, int targetDepth) {
-    DEBUG printf("Putting block at (%d,%d,%d) (size: %d) with color %lld...\n",pos.x,pos.y,pos.z,1<<((maxDepth-targetDepth)*2),color);
+    DEBUG(3) printf("Putting block at (%d,%d,%d) (size: %d) with color %lld...\n",pos.x,pos.y,pos.z,1<<((maxDepth-targetDepth)*2),color);
     targetDepth--; // convert to zero based index
 
     int posOffset = (maxDepth-1) * 2;
@@ -185,19 +183,19 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
 
         int index = curr.z << 4 | curr.y << 2 | curr.x;
 
-        //DEBUG printf("depth: %d, index: %d\n",depth, index);
+        DEBUG(4) printf("depth: %d, index: %d\n",depth, index);
  
         if (depth == targetDepth) {
 
             // if leaf
             if (stack[depth].ptr->flags & 1) {
-                DEBUG printf("Found leaf at target depth %d, setting color...\n",depth);
+                DEBUG(3) printf("Found leaf at target depth %d, setting color...\n",depth);
                 stack[depth].ptr->leaf.packedColor = color;
                 return;
 
             // else branch
             } else {
-                DEBUG printf("Found branch at target depth %d, converting to leaf...\n", depth);
+                DEBUG(3) printf("Found branch at target depth %d, converting to leaf...\n", depth);
                 deleteChildren(stack[depth]);
                 stack[depth].ptr->leaf.packedColor = color;
                 stack[depth].ptr->flags = 1;
@@ -208,13 +206,15 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
         // if leaf
         } else if (stack[depth].ptr->flags & 1) {
 
+            DEBUG(4) printf("Turning leaf into branch at depth %d and adding child, child index: %d\n",depth,index);
+
             u32 leafFlags = stack[depth].ptr->flags;
             u64 leafColor = stack[depth].ptr->leaf.packedColor;
 
-            Ptr childPtrArray = allocConsecNodes((sizeof(u32) * 64) / 16);
+            Ptr childPtrArray = allocConsecNodes(sizeof(u32) * 64);
             memset(childPtrArray.ptr, 0, sizeof(u32) * 64);
 
-            Ptr childNodes = allocConsecNodes(64);
+            Ptr childNodes = allocConsecNodes(64 * sizeof(Node));
             memset(childNodes.ptr, 0, sizeof(Node) * 64);
 
             for (int i = 0; i < 64; i++) {
@@ -227,20 +227,22 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
             stack[depth].ptr->branch.bitmap = -1; // all set
             stack[depth].ptr->branch.children = childPtrArray.index;
 
-            stack[depth++] = Ptr{((u32*)childPtrArray.ptr)[index], &childNodes.ptr[index]};
+            stack[++depth] = Ptr{((u32*)childPtrArray.ptr)[index], &childNodes.ptr[index]};
 
         // else if air/empty
         } else if (!((stack[depth].ptr->branch.bitmap >> index) & 1)) {
 
-            DEBUG printf("Adding child node at depth %d, child index: %d\n",depth+1,index);
+            DEBUG(4) printf("Adding child node at depth %d, child index: %d\n",depth+1,index);
 
             Ptr child = allocNode();
-            Ptr array = allocConsecNodes((sizeof(u32) * 64) / 16);
+            Ptr array = allocConsecNodes(sizeof(u32) * 64);
             memset(array.ptr, 0, sizeof(u32) * 64);
             *child.ptr = {0,{.branch = {0, array.index}}};
+            DEBUG(5) printf("child: %d, array: %d\n",child.index,array.index);
 
             stack[depth].ptr->branch.bitmap |= 1ull << index;
             ((u32*)convertToPtr(stack[depth].ptr->branch.children).ptr)[index] = child.index;
+            
 
             stack[++depth] = child;
 

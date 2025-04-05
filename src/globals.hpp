@@ -6,8 +6,9 @@
 #ifndef _GLOBALS
 #define _GLOBALS
 
-const bool debug = true;
-#define DEBUG if (debug) 
+#define DEBUG_LEVEL 3
+
+#define DEBUG(x) if (x <= DEBUG_LEVEL) 
 
 extern int width;
 extern int height;

@@ -15,6 +15,7 @@ const int BLOCK_SIZE_MASK = BLOCK_SIZE - 1;
 extern u8* blocks[]; // 1024
 
 const int FREE_LIST_SIZE = 1 << 12; // 4096
+const int FREE_LIST_SIZE_MASK = FREE_LIST_SIZE - 1;
 extern u32 freeList[];
 
 extern u32 nextAllocIndex;
@@ -38,12 +39,12 @@ Ptr allocConsecNodes(int n);
 
 inline void freeNode(u32 index) {
     if (freeListPop >= 1024) {
-        DEBUG fprintf(stderr, "Free list is full!\n");
+        DEBUG(1) fprintf(stderr, "Free list is full!\n");
         return;
     }
 
     freeList[firstFreeIndex++] = index;
-    firstFreeIndex ^= FREE_LIST_SIZE; // same as % 1024 but faster
+    firstFreeIndex &= FREE_LIST_SIZE_MASK; // same as % 1024 but faster
     freeListPop++;
 }
 
