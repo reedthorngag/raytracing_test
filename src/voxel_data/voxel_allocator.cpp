@@ -2,7 +2,7 @@
 #include "voxel_allocator.hpp"
 
 
-u8* blocks[1 << (32-BLOCK_SIZE_BITS)]; // 1024
+Block blocks[MAX_BLOCKS]{};
 
 u32 freeList[FREE_LIST_SIZE_MASK];
 
@@ -12,19 +12,26 @@ int freeListPop = 0;
 int nextFreeListIndex = 0;
 int firstFreeIndex = 0;
 
+GLuint ssbo;
+u32 currentSsboSize = 0;
+
 Ptr allocNode() {
     if (freeListPop--) {
         u32 node = freeList[nextFreeListIndex++];
         nextFreeListIndex &= FREE_LIST_SIZE_MASK;
-        DEBUG(5) printf("node found in free list: %u free list index: %d\n",node,nextFreeListIndex);
+        blocks[node >> BLOCK_SIZE_BITS].modified = true;
+
+        DEBUG(5) printf("node found in free list: %u next free list index: %d\n",node,nextFreeListIndex);
+
         return convertToPtr(node);
     }
     freeListPop++;
 
-    if (!blocks[nextAllocIndex >> BLOCK_SIZE_BITS]) {
+    if (!blocks[nextAllocIndex >> BLOCK_SIZE_BITS].ptr) {
         mallocBlock(nextAllocIndex >> BLOCK_SIZE_BITS);
     }
 
+    blocks[nextAllocIndex >> BLOCK_SIZE_BITS].modified = true;
     Ptr ptr = convertToPtr(nextAllocIndex);
     nextAllocIndex += 16;
     return ptr;
@@ -40,6 +47,7 @@ Ptr allocConsecNodes(int n) {
         mallocBlock(nextAllocIndex >> BLOCK_SIZE_BITS);
     }
 
+    blocks[nextAllocIndex >> BLOCK_SIZE_BITS].modified = true;
     Ptr ptr = convertToPtr(nextAllocIndex);
     nextAllocIndex += n;
     return ptr;

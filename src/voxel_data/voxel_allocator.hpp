@@ -3,16 +3,23 @@
 #include <memoryapi.h>
 #include <errhandlingapi.h>
 #include <windows.h>
+#include <GL/glew.h>
 
 #include "../globals.hpp"
 #include "../types.hpp"
 #include "types.hpp"
 
 const int BLOCK_SIZE_BITS = 22;
+const int MAX_BLOCKS = 1 << (32-BLOCK_SIZE_BITS); // 1024
 const int BLOCK_SIZE = 1 << BLOCK_SIZE_BITS; // 4194304
 const int BLOCK_SIZE_MASK = BLOCK_SIZE - 1;
 
-extern u8* blocks[]; // 1024
+struct Block {
+    u8* ptr;
+    bool modified;
+};
+
+extern Block blocks[]; // 1024
 
 const int FREE_LIST_SIZE = 1 << 12; // 4096
 const int FREE_LIST_SIZE_MASK = FREE_LIST_SIZE - 1;
@@ -24,12 +31,44 @@ extern int freeListPop;
 extern int nextFreeListIndex;
 extern int firstFreeIndex;
 
+extern GLuint ssbo;
+extern u32 currentSsboSize;
+
+inline void updateSsboData() {
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+
+    u32 n = 1;
+    for (; n < MAX_BLOCKS && blocks[n].ptr; n++);
+    
+    if (n != currentSsboSize) {
+        currentSsboSize = n;
+        glBufferData(GL_SHADER_STORAGE_BUFFER, n << BLOCK_SIZE_BITS, NULL ,GL_DYNAMIC_DRAW);
+    }
+
+    for (u32 i = 0; i < n; i++)
+        if (blocks[i].modified)
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, i << BLOCK_SIZE_BITS, BLOCK_SIZE, blocks[i].ptr);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
+inline void initVoxelDataAllocator() {
+
+    glGenBuffers(1, &ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+
+    updateSsboData();
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo); // bind to layout = 3
+}
+
 inline Ptr convertToPtr(u32 index) {
-    return {index,(Node*)(blocks[index >> BLOCK_SIZE_BITS] + (index & BLOCK_SIZE_MASK))};
+    return {index,(Node*)(blocks[index >> BLOCK_SIZE_BITS].ptr + (index & BLOCK_SIZE_MASK))};
 }
 
 inline void mallocBlock(int n) {
-    blocks[n] = (u8*)malloc(BLOCK_SIZE);
+    blocks[n] = Block{(u8*)malloc(BLOCK_SIZE),false};
 }
 
 Ptr allocNode();

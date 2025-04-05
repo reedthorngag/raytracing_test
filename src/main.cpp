@@ -9,6 +9,7 @@
 #include "chunk.hpp"
 #include "input.hpp"
 #include "voxel_data/tetrahexa_tree.hpp"
+#include "voxel_data/voxel_allocator.hpp"
 
 
 extern "C" {
@@ -88,11 +89,6 @@ void render() {
 int main() {
     printf("Hello world!\n");
 
-    init();
-
-    return 0;
-
-
     createWindow();
     setupOpenGl();
 
@@ -132,6 +128,9 @@ int main() {
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    initTetraHexaTree();
+    checkGlError("createSsbo");
+
     printf("generating chunk...\n");
     double start = glfwGetTime();
 
@@ -158,6 +157,10 @@ int main() {
 
         //glfwWaitEvents();
         start = glfwGetTime();
+
+        updateSsboData();
+        checkGlError("updateSsboData");
+
         render();
 
         times[i++] = glfwGetTime()-start;

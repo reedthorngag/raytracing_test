@@ -10,7 +10,7 @@
 int numNodes = 0;
 Ptr root;
 
-void init() {
+void initTetraHexaTree() {
 
     root = allocNode();
     Ptr array = allocConsecNodes((sizeof(u32) * 64) / 16);

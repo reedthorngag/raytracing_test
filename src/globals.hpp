@@ -6,7 +6,7 @@
 #ifndef _GLOBALS
 #define _GLOBALS
 
-#define DEBUG_LEVEL 3
+#define DEBUG_LEVEL 1
 
 #define DEBUG(x) if (x <= DEBUG_LEVEL) 
 

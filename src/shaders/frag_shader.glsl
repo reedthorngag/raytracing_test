@@ -175,7 +175,6 @@ void main()
     if (ray.step.z < 0) pos.exact.z -= 1;
 
     int step = 1;
-    if (pos.exact.x > 100) step = 2;
 
     pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
     pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
