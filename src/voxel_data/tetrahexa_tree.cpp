@@ -96,7 +96,9 @@ void traverseTree(Pos* pos, int count) {
             // this might be used in future, its a tradeoff between memory and speed though
             //index = std::popcount(stack[depth].ptr.branch.bitmap << (64 - index));
 
-            stack[depth+1] = convertToPtr(((u32*)convertToPtr(stack[depth].ptr->branch.children).ptr)[index]);
+            stack[depth+1] = convertToPtr(
+                ((u32*)convertToPtr(stack[depth].ptr->branch.children).ptr)[index]
+            );
 
             depth++;
         }
@@ -139,7 +141,9 @@ u64 getBlock(Pos pos) {
         // this might be used in future, its a tradeoff between memory and speed though
         //index = std::popcount(stack[depth].ptr.branch.bitmap << (64 - index));
 
-        stack[depth+1] = convertToPtr(((u32*)convertToPtr(stack[depth].ptr->branch.children).ptr)[index]);
+        stack[depth+1] = convertToPtr(
+            ((u32*)convertToPtr(stack[depth].ptr->branch.children).ptr)[index]
+        );
 
         depth++; 
     }
@@ -211,14 +215,14 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
             u32 leafFlags = stack[depth].ptr->flags;
             u64 leafColor = stack[depth].ptr->leaf.packedColor;
 
-            Ptr childPtrArray = allocConsecNodes(sizeof(u32) * 64);
+            Ptr childPtrArray = allocConsecNodes((sizeof(u32) * 64) / 16);
             memset(childPtrArray.ptr, 0, sizeof(u32) * 64);
 
-            Ptr childNodes = allocConsecNodes(64 * sizeof(Node));
+            Ptr childNodes = allocConsecNodes(64);
             memset(childNodes.ptr, 0, sizeof(Node) * 64);
 
             for (int i = 0; i < 64; i++) {
-                ((u32*)childPtrArray.ptr)[i] = childNodes.index + (i << 4);
+                ((u32*)childPtrArray.ptr)[i] = childNodes.index + i;
                 childNodes.ptr[i].flags = leafFlags;
                 childNodes.ptr[i].leaf.packedColor = leafColor;
             }
@@ -235,7 +239,7 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
             DEBUG(4) printf("Adding child node at depth %d, child index: %d\n",depth+1,index);
 
             Ptr child = allocNode();
-            Ptr array = allocConsecNodes(sizeof(u32) * 64);
+            Ptr array = allocConsecNodes((sizeof(u32) * 64) / 16);
             memset(array.ptr, 0, sizeof(u32) * 64);
             *child.ptr = {0,{.branch = {0, array.index}}};
             DEBUG(5) printf("child: %d, array: %d\n",child.index,array.index);

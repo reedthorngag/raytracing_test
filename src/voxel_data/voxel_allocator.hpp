@@ -61,7 +61,7 @@ inline void initVoxelDataAllocator() {
 }
 
 inline Ptr convertToPtr(u32 index) {
-    return {index,(Node*)(blocks[index >> BLOCK_SIZE_BITS].ptr + (index & BLOCK_SIZE_MASK))};
+    return {index,(Node*)(blocks[(index<<4) >> BLOCK_SIZE_BITS].ptr + ((index<<4) & BLOCK_SIZE_MASK))};
 }
 
 inline void mallocBlock(int n) {

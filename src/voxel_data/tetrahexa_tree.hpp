@@ -20,7 +20,7 @@ void traverseTree(Pos* pos, int count);
 
 void putBlock(Pos pos, u64 color, int targetDepth);
 
-void deleteChildren(Node* node);
+void deleteChildren(Ptr node);
 
 u64 getBlock(Pos pos);
 

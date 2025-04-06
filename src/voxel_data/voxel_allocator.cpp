@@ -19,7 +19,7 @@ Ptr allocNode() {
     if (freeListPop--) {
         u32 node = freeList[nextFreeListIndex++];
         nextFreeListIndex &= FREE_LIST_SIZE_MASK;
-        blocks[node >> BLOCK_SIZE_BITS].modified = true;
+        blocks[node >> (BLOCK_SIZE_BITS-4)].modified = true;
 
         DEBUG(5) printf("node found in free list: %u next free list index: %d\n",node,nextFreeListIndex);
 
@@ -32,24 +32,24 @@ Ptr allocNode() {
     }
 
     blocks[nextAllocIndex >> BLOCK_SIZE_BITS].modified = true;
-    Ptr ptr = convertToPtr(nextAllocIndex);
+    Ptr ptr = convertToPtr(nextAllocIndex >> 4);
     nextAllocIndex += 16;
     return ptr;
 }
 
 Ptr allocConsecNodes(int n) {
 
-    if ((nextAllocIndex & BLOCK_SIZE_MASK) + n > BLOCK_SIZE) {
+    if ((nextAllocIndex & BLOCK_SIZE_MASK) + (n << 4) > BLOCK_SIZE) {
 
-        freeConsecNodes(nextAllocIndex, n >> 4);
-        nextAllocIndex += n;
+        freeConsecNodes(nextAllocIndex >> 4, n);
+        nextAllocIndex += n << 4;
 
         mallocBlock(nextAllocIndex >> BLOCK_SIZE_BITS);
     }
 
     blocks[nextAllocIndex >> BLOCK_SIZE_BITS].modified = true;
-    Ptr ptr = convertToPtr(nextAllocIndex);
-    nextAllocIndex += n;
+    Ptr ptr = convertToPtr(nextAllocIndex >> 4);
+    nextAllocIndex += n << 4;
     return ptr;
 }
 
@@ -61,9 +61,8 @@ void freeConsecNodes(u32 startIndex, int n) {
     DEBUG(5) printf("adding %d nodes to free list...",n);
     freeListPop += n;
     while (n--) {
-        freeList[firstFreeIndex++] = startIndex;
+        freeList[firstFreeIndex++] = startIndex++;
         firstFreeIndex &= FREE_LIST_SIZE_MASK;
-        startIndex += 16;
     }
     DEBUG(5) printf(" new first free index is %d, free list pop: %d\n",firstFreeIndex,freeListPop);
 }

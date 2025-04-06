@@ -19,7 +19,7 @@ in vec4 gl_FragCoord;
 
 layout (binding = 3) buffer nodes {
     u32 flags;
-    u64 bitmap;
+    u64 bitmap; // doubles as color
     u32 children;
 };
 
