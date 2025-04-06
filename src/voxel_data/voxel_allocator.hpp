@@ -43,7 +43,7 @@ inline void updateSsboData() {
     
     if (n != currentSsboSize) {
         currentSsboSize = n;
-        glBufferData(GL_SHADER_STORAGE_BUFFER, n << BLOCK_SIZE_BITS, NULL ,GL_DYNAMIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, n << BLOCK_SIZE_BITS, NULL, GL_DYNAMIC_DRAW);
     }
 
     for (u32 i = 0; i < n; i++)
@@ -56,9 +56,6 @@ inline void updateSsboData() {
 inline void initVoxelDataAllocator() {
 
     glGenBuffers(1, &ssbo);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-
-    updateSsboData();
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo); // bind to layout = 3
 }

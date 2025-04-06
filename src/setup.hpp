@@ -57,6 +57,8 @@ void createWindow() {
         exit(1);
     }
 
+    printf("OpenGL version: %s\n",glGetString(GL_VERSION));
+
     glfwGetFramebufferSize(window,&width,&height);
     glViewport(0,0,width,height);
 

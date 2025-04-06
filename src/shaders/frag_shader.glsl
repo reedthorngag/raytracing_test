@@ -2,6 +2,9 @@
 #extension GL_ARB_gpu_shader_int64 : enable
 
 #define u64 uint64_t
+#define u32 uint64_t
+#define u16 uint64_t
+#define u8 uint64_t
 
 out vec4 FragColor;
 
@@ -13,6 +16,16 @@ uniform int renderPosData;
 uniform sampler3D tex;
 
 in vec4 gl_FragCoord;
+
+layout (binding = 3) buffer nodes {
+    u32 flags;
+    u64 bitmap;
+    u32 children;
+};
+
+layout (binding = 3) buffer children_array {
+    u32 indexes[4];
+};
 
 int width = 1920;
 int halfWidth = width/2;
