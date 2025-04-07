@@ -57,6 +57,7 @@ void dumpPixelData() {
     checkGlError("glReadPixels");
 
     printf("\rdebug frame: %s: %f %f %f %f (mouse pos: %lf, %lf)\n",debugFrameTypeString[sendDebugFrame],buffer[0],buffer[1],buffer[2],buffer[3],mouse.x,mouse.y);
+    printf("\rnode data: %u %llu %u\n",((Node*)blocks[0].ptr)->flags,((Node*)blocks[0].ptr)->branch.bitmap,((Node*)blocks[0].ptr)->branch.children);
 }
 
 void render() {

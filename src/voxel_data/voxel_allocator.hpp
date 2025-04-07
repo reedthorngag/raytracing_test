@@ -47,8 +47,10 @@ inline void updateSsboData() {
     }
 
     for (u32 i = 0; i < n; i++)
-        if (blocks[i].modified)
+        if (blocks[i].modified) {
+            blocks[i].modified = false;
             glBufferSubData(GL_SHADER_STORAGE_BUFFER, i << BLOCK_SIZE_BITS, BLOCK_SIZE, blocks[i].ptr);
+        }
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }

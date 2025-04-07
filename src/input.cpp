@@ -129,7 +129,7 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mod
             case GLFW_MOUSE_BUTTON_2: {
                 printf("\rMouse pos: %lf, %lf\n",mouse.x,mouse.y);
                 glm::ivec3 pos = RAY_CASTER::castRayFromCam(8);
-                putBlock(Pos{pos.x,pos.y,pos.z},RGB_TO_U64(255,0,0),5);
+                putBlock(Pos{pos.x,pos.y,pos.z},RGB_TO_U64(255,0,0),3);
                 printf("\rPut block at %d,%d,%d!\n",pos.x,pos.y,pos.z);
                 break;
             }
@@ -145,14 +145,12 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mod
 void glfwMousePosCallback(GLFWwindow* window, double x, double y) {
     if (mouseLocked) {
         double xDelta = halfWidth - x;
-        double yDelta = halfWidth - y;
+        double yDelta = halfHeight - y;
         rotateCamera(xDelta * -0.1, yDelta * -0.1); // invert x
-        glfwSetCursorPos(window,halfWidth,halfWidth);
+        glfwSetCursorPos(window,halfWidth,halfHeight);
     }
     mouse.x = x;
     mouse.y = height-y;
-    //printf("\rmouse pos: %lf,%lf last update: %lf    ",mouse.x,mouse.y,((glfwGetTime()-lastMouseUpdate)));
-    fflush(stdout);
     lastMouseUpdate = glfwGetTime();
 }
 

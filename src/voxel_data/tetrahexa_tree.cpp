@@ -36,6 +36,8 @@ void initTetraHexaTree() {
 
     traverseTree(pos, 3);
 
+    printf("root: %u %llu %u\n",root.ptr->flags,root.ptr->branch.bitmap,root.ptr->branch.children);
+
 }
 
 void traverseTree(Pos* pos, int count) {

@@ -17,14 +17,18 @@ uniform sampler3D tex;
 
 in vec4 gl_FragCoord;
 
-layout (binding = 3) buffer nodes {
-    u32 flags;
-    u64 bitmap; // doubles as color
-    u32 children;
+layout (packed, binding = 3) buffer layout_nodes {
+    struct {
+        u32 flags;
+        u64 bitmap; // doubles as color
+        u32 children;
+    } nodes[];
 };
 
-layout (binding = 3) buffer children_array {
-    u32 indexes[4];
+layout (packed, binding = 3) buffer layout_children_array {
+    struct {
+        u32 indexes[4];
+    } children_array[];
 };
 
 int width = 1920;
@@ -127,6 +131,14 @@ struct Pos {
 Pos pos;
 Ray ray;
 
+const int MAX_DEPTH = 6;
+
+u32 stack[MAX_DEPTH];
+ivec3 currentPos;
+int posOffset;
+int depth;
+
+u64 getBlockAt(ivec3 pos);
 void nextIntersect(int step);
 void nextIntersectDDA();
 
@@ -151,16 +163,40 @@ void setFragToVec(vec3 vec) {
     FragColor = vec4(vec.xyz,0);
 }
 
+const int BITS_PER_COLOR = 21;
+const int COLOR_RANGE = 1 << BITS_PER_COLOR;
+const int COLOR_MASK = COLOR_RANGE - 1;
+const double SCALED_COLOR = 1.0 / COLOR_RANGE;
+
+vec4 color_int_to_vec4(u64 color) {
+    return vec4((color >> (BITS_PER_COLOR * 2)) * SCALED_COLOR,
+        ((color >> BITS_PER_COLOR) & COLOR_MASK) * SCALED_COLOR,
+        (color & COLOR_MASK) * SCALED_COLOR,
+        1.0
+    );
+}
+
 void main()
 {
+    FragColor = vec4(
+        int(nodes[0].flags >> 16),
+        int(nodes[0].flags & (1 << 16) - 1),
+        int(nodes[0].children >> 16),
+        int(nodes[0].children & (1 << 16) - 1)
+    );
+    return;
 
     if (renderPosData == 0 && distance(gl_FragCoord.xy, mousePos) < 3) {
         FragColor = vec4(1,1,1,1);
         return;
     }
 
-    if (texture(tex, vec3(origin.x*scale,origin.y*scale,origin.z*scale)).xyz != 0) {
-        FragColor = texture(tex, vec3(origin.x*scale,origin.y*scale,origin.z*scale));
+    stack[0] = 0;
+    currentPos = ivec3(0);
+    depth = 0;
+
+    if (getBlockAt(ivec3(floor(origin))) != -1) {
+        FragColor = r;//color_int_to_vec4(getBlockAt(ivec3(floor(origin))));
         return;
     }
 
@@ -195,11 +231,17 @@ void main()
 
     bool set = false;
     for (int i = 0; i < 100; i++) {
-        if (texture(tex, vec3(pos.round.x*scale,pos.round.y*scale,pos.round.z*scale)).xyz != 0) {
-           FragColor = texture(tex, vec3(pos.round.x*scale,pos.round.y*scale,pos.round.z*scale));
-           set = true;
-           break;
+        if (getBlockAt(pos.round) != -1) {
+            u64 color = getBlockAt(pos.round);
+            FragColor = r;//color_int_to_vec4(color);
+            set = true;
+            break;
         }
+        // if (texture(tex, vec3(pos.round.x*scale,pos.round.y*scale,pos.round.z*scale)).xyz != 0) {
+        //    FragColor = texture(tex, vec3(pos.round.x*scale,pos.round.y*scale,pos.round.z*scale));
+        //    set = true;
+        //    break;
+        // }
         nextIntersectDDA();
         //nextIntersect(step);
     }
@@ -226,9 +268,9 @@ void main()
     else if (renderPosData == 8)
         setFragToVec(trunc(origin.xyz));
     else if (renderPosData == 9)
-        setFragToVec(vec3(0));
+        setFragToVec(vec3(nodes[0].flags,nodes[0].bitmap,nodes[0].children));
     else if (renderPosData == 10)
-        setFragToVec(vec3(0));
+        setFragToVec(vec3(stack[3],stack[4],stack[5]));
         
 }
 
@@ -282,4 +324,50 @@ void nextIntersect(int step) {
     pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
     pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
     pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
+}
+
+u64 getBlockAt(ivec3 pos) {
+
+    int n = 0;
+    int mask = 0x3 << ((MAX_DEPTH-1) * 2 - 2);
+    while (depth != 0 && (pos.x & mask) == (currentPos.x & mask) &&
+            (pos.y & mask) == (currentPos.y & mask) &&
+            (pos.z & mask) == (currentPos.z & mask)) {
+        n++;
+        mask >>= 2;
+    }
+
+    currentPos = pos;
+
+    if (n < depth)
+        depth = n;
+
+    posOffset = (MAX_DEPTH-1 - depth) * 2;
+
+    while (depth < MAX_DEPTH) {
+        posOffset -= 2;
+
+        ivec3 curr = (pos >> posOffset) & 0x3;
+
+        int index = curr.z << 4 | curr.y << 2 | curr.x;
+
+        
+        if ((int(nodes[int(stack[depth])].flags) & 1) == 1) {
+            return nodes[int(stack[depth])].bitmap;
+
+        } else if ((int(nodes[int(stack[depth])].bitmap >> index) & 1) == 0) {
+            return -1;
+        }
+
+        stack[depth+1] = children_array[
+            int(nodes[
+                int(stack[depth])
+            ].children + 
+            (index >> 2))
+            ].indexes[
+                int(index & 0x3)
+            ];
+
+        depth++;
+    }
 }
