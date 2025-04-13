@@ -68,6 +68,8 @@
     },
     "C_Cpp.errorSquiggles": "disabled",
     "cSpell.words": [
-        "Hexa"
+        "Hexa",
+        "Ssbo",
+        "uvec"
     ]
 }

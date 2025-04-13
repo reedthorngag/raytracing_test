@@ -2,9 +2,7 @@
 #extension GL_ARB_gpu_shader_int64 : enable
 
 #define u64 uint64_t
-#define u32 uint64_t
-#define u16 uint64_t
-#define u8 uint64_t
+#define u32 uint
 
 out vec4 FragColor;
 
@@ -17,19 +15,14 @@ uniform sampler3D tex;
 
 in vec4 gl_FragCoord;
 
-layout (packed, binding = 3) buffer layout_nodes {
-    struct {
-        u32 flags;
-        u64 bitmap; // doubles as color
-        u32 children;
-    } nodes[];
+layout (std430, binding = 3) buffer layoutNodes {
+    u64vec2 nodes[];
 };
 
-layout (packed, binding = 3) buffer layout_children_array {
-    struct {
-        u32 indexes[4];
-    } children_array[];
+layout (packed, binding = 2) buffer layoutArrays {
+    uvec4 children_array[];
 };
+
 
 int width = 1920;
 int halfWidth = width/2;
@@ -178,13 +171,7 @@ vec4 color_int_to_vec4(u64 color) {
 
 void main()
 {
-    FragColor = vec4(
-        int(nodes[0].flags >> 16),
-        int(nodes[0].flags & (1 << 16) - 1),
-        int(nodes[0].children >> 16),
-        int(nodes[0].children & (1 << 16) - 1)
-    );
-    return;
+
 
     if (renderPosData == 0 && distance(gl_FragCoord.xy, mousePos) < 3) {
         FragColor = vec4(1,1,1,1);
@@ -267,9 +254,14 @@ void main()
         setFragToVec(cameraDir);
     else if (renderPosData == 8)
         setFragToVec(trunc(origin.xyz));
-    else if (renderPosData == 9)
-        setFragToVec(vec3(nodes[0].flags,nodes[0].bitmap,nodes[0].children));
-    else if (renderPosData == 10)
+    else if (renderPosData == 9) {
+        FragColor = vec4(
+            int(bitCount(int(nodes[0].y))),
+            int(bitCount(int(nodes[0].x >> 32))),
+            int(bitCount(int(nodes[0].x))),
+            int(bitCount(int(nodes[0].y >> 32)))
+        );
+    } else if (renderPosData == 10)
         setFragToVec(vec3(stack[3],stack[4],stack[5]));
         
 }
@@ -352,20 +344,20 @@ u64 getBlockAt(ivec3 pos) {
         int index = curr.z << 4 | curr.y << 2 | curr.x;
 
         
-        if ((int(nodes[int(stack[depth])].flags) & 1) == 1) {
-            return nodes[int(stack[depth])].bitmap;
+        if ((uint(nodes[stack[depth]].y) & 1) == 1) {
+            return nodes[stack[depth]].x;
 
-        } else if ((int(nodes[int(stack[depth])].bitmap >> index) & 1) == 0) {
+        } else if ((uint(nodes[stack[depth]].x >> index) & 1) == 0) {
             return -1;
         }
 
         stack[depth+1] = children_array[
-            int(nodes[
-                int(stack[depth])
-            ].children + 
-            (index >> 2))
-            ].indexes[
-                int(index & 0x3)
+                uint(nodes[
+                        stack[depth]
+                    ].y >> 30
+                ) + (index >> 2)
+            ][
+                index & 0x3
             ];
 
         depth++;

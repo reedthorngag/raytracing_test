@@ -29,14 +29,15 @@ struct Pos {
 
 // lowest bit in flags is set in leaf
 struct Node {
-    u32 flags;
     union {
         struct __attribute__((packed)) {
             u64 bitmap;
+            u32 flags;
             u32 children;
         } branch;
         struct __attribute__((packed)) {
             u64 packedColor;
+            u32 flags;
             u32 spare;
         } leaf;
     };
