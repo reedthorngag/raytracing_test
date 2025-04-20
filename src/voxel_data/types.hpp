@@ -43,10 +43,15 @@ struct Node {
     };
 } __attribute__((packed));
 
+struct Block {
+    u8* ptr;
+    bool modified;
+};
 
 struct Ptr {
     u32 index;
     Node* ptr;
+    Block* block;
 };
 
 #endif

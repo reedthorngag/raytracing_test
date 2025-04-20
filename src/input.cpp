@@ -129,7 +129,7 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mod
             case GLFW_MOUSE_BUTTON_2: {
                 printf("\rMouse pos: %lf, %lf\n",mouse.x,mouse.y);
                 glm::ivec3 pos = RAY_CASTER::castRayFromCam(8);
-                putBlock(Pos{pos.x,pos.y,pos.z},RGB_TO_U64(255,0,0),3);
+                putBlock(Pos{pos.x,pos.y,pos.z},RGB_TO_U64(255,0,0),6);
                 printf("\rPut block at %d,%d,%d!\n",pos.x,pos.y,pos.z);
                 break;
             }

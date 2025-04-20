@@ -4,7 +4,6 @@ cls
 g++ -Wall -g -W -Werror ^
     -Wno-unused-parameter -Wno-unused-variable -Wno-missing-field-initializers ^
     -Wno-unused-but-set-variable ^
-    -I C:/lib ^
     -I C:/lib/glew/include ^
     -I C:/lib/glfw/include ^
     -I ./include ^

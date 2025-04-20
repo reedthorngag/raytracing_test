@@ -80,7 +80,7 @@ void render() {
 
     checkGlError("glDrawArrays");
 
-    if (sendDebugFrame) {
+    if (sendDebugFrame) {  
         dumpPixelData();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         sendDebugFrame = 0;

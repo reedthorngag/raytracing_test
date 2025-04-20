@@ -14,11 +14,6 @@ const int MAX_BLOCKS = 1 << (32-BLOCK_SIZE_BITS); // 1024
 const int BLOCK_SIZE = 1 << BLOCK_SIZE_BITS; // 4194304
 const int BLOCK_SIZE_MASK = BLOCK_SIZE - 1;
 
-struct Block {
-    u8* ptr;
-    bool modified;
-};
-
 extern Block nodeBlocks[]; // 1024
 extern Block arrayBlocks[]; // 1024
 
@@ -51,14 +46,14 @@ inline void updateSsboData() {
     
     if (n != currentArraySsboSize) {
         currentArraySsboSize = n;
-        glBufferData(GL_SHADER_STORAGE_BUFFER, 1 << BLOCK_SIZE_BITS, NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, n << BLOCK_SIZE_BITS, NULL, GL_DYNAMIC_DRAW);
     }
 
     for (u32 i = 0; i < n; i++)
         if (arrayBlocks[i].modified) {
             arrayBlocks[i].modified = false;
             printf("Uploading array block %d to gpu!\n",n);
-            glBufferSubData(GL_SHADER_STORAGE_BUFFER, i << BLOCK_SIZE_BITS, 16, arrayBlocks[i].ptr);
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, i << BLOCK_SIZE_BITS, BLOCK_SIZE, arrayBlocks[i].ptr);
             DEBUG(2) checkGlError("Upload array data");
         }
 
@@ -70,14 +65,14 @@ inline void updateSsboData() {
     
     if (n != currentNodeSsboSize) {
         currentNodeSsboSize = n;
-        glBufferData(GL_SHADER_STORAGE_BUFFER, 1 << BLOCK_SIZE_BITS, NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, n << BLOCK_SIZE_BITS, NULL, GL_DYNAMIC_DRAW);
     }
 
     for (u32 i = 0; i < n; i++)
         if (nodeBlocks[i].modified) {
             nodeBlocks[i].modified = false;
             printf("Uploading node block %d to gpu!\n",n);
-            glBufferSubData(GL_SHADER_STORAGE_BUFFER, i << BLOCK_SIZE_BITS, 16, nodeBlocks[i].ptr);
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, i << BLOCK_SIZE_BITS, BLOCK_SIZE, nodeBlocks[i].ptr);
             DEBUG(2) checkGlError("Upload node data");
         }
 
@@ -98,11 +93,11 @@ inline void initVoxelDataAllocator() {
 }
 
 inline Ptr convertToPtr(u32 index) {
-    return {index,(Node*)(nodeBlocks[(index<<4) >> BLOCK_SIZE_BITS].ptr + ((index<<4) & BLOCK_SIZE_MASK))};
+    return {index,(Node*)(nodeBlocks[(index<<4) >> BLOCK_SIZE_BITS].ptr + ((index<<4) & BLOCK_SIZE_MASK)),&nodeBlocks[(index<<4) >> BLOCK_SIZE_BITS]};
 }
 
 inline Ptr convertToArrayPtr(u32 index) {
-    return {index,(Node*)(arrayBlocks[(index<<8) >> BLOCK_SIZE_BITS].ptr + ((index<<8) & BLOCK_SIZE_MASK))};
+    return {index,(Node*)(arrayBlocks[(index<<8) >> BLOCK_SIZE_BITS].ptr + ((index<<8) & BLOCK_SIZE_MASK)),&arrayBlocks[(index<<8) >> BLOCK_SIZE_BITS]};
 }
 
 inline void mallocNodeBlock(int n) {

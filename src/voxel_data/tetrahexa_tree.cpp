@@ -63,7 +63,7 @@ void traverseTree(Pos* pos, int count) {
 
         int n = 0;
         int mask = 0b11 << ((maxDepth-1) * 2 - 2);
-        while (depth && (target.x & mask) == (current.x & mask) &&
+        while (n < depth && (target.x & mask) == (current.x & mask) &&
                 (target.y & mask) == (current.y & mask) &&
                 (target.z & mask) == (current.z & mask)) {
             n++;
@@ -197,6 +197,7 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
             if (stack[depth].ptr->branch.flags & 1) {
                 DEBUG(3) printf("Found leaf at target depth %d, setting color...\n",depth);
                 stack[depth].ptr->leaf.packedColor = color;
+                stack[depth].block->modified = true;
                 return;
 
             // else branch
@@ -205,6 +206,7 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
                 deleteChildren(stack[depth]);
                 stack[depth].ptr->leaf.packedColor = color;
                 stack[depth].ptr->branch.flags = 1;
+                stack[depth].block->modified = true;
                 return;
             }
         
@@ -232,6 +234,7 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
             stack[depth].ptr->branch.flags = 0;
             stack[depth].ptr->branch.bitmap = -1; // all set
             stack[depth].ptr->branch.children = childPtrArray.index;
+            stack[depth].block->modified = true;
 
             stack[++depth] = Ptr{((u32*)childPtrArray.ptr)[index], &childNodes.ptr[index]};
 
@@ -247,6 +250,7 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
             DEBUG(5) printf("child: %d, array: %d\n",child.index,array.index);
 
             stack[depth].ptr->branch.bitmap |= 1ull << index;
+            stack[depth].block->modified = true;
             ((u32*)convertToArrayPtr(stack[depth].ptr->branch.children).ptr)[index] = child.index;
             
 

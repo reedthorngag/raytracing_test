@@ -182,8 +182,10 @@ void main()
     currentPos = ivec3(0);
     depth = 0;
 
-    if (getBlockAt(ivec3(floor(origin))) != -1) {
-        FragColor = r;//color_int_to_vec4(getBlockAt(ivec3(floor(origin))));
+    pos.round = ivec3(floor(origin));
+
+    if (getBlockAt(pos.round) != -1) {
+        FragColor = r;
         return;
     }
 
@@ -202,8 +204,6 @@ void main()
 
     ray = buildRay(projection_plane_intersect);
 
-    pos.round = ivec3(floor(origin));
-
     pos.exact = origin;
     
     if (ray.step.x < 0) pos.exact.x -= 1;
@@ -218,52 +218,50 @@ void main()
 
     bool set = false;
     for (int i = 0; i < 100; i++) {
+        nextIntersectDDA();
+        // nextIntersect(step);
         if (getBlockAt(pos.round) != -1) {
-            u64 color = getBlockAt(pos.round);
+            //u64 color = getBlockAt(pos.round);
             FragColor = r;//color_int_to_vec4(color);
             set = true;
             break;
         }
-        // if (texture(tex, vec3(pos.round.x*scale,pos.round.y*scale,pos.round.z*scale)).xyz != 0) {
-        //    FragColor = texture(tex, vec3(pos.round.x*scale,pos.round.y*scale,pos.round.z*scale));
-        //    set = true;
-        //    break;
-        // }
-        nextIntersectDDA();
-        //nextIntersect(step);
     }
 
     nextIntersectDDA();
 
     if (!set) {
-        FragColor = vec4(0,0,( abs(double(pos.round.y) - 50))/100,0);
+        FragColor = vec4(0,0,float(depth)/MAX_DEPTH,0);
     }
-    if (renderPosData == 1)
-        FragColor = vec4(pos.round.x,pos.round.y,pos.round.z,0);
-    else if (renderPosData == 2)
-        FragColor = vec4(ray.dir.x,ray.dir.y,ray.dir.z,0);
-    else if (renderPosData == 3)
-        setFragToVec(projection_plane_center);
-    else if (renderPosData == 4)
-        FragColor = vec4(projection_plane_left,projection_plane_width);
-    else if (renderPosData == 5)
-        FragColor = vec4(ray.delta.x,ray.delta.y,ray.delta.z,0);
-    else if (renderPosData == 6)
-        FragColor = vec4(origin.xyz,0);
-    else if (renderPosData == 7)
-        setFragToVec(cameraDir);
-    else if (renderPosData == 8)
-        setFragToVec(trunc(origin.xyz));
-    else if (renderPosData == 9) {
-        FragColor = vec4(
-            int(bitCount(int(nodes[0].y))),
-            int(bitCount(int(nodes[0].x >> 32))),
-            int(bitCount(int(nodes[0].x))),
-            int(bitCount(int(nodes[0].y >> 32)))
-        );
-    } else if (renderPosData == 10)
-        setFragToVec(vec3(stack[3],stack[4],stack[5]));
+
+    { // debug data
+        if (renderPosData == 1)
+            FragColor = vec4(pos.round.x,pos.round.y,pos.round.z,0);
+        else if (renderPosData == 2)
+            FragColor = vec4(ray.dir.x,ray.dir.y,ray.dir.z,0);
+        else if (renderPosData == 3)
+            setFragToVec(projection_plane_center);
+        else if (renderPosData == 4)
+            FragColor = vec4(projection_plane_left,projection_plane_width);
+        else if (renderPosData == 5)
+            FragColor = vec4(ray.delta.x,ray.delta.y,ray.delta.z,0);
+        else if (renderPosData == 6)
+            FragColor = vec4(origin.xyz,0);
+        else if (renderPosData == 7)
+            setFragToVec(cameraDir);
+        else if (renderPosData == 8)
+            setFragToVec(trunc(origin.xyz));
+        else if (renderPosData == 9) {
+            FragColor = vec4(
+                int(bitCount(int(nodes[0].y))),
+                int(bitCount(int(nodes[0].x >> 32))),
+                int(bitCount(int(nodes[0].x))),
+                int(bitCount(int(nodes[0].y >> 32)))
+            );
+        } else if (renderPosData == 10)
+            setFragToVec(vec3(stack[3],stack[4],stack[5]));
         
+    }
 }
 
 void nextIntersectDDA() {
@@ -322,9 +320,11 @@ u64 getBlockAt(ivec3 pos) {
 
     int n = 0;
     int mask = 0x3 << ((MAX_DEPTH-1) * 2 - 2);
-    while (depth != 0 && (pos.x & mask) == (currentPos.x & mask) &&
+    while (n < depth &&
+            (pos.x & mask) == (currentPos.x & mask) &&
             (pos.y & mask) == (currentPos.y & mask) &&
-            (pos.z & mask) == (currentPos.z & mask)) {
+            (pos.z & mask) == (currentPos.z & mask))
+    {
         n++;
         mask >>= 2;
     }

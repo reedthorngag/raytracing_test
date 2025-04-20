@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "shaders/load_shader.hpp"
 #include "globals.hpp"
@@ -32,8 +33,14 @@ void createWindow() {
 
     glfwSetMonitorCallback(glfwMonitorCallback);
 
-    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    int count;
+    GLFWmonitor** monitors = glfwGetMonitors(&count);//glfwGetPrimaryMonitor();
+    GLFWmonitor* monitor = monitors[0];
+    DEBUG(1) printf("Number of connected monitors: %d\n",count);
 
+    int x, y;
+    glfwGetMonitorPos(monitor, &x, &y);
+    DEBUG(1) printf("monitor pos: %d, %d\n",x,y);
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -42,13 +49,15 @@ void createWindow() {
     glfwWindowHint(GLFW_DECORATED, false);
     glfwWindowHint(GLFW_FLOATING, true);
 
-    window = glfwCreateWindow(mode->width, mode->height, "Voxel engine v2", NULL, NULL);
+    window = glfwCreateWindow(mode->width, mode->height, "Voxel engine v2", 0, NULL);
     if (!window) {
         printf("Window creation failed!\n");
         exit(1);
     }
 
-    glfwSetWindowPos(window,0,0);
+    glfwShowWindow(window);
+    glfwSetWindowSize(window, mode->width,mode->height);
+    glfwSetWindowPos(window,x,y);
 
     glfwMakeContextCurrent(window);
 
@@ -57,12 +66,12 @@ void createWindow() {
         exit(1);
     }
 
-    printf("OpenGL version: %s\n",glGetString(GL_VERSION));
+    DEBUG(1) printf("OpenGL version: %s\n",glGetString(GL_VERSION));
 
     glfwGetFramebufferSize(window,&width,&height);
     glViewport(0,0,width,height);
 
-    printf("width: %d, height: %d\n",width, height);
+    DEBUG(1) printf("Frame buffer size: %d, %d\n",width, height);
 
     halfWidth = (double)width/2.0;
     halfHeight = (double)height/2.0;
