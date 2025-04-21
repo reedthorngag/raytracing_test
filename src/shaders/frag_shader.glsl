@@ -20,7 +20,7 @@ layout (std430, binding = 3) buffer layoutNodes {
 };
 
 layout (packed, binding = 2) buffer layoutArrays {
-    uvec4 children_array[];
+    uint[64] children_array[];
 };
 
 
@@ -217,7 +217,7 @@ void main()
     pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
 
     bool set = false;
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 6; i++) {
         nextIntersectDDA();
         // nextIntersect(step);
         if (getBlockAt(pos.round) != -1) {
@@ -233,6 +233,8 @@ void main()
     if (!set) {
         FragColor = vec4(0,0,float(depth)/MAX_DEPTH,0);
     }
+    if (depth == 6)
+        FragColor = g;
 
     { // debug data
         if (renderPosData == 1)
@@ -352,13 +354,11 @@ u64 getBlockAt(ivec3 pos) {
         }
 
         stack[depth+1] = children_array[
-                uint(nodes[
+                (uint(nodes[
                         stack[depth]
-                    ].y >> 30
-                ) + (index >> 2)
-            ][
-                index & 0x3
-            ];
+                    ].y >> 32
+                ))
+            ][index];
 
         depth++;
     }
