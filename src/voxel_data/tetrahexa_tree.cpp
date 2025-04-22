@@ -242,6 +242,20 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
         // else if air/empty
         } else if (!((stack[depth].ptr->branch.bitmap >> index) & 1)) {
 
+            if (depth+1 == targetDepth) {
+                DEBUG(3) printf("Adding leaf at target depth %d, index %d...\n",depth+1,index);
+                Ptr leaf = allocNode();
+                *leaf.ptr = {{.leaf = {color, 1, 0}}};
+
+                stack[depth].ptr->branch.bitmap |= 1ull << index;
+                Ptr childArray = convertToArrayPtr(stack[depth].ptr->branch.children);
+                ((u32*)childArray.ptr)[index] = leaf.index;
+                childArray.block->modified = true;
+
+                stack[depth].block->modified = true;
+                return;
+            }
+
             DEBUG(3) printf("Adding child node at depth %d, child index: %d\n",depth+1,index);
 
             Ptr child = allocNode();
@@ -250,11 +264,11 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
             *child.ptr = {{.branch = {0, 0, array.index}}};
             DEBUG(5) printf("child: %d, array: %d\n",child.index,array.index);
 
-            u64 tmp = stack[depth].ptr->branch.bitmap;
             stack[depth].ptr->branch.bitmap |= 1ull << index;
-            if (tmp == stack[depth].ptr->branch.bitmap) printf("WTF!?!?\n");
             stack[depth].block->modified = true;
-            ((u32*)convertToArrayPtr(stack[depth].ptr->branch.children).ptr)[index] = child.index;
+            Ptr childArray = convertToArrayPtr(stack[depth].ptr->branch.children);
+            ((u32*)childArray.ptr)[index] = child.index;
+            childArray.block->modified = true;
             
 
             stack[++depth] = child;
