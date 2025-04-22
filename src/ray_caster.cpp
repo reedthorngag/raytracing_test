@@ -59,6 +59,10 @@ namespace RAY_CASTER {
         pos.round = ivec3(floor(cameraPos));
         pos.exact = cameraPos;
 
+        if (ray.step.x < 0) pos.exact.x -= 1;
+        if (ray.step.y < 0) pos.exact.y -= 1;
+        if (ray.step.z < 0) pos.exact.z -= 1;
+
         pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
         pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
         pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;

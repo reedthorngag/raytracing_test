@@ -23,6 +23,7 @@ void rotateCamera(double xDelta, double yDelta) {
     if (rotationY < -360) rotationY += 360;
     cameraDir = glm::rotateX(glm::vec3(0,0,1),(float)glm::radians(rotationX));
     cameraDir = glm::rotateY(cameraDir,(float)glm::radians(rotationY));
+    cameraDir = glm::normalize(cameraDir);
 }
 
 void doInputUpdates(double timeSinceLast) {
@@ -128,7 +129,7 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mod
             
             case GLFW_MOUSE_BUTTON_2: {
                 printf("\rMouse pos: %lf, %lf\n",mouse.x,mouse.y);
-                glm::ivec3 pos = RAY_CASTER::castRayFromCam(8);
+                glm::ivec3 pos = RAY_CASTER::castRayFromCam(20);
                 putBlock(Pos{pos.x,pos.y,pos.z},RGB_TO_U64(255,0,0),6);
                 printf("\rPut block at %d,%d,%d!\n",pos.x,pos.y,pos.z);
                 break;

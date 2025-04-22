@@ -134,13 +134,13 @@ int depth;
 u64 getBlockAt(ivec3 pos);
 void nextIntersect(int step);
 void nextIntersectDDA();
+void genSkyBox();
 
 vec4 r = vec4(1,0,0,1);
 vec4 g = vec4(0,1,0,1);
 vec4 b = vec4(0,0,1,1);
 
-mat4 rotationMatrix(vec3 axis, float angle)
-{
+mat4 rotationMatrix(vec3 axis, float angle) {
     axis = normalize(axis);
     float s = sin(angle);
     float c = cos(angle);
@@ -172,7 +172,6 @@ vec4 color_int_to_vec4(u64 color) {
 void main()
 {
 
-
     if (renderPosData == 0 && distance(gl_FragCoord.xy, mousePos) < 3) {
         FragColor = vec4(1,1,1,1);
         return;
@@ -184,8 +183,9 @@ void main()
 
     pos.round = ivec3(floor(origin));
 
-    if (getBlockAt(pos.round) != -1) {
-        FragColor = r;
+    u64 color = getBlockAt(pos.round);
+    if (color != -1) {
+        FragColor = color_int_to_vec4(color);
         return;
     }
 
@@ -217,12 +217,11 @@ void main()
     pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
 
     bool set = false;
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 200; i++) {
         nextIntersectDDA();
-        // nextIntersect(step);
-        if (getBlockAt(pos.round) != -1) {
-            //u64 color = getBlockAt(pos.round);
-            FragColor = r;//color_int_to_vec4(color);
+        color = getBlockAt(pos.round);
+        if (color != -1) {
+            FragColor = color_int_to_vec4(color);
             set = true;
             break;
         }
@@ -231,10 +230,8 @@ void main()
     nextIntersectDDA();
 
     if (!set) {
-        FragColor = vec4(0,0,float(depth)/MAX_DEPTH,0);
+        genSkyBox();
     }
-    if (depth == 6)
-        FragColor = g;
 
     { // debug data
         if (renderPosData == 1)
@@ -264,6 +261,10 @@ void main()
             setFragToVec(vec3(stack[3],stack[4],stack[5]));
         
     }
+}
+
+void genSkyBox() {
+    FragColor = vec4(clamp((0.4-ray.dir.y)*0.5,0.0,0.5)*2+0.1,clamp((0.4-ray.dir.y)*0.5,0.0,0.5)*2+0.1,1,0);
 }
 
 void nextIntersectDDA() {

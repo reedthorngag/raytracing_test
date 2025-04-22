@@ -29,7 +29,7 @@ Ptr allocNode() {
         nodeNextFreeListIndex &= FREE_LIST_SIZE_MASK;
         nodeBlocks[node >> (BLOCK_SIZE_BITS-4)].modified = true;
 
-        DEBUG(5) printf("node found in free list: %u next free list index: %d\n",node,nodeNextFreeListIndex);
+        DEBUG(3) printf("node found in free list: %u next free list index: %d\n",node,nodeNextFreeListIndex);
 
         return convertToPtr(node);
     }
@@ -51,7 +51,7 @@ Ptr allocArray() {
         arrayNextFreeListIndex &= FREE_LIST_SIZE_MASK;
         arrayBlocks[array >> (BLOCK_SIZE_BITS-8)].modified = true;
 
-        DEBUG(5) printf("array found in free list: %u next free list index: %d\n",array,arrayNextFreeListIndex);
+        DEBUG(3) printf("array found in free list: %u next free list index: %d\n",array,arrayNextFreeListIndex);
 
         return convertToPtr(array);
     }

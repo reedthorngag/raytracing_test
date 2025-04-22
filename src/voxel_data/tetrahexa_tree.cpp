@@ -129,7 +129,7 @@ u64 getBlock(Pos pos) {
         int index = curr.z << 4 | curr.y << 2 | curr.x;
 
         //DEBUG printf("depth: %d, index: %d\n",depth, index);
-        DEBUG(3) printf("depth: %d, index: %d, pos: %d,%d,%d\n",depth, index, curr.x, curr.y, curr.z);
+        DEBUG(4) printf("depth: %d, index: %d, pos: %d,%d,%d\n",depth, index, curr.x, curr.y, curr.z);
 
         if (stack[depth].ptr->branch.flags & 1) {
             DEBUG(2) printf("Found leaf at depth %d, returning color\n",depth);
@@ -156,6 +156,7 @@ u64 getBlock(Pos pos) {
 }
 
 void deleteChildren(Ptr node) {
+    printf("deleting children...\n");
     if (node.ptr->branch.flags & 1)
         return;
 
@@ -214,7 +215,7 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
         // if leaf
         } else if (stack[depth].ptr->branch.flags & 1) {
 
-            DEBUG(4) printf("Turning leaf into branch at depth %d and adding child, child index: %d\n",depth,index);
+            DEBUG(3) printf("Turning leaf into branch at depth %d and adding child, child index: %d\n",depth,index);
 
             u32 leafFlags = stack[depth].ptr->branch.flags;
             u64 leafColor = stack[depth].ptr->leaf.packedColor;
@@ -241,7 +242,7 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
         // else if air/empty
         } else if (!((stack[depth].ptr->branch.bitmap >> index) & 1)) {
 
-            DEBUG(4) printf("Adding child node at depth %d, child index: %d\n",depth+1,index);
+            DEBUG(3) printf("Adding child node at depth %d, child index: %d\n",depth+1,index);
 
             Ptr child = allocNode();
             Ptr array = allocArray();
@@ -249,7 +250,9 @@ void putBlock(Pos pos, u64 color, int targetDepth) {
             *child.ptr = {{.branch = {0, 0, array.index}}};
             DEBUG(5) printf("child: %d, array: %d\n",child.index,array.index);
 
+            u64 tmp = stack[depth].ptr->branch.bitmap;
             stack[depth].ptr->branch.bitmap |= 1ull << index;
+            if (tmp == stack[depth].ptr->branch.bitmap) printf("WTF!?!?\n");
             stack[depth].block->modified = true;
             ((u32*)convertToArrayPtr(stack[depth].ptr->branch.children).ptr)[index] = child.index;
             
