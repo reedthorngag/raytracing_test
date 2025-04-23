@@ -109,6 +109,7 @@ void glfwCharCallback(GLFWwindow* window, int key, int scancode, int action, int
                 break;
 
             case GLFW_KEY_R:
+                printf("\r");
                 reloadShaders();
                 break;
             

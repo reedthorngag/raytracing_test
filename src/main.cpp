@@ -60,6 +60,26 @@ void dumpPixelData() {
     printf("\rnode data: %u %llu %u\n",((Node*)nodeBlocks[0].ptr)->branch.flags,((Node*)nodeBlocks[0].ptr)->branch.bitmap,((Node*)nodeBlocks[0].ptr)->branch.children);
 }
 
+u32 getMortonPos(glm::vec3 pos) {
+    glm::ivec3 p = glm::ivec3(glm::floor(pos));
+
+    int n = p.x;
+    n = (n | (n << 16)) & 0x030000FF;
+    n = (n | (n <<  8)) & 0x0300F00F;
+    u32 x = n;
+
+    n = p.y;
+    n = (n | (n << 16)) & 0x030000FF;
+    n = (n | (n <<  8)) & 0x0300F00F;
+    u32 y = n;
+
+    n = p.z;
+    n = (n | (n << 16)) & 0x030000FF;
+    n = (n | (n <<  8)) & 0x0300F00F;
+
+    return (n << 8) | (y << 4) | x;
+}
+
 void render() {
 
     if (sendDebugFrame) {
@@ -73,6 +93,7 @@ void render() {
     glUniform3f(glGetUniformLocation(program, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
     glUniform2f(glGetUniformLocation(program, "mousePos"), mouse.x, mouse.y);
     glUniform1i(glGetUniformLocation(program, "renderPosData"), sendDebugFrame);
+    //glUniform1i(glGetUniformLocation(program, "mortonPosOrigin"), getMortonPos(cameraPos));
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);

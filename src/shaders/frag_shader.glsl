@@ -1,8 +1,12 @@
 #version 460 core
 #extension GL_ARB_gpu_shader_int64 : enable
+//#extension GL_ARB_gpu_shader_int8 : enable
+#extension GL_NV_gpu_shader5 : enable
 
 #define u64 uint64_t
+#define i64 int64_t
 #define u32 uint
+#define u8 uint8_t
 
 out vec4 FragColor;
 
@@ -117,7 +121,7 @@ Ray buildRay(vec3 dir) {
 struct Pos {
     ivec3 round;
     
-    dvec3 exact;
+    vec3 exact;
 
     dvec3 deltaPos;
 };
@@ -129,10 +133,11 @@ const int MAX_DEPTH = 6;
 
 u32 stack[MAX_DEPTH];
 ivec3 currentPos;
+u64 currentMortonPos;
 int posOffset;
 int depth;
 
-u64 getBlockAt(ivec3 pos);
+u64 getBlock();
 void nextIntersect(int step);
 void nextIntersectDDA();
 void genSkyBox();
@@ -170,6 +175,12 @@ vec4 color_int_to_vec4(u64 color) {
     );
 }
 
+u64 mortonPos = 0;
+const u64vec3 magicNumbers = u64vec3(
+    (0x1f<<47) | 0xffff,
+    (0x1f<<47) | (0xff<<23) | 0xff,
+    (0x100f00f<<35) | 0xf00f00f);
+
 void main()
 {
 
@@ -179,12 +190,31 @@ void main()
     }
 
     stack[0] = 0;
-    currentPos = ivec3(0);
     depth = 0;
 
     pos.round = ivec3(floor(origin));
 
-    u64 color = getBlockAt(pos.round);
+    u64 n = pos.round.x;
+    n = (n | n << 32) & magicNumbers.x;
+    n = (n | n << 16) & magicNumbers.y;
+    n = (n | n << 8) & magicNumbers.z;
+    u64 x = n;
+
+    n = pos.round.y;
+    n = (n | n << 32) & magicNumbers.x;
+    n = (n | n << 16) & magicNumbers.y;
+    n = (n | n << 8) & magicNumbers.z;
+    u64 y = n;
+
+    n = pos.round.z;
+    n = (n | n << 32) & magicNumbers.x;
+    n = (n | n << 16) & magicNumbers.y;
+    n = (n | n << 8) & magicNumbers.z;
+
+    mortonPos = (n << 8) | (y << 4) | x;
+    currentMortonPos = mortonPos;
+
+    u64 color = getBlock();
     if (color != -1) {
         FragColor = color_int_to_vec4(color);
         return;
@@ -219,16 +249,16 @@ void main()
 
     bool set = false;
     for (int i = 0; i < 200; i++) {
+
         nextIntersectDDA();
-        color = getBlockAt(pos.round);
+
+        color = getBlock();
         if (color != -1) {
             FragColor = color_int_to_vec4(color);
             set = true;
             break;
         }
     }
-
-    nextIntersectDDA();
 
     if (!set) {
         genSkyBox();
@@ -282,12 +312,36 @@ void nextIntersectDDA() {
     if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
         pos.round.x += ray.step.x;
         pos.deltaPos.x += ray.absDelta.x;
+
+        u64 n = abs(pos.round.x);
+        n = (n | n << 32) & magicNumbers.x;
+        n = (n | n << 16) & magicNumbers.y;
+        n = (n | n << 8) & magicNumbers.z;
+        mortonPos &= ~magicNumbers.z;
+        mortonPos |= n;
+
     } else if (pos.deltaPos.y < pos.deltaPos.z) {
         pos.round.y += ray.step.y;
         pos.deltaPos.y += ray.absDelta.y;
+
+        u64 n = abs(pos.round.y);
+        n = (n | n << 32) & magicNumbers.x;
+        n = (n | n << 16) & magicNumbers.y;
+        n = (n | n << 8) & magicNumbers.z;
+        mortonPos &= ~magicNumbers.z << 4;
+        mortonPos |= n << 4;
+
     } else {
         pos.round.z += ray.step.z;
         pos.deltaPos.z += ray.absDelta.z;
+        
+        u64 n = abs(pos.round.z);
+        n = (n | n << 32) & magicNumbers.x;
+        n = (n | n << 16) & magicNumbers.y;
+        n = (n | n << 8) & magicNumbers.z;
+        mortonPos &= ~magicNumbers.z << 8;
+        mortonPos |= n << 8;
+
     }
 }
 
@@ -296,9 +350,9 @@ void nextIntersect(int step) {
 
     ivec3 steps = ray.step * step;
 
-    double xDst = (pos.round.x + steps.x) - pos.exact.x;
-    double yDst = (pos.round.y + steps.y) - pos.exact.y;
-    double zDst = (pos.round.z + steps.z) - pos.exact.z;
+    float xDst = (pos.round.x + steps.x) - pos.exact.x;
+    float yDst = (pos.round.y + steps.y) - pos.exact.y;
+    float zDst = (pos.round.z + steps.z) - pos.exact.z;
 
     if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
 
@@ -329,36 +383,56 @@ void nextIntersect(int step) {
     pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
 }
 
-u64 getBlockAt(ivec3 pos) {
+int[] divideBy6Lookup = {
+    0,0,0,0,0,0,0,0,0,0,0,0,
+    1,1,1,1,1,1,1,1,1,1,1,1,
+    2,2,2,2,2,2,2,2,2,2,2,2,
+    3,3,3,3,3,3,3,3,3,3,3,3,
+    4,4,4,4,4,4,4,4,4,4,4,4,
+    5,5,5,5,5,5,5,5,5,5,5,5,
+};
 
-    // int n = 0;
-    // int mask = 0x3 << ((MAX_DEPTH-1) * 2 - 2);
-    // while (n < depth &&
-    //         (pos.x & mask) == (currentPos.x & mask) &&
-    //         (pos.y & mask) == (currentPos.y & mask) &&
-    //         (pos.z & mask) == (currentPos.z & mask))
-    // {
-    //     n++;
-    //     mask >>= 2;
-    // }
+int findMSBb(int n) {
+    for (int i = 31; i >= 0; i--)
+        if (((n >> i) & 1) == 1) return i;
+    return -1;
+}
 
-    ivec3 p = currentPos ^ pos;
-    int n = max(max(findMSB(p.x), findMSB(p.y)),findMSB(p.z));
-    n >> 2;
+u64 getBlock() {
 
-    currentPos = pos;
+    int n = 0;
+    int mask = 0x3 << ((MAX_DEPTH-1) * 2 - 2);
+    while (n < depth &&
+            (pos.round.x & mask) == (currentPos.x & mask) &&
+            (pos.round.y & mask) == (currentPos.y & mask) &&
+            (pos.round.z & mask) == (currentPos.z & mask))
+    {
+        n++;
+        mask >>= 2;
+    }
+    
+    // currentMortonPos ^= mortonPos;
+    // int i = findMSB(uint(currentMortonPos>>32));
+    // if (i == -1) i = findMSB(uint(currentMortonPos));
+    // else i += 32;
+    // int n1 = 5-(divideBy6Lookup[max(i,0)]);
+    
+    // if (n != n1) return 0;
+
+    currentMortonPos = mortonPos;
+    currentPos = pos.round;
 
     if (n < depth)
        depth = n;
 
-    posOffset = (MAX_DEPTH-1 - depth) * 2;
+    posOffset = (MAX_DEPTH-1 - depth) * 12;
 
     while (depth < MAX_DEPTH) {
         posOffset -= 2;
 
-        ivec3 curr = (pos >> posOffset) & 0x3;
+        //ivec3 curr = (pos.round >> posOffset) & 0x3;
 
-        int index = curr.z << 4 | curr.y << 2 | curr.x;
+        int index = int((mortonPos >> posOffset) & 0xfff);//curr.z << 4 | curr.y << 2 | curr.x;
 
         
         if ((uint(nodes[stack[depth]].y) & 1) == 1) {

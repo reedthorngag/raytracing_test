@@ -134,9 +134,10 @@ bool linkProgram(GLuint program) {
 void reloadShaders() {
     GLuint oldProgram = program;
 
-    if (setupOpenGl())
+    if (setupOpenGl()) {
         glDeleteProgram(program);
-    else
+        printf("Shaders successfully reloaded!    \n");
+    } else
         program = oldProgram;
 }
 
