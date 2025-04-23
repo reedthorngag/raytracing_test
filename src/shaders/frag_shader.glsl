@@ -10,6 +10,7 @@ uniform vec3 origin;
 uniform vec3 cameraDir;
 uniform vec2 mousePos;
 uniform int renderPosData;
+uniform uint rootNodeIndex;
 
 uniform sampler3D tex;
 
@@ -263,8 +264,17 @@ void main()
     }
 }
 
+float sigmoid(float x, float scale, float dropOffSteepness) {
+    return abs(1.0/(1+exp(-x*dropOffSteepness))*scale);
+}
+
 void genSkyBox() {
-    FragColor = vec4(clamp((0.4-ray.dir.y)*0.5,0.0,0.5)*2+0.1,clamp((0.4-ray.dir.y)*0.5,0.0,0.5)*2+0.1,1,0);
+    if (ray.dir.y < 0) ray.dir.y *= 1.4;
+    float haze = (0.1-abs(clamp(ray.dir.y,-.3,.3))) * 0.8 + 0.1;
+    float modifier = sigmoid(1-(haze*2),1.0,2.0);
+    vec3 hazeMask = vec3(haze);
+    vec3 skyDefaultColor = vec3(0.2,0.4,1);
+    FragColor = vec4((skyDefaultColor + clamp(haze,0,1) * 3)*modifier,1);
 }
 
 void nextIntersectDDA() {
@@ -321,21 +331,25 @@ void nextIntersect(int step) {
 
 u64 getBlockAt(ivec3 pos) {
 
-    int n = 0;
-    int mask = 0x3 << ((MAX_DEPTH-1) * 2 - 2);
-    while (n < depth &&
-            (pos.x & mask) == (currentPos.x & mask) &&
-            (pos.y & mask) == (currentPos.y & mask) &&
-            (pos.z & mask) == (currentPos.z & mask))
-    {
-        n++;
-        mask >>= 2;
-    }
+    // int n = 0;
+    // int mask = 0x3 << ((MAX_DEPTH-1) * 2 - 2);
+    // while (n < depth &&
+    //         (pos.x & mask) == (currentPos.x & mask) &&
+    //         (pos.y & mask) == (currentPos.y & mask) &&
+    //         (pos.z & mask) == (currentPos.z & mask))
+    // {
+    //     n++;
+    //     mask >>= 2;
+    // }
+
+    ivec3 p = currentPos ^ pos;
+    int n = max(max(findMSB(p.x), findMSB(p.y)),findMSB(p.z));
+    n >> 2;
 
     currentPos = pos;
 
     if (n < depth)
-        depth = n;
+       depth = n;
 
     posOffset = (MAX_DEPTH-1 - depth) * 2;
 
@@ -363,4 +377,7 @@ u64 getBlockAt(ivec3 pos) {
 
         depth++;
     }
+
+    //return 0x0000000000ffffff;
+    return 0;
 }

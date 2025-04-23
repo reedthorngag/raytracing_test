@@ -42,7 +42,7 @@ void createWindow() {
     glfwSetInputMode(global.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 }
 
-void setupOpenGl() {
+void loadShaders() {
     GLuint fragShader = loadShader("../src/shaders/frag_shader.glsl",GL_FRAGMENT_SHADER);
     GLuint vertexShader = loadShader("../src/shaders/vertex_shader.glsl",GL_VERTEX_SHADER);
 

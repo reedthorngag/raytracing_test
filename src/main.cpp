@@ -91,13 +91,10 @@ int main() {
     printf("Hello world!\n");
 
     createWindow();
-    setupOpenGl();
 
-    checkGlError("setupOpenGl");
+    if (!setupOpenGl())
+        exit(1);
 
-    glUseProgram(program);
-
-    checkGlError("glUseProgram");
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
@@ -148,7 +145,7 @@ int main() {
     glfwSetCursorPosCallback(window,glfwMousePosCallback);
     glfwSetMouseButtonCallback(window, glfwMouseButtonCallback);
 
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
 
     const int averageSize = 40;
     double times[averageSize]{};
@@ -171,7 +168,7 @@ int main() {
         i %= averageSize;
         double out = 0;
         for (int n = 0; n < averageSize && times[n]; n++) out += times[n];
-        printf("\rrender time: %dms (%d fps) rotationXY: %lf, %lf camPos: %lf, %lf, %lf    ",(int)(out/(double)averageSize*1000),(int)(1000/(out/(double)averageSize * 1000)),rotationX,rotationY,cameraPos.x,cameraPos.y,cameraPos.z);
+        printf("\rrender time: %dms (%d fps) rotationXY: %lf, %lf camPos: %lf, %lf, %lf    ",(int)(out/(double)averageSize*1000),(int)(1000/(out/(double)averageSize * 1000)),rotationY,rotationX,cameraPos.x,cameraPos.y,cameraPos.z);
 
         glfwSwapBuffers(window);
         //glFinish();

@@ -146,7 +146,7 @@ int main() {
 
 
     createWindow();
-    setupOpenGl();
+    loadShaders();
 
     glUseProgram(global.program);
 

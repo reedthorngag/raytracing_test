@@ -56,7 +56,7 @@ namespace RAY_CASTER {
         Ray ray = buildRay(cameraDir);
 
         RayPos pos;
-        pos.round = ivec3(floor(cameraPos));
+        pos.round = ivec3(trunc(cameraPos));
         pos.exact = cameraPos;
 
         if (ray.step.x < 0) pos.exact.x -= 1;

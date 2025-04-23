@@ -9,7 +9,7 @@ GLuint loadShader(const char* fileName, int type) {
     std::ifstream file(fileName, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
         printf("Failed to open %s\n",fileName);
-        exit(1);
+        return 0;
     }
 
     int size = file.tellg();
@@ -18,7 +18,7 @@ GLuint loadShader(const char* fileName, int type) {
     char* buf = new char[size];
     if (!file.read(buf,size)) {
         printf("Failed to read from %s\n",fileName);
-        exit(1);
+        return 0;
     }
 
     file.close();
@@ -41,7 +41,7 @@ GLuint loadShader(const char* fileName, int type) {
         delete[] errorLog;
         glDeleteShader(shader);
 
-        exit(1);
+        return 0;
     }
 
     delete[] buf;

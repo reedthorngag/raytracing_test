@@ -3,8 +3,8 @@
 
 extern bool keys[512];
 
-extern double rotationX;
 extern double rotationY;
+extern double rotationX;
 
 void doInputUpdates(double timeSinceLast);
 

@@ -9,20 +9,21 @@
 #include "globals.hpp"
 #include "voxel_data/tetrahexa_tree.hpp"
 #include "ray_caster.hpp"
+#include "setup.hpp"
 
 bool keys[512] = { 0 };
 
-double rotationX = 0;
 double rotationY = 0;
+double rotationX = 0;
 
 void rotateCamera(double xDelta, double yDelta) {
-    if (rotationX+yDelta <= -90 || rotationX+yDelta >= 90) yDelta = 0;
-    rotationX += yDelta; // because its around, not along, that axis
-    rotationY += xDelta;
-    if (rotationY > 360) rotationY -= 360;
-    if (rotationY < -360) rotationY += 360;
-    cameraDir = glm::rotateX(glm::vec3(0,0,1),(float)glm::radians(rotationX));
-    cameraDir = glm::rotateY(cameraDir,(float)glm::radians(rotationY));
+    if (rotationY+yDelta <= -90 || rotationY+yDelta >= 90) yDelta = 0;
+    rotationY += yDelta;
+    rotationX += xDelta;
+    if (rotationX > 180) rotationX -= 360;
+    if (rotationX < -180) rotationX += 360;
+    cameraDir = glm::rotateX(glm::vec3(0,0,1),(float)glm::radians(rotationY));
+    cameraDir = glm::rotateY(cameraDir,(float)glm::radians(rotationX));
     cameraDir = glm::normalize(cameraDir);
 }
 
@@ -105,6 +106,10 @@ void glfwCharCallback(GLFWwindow* window, int key, int scancode, int action, int
                 break;
             case GLFW_KEY_0:
                 sendDebugFrame = 10;
+                break;
+
+            case GLFW_KEY_R:
+                reloadShaders();
                 break;
             
             default:
