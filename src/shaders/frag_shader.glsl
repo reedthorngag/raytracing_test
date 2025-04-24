@@ -386,8 +386,6 @@ u64 getBlock() {
         mask >>= 6;
     }
 
-    int n1 = findMSB(currentMortonPos);
-
     currentMortonPos = mortonPos;
 
     if (n < depth)
