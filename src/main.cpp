@@ -17,24 +17,6 @@ extern "C" {
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
-float vertices[] = {
-    -1, -1, 0.0,
-    -1,  1, 0.0,
-     1, -1, 0.0,
-     1,  1, 0.0,
-};
-
-GLuint VAO;
-GLuint VBO;
-
-GLuint pixelsDataTex;
-GLuint mouseHitPosTex;
-
-GLuint pixelsDataFBO;
-GLuint mouseHitPosFBO;
-
-GLuint lowResPassFBO;
-
 Chunk* chunk;
 
 const char* debugFrameTypeString[] {
@@ -82,35 +64,34 @@ u32 getMortonPos(glm::vec3 pos) {
     n = (n | (n <<  8)) & 0x0300F00F;
     n = (n | (n <<  4)) & 0x030C30C3;
 
-    return (n << 8) | (y << 4) | x;
+    return (n << 4) | (y << 2) | x;
 }
 
 void render() {
 
+    glClearColor(1,1,1,1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     glUseProgram(program1);
 
-    glUniform3f(glGetUniformLocation(program2, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
-    glUniform3f(glGetUniformLocation(program2, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
-    glUniform2f(glGetUniformLocation(program2, "mousePos"), mouse.x, mouse.y);
-    glUniform1i(glGetUniformLocation(program2, "renderPosData"), sendDebugFrame);
-    glUniform1ui(glGetUniformLocation(program2, "originMortonPos"), getMortonPos(cameraPos));
+    glUniform3f(glGetUniformLocation(program1, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
+    glUniform3f(glGetUniformLocation(program1, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
+    glUniform2f(glGetUniformLocation(program1, "mousePos"), mouse.x, mouse.y);
+    glUniform1i(glGetUniformLocation(program1, "renderPosData"), sendDebugFrame);
+    glUniform1ui(glGetUniformLocation(program1, "originMortonPos"), getMortonPos(cameraPos));
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    return;
 
-    
     glUseProgram(program2);
 
     if (sendDebugFrame) {
         glBindFramebuffer(GL_FRAMEBUFFER, pixelsDataFBO);
     }
 
-    glClearColor(1,1,1,1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindTexture(GL_TEXTURE_2D, lowResPassTex);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     if (sendDebugFrame) {  
@@ -129,41 +110,11 @@ int main() {
         exit(1);
 
 
-    glGenVertexArrays(1, &VAO);
+    glUseProgram(program1);
     glBindVertexArray(VAO);
-
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    checkGlError("glEnableVertexAttribArray");
-
-
-    glGenTextures(1,&pixelsDataTex);
-    glBindTexture(GL_TEXTURE_2D, pixelsDataTex);
-  
-    checkGlError("glBindTexture");
-
-    // Allocate the storage.
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
-
-    glGenFramebuffers(1, &pixelsDataFBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, pixelsDataFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,pixelsDataTex,0);
-    
-    printf("Framebuffer status: %d\n",glCheckFramebufferStatus(GL_FRAMEBUFFER));
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
     initTetraHexaTree();
     initVoxelDataAllocator();
-    checkGlError("createSsbo");
+    checkGlError(program2, "createSsbo");
 
     printf("generating chunk...\n");
     double start = glfwGetTime();
@@ -192,8 +143,9 @@ int main() {
         //glfwWaitEvents();
         start = glfwGetTime();
 
+        glUseProgram(program1);
         updateSsboData();
-        checkGlError("updateSsboData");
+        checkGlError(program1, "updateSsboData");
 
         render();
 

@@ -16,8 +16,6 @@ uniform int renderPosData;
 uniform uint rootNodeIndex;
 uniform uint originMortonPos;
 
-uniform sampler3D tex;
-
 in vec4 gl_FragCoord;
 
 layout (std430, binding = 3) buffer layoutNodes {
@@ -192,8 +190,7 @@ void main()
     mortonPos = originMortonPos;
     currentMortonPos = mortonPos;
 
-    u64 color = getBlock();
-    if (color != -1) {
+    if (getBlock()) {
         FragColor = color_int_to_vec4(color);
         return;
     }

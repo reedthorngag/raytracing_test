@@ -7,6 +7,17 @@
 #ifndef SETUP
 #define SETUP
 
+extern float vertices[];
+
+extern GLuint VAO;
+extern GLuint VBO;
+
+extern GLuint pixelsDataTex;
+extern GLuint pixelsDataFBO;
+
+extern GLuint lowResPassTex;
+extern GLuint lowResPassFBO;
+
 void glfwErrorCallback(int errorCode, const char* errorMessage);
 
 void glfwMonitorCallback(GLFWmonitor* monitor, int event);

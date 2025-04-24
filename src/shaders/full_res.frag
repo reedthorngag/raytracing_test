@@ -16,7 +16,7 @@ uniform int renderPosData;
 uniform uint rootNodeIndex;
 uniform uint originMortonPos;
 
-uniform sampler3D tex;
+uniform sampler2D startPoints;
 
 in vec4 gl_FragCoord;
 
