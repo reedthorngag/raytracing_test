@@ -260,7 +260,7 @@ void main() {
     pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
 
     bool set = false;
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 170; i++) {
 
         nextIntersectDDA();
 
