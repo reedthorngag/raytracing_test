@@ -74,24 +74,34 @@ void render() {
 
     glUseProgram(program1);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, lowResPassFBO);
+
     glUniform3f(glGetUniformLocation(program1, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
     glUniform3f(glGetUniformLocation(program1, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
     glUniform2f(glGetUniformLocation(program1, "mousePos"), mouse.x, mouse.y);
-    glUniform1i(glGetUniformLocation(program1, "renderPosData"), sendDebugFrame);
     glUniform1ui(glGetUniformLocation(program1, "originMortonPos"), getMortonPos(cameraPos));
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    return;
+
 
     glUseProgram(program2);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     if (sendDebugFrame) {
         glBindFramebuffer(GL_FRAMEBUFFER, pixelsDataFBO);
     }
 
+    glUniform3f(glGetUniformLocation(program2, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
+    glUniform3f(glGetUniformLocation(program2, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
+    glUniform2f(glGetUniformLocation(program2, "mousePos"), mouse.x, mouse.y);
+    glUniform1i(glGetUniformLocation(program2, "renderPosData"), sendDebugFrame);
+
     glBindTexture(GL_TEXTURE_2D, lowResPassTex);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     if (sendDebugFrame) {  
@@ -145,7 +155,6 @@ int main() {
 
         glUseProgram(program1);
         updateSsboData();
-        checkGlError(program1, "updateSsboData");
 
         render();
 

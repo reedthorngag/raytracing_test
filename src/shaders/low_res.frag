@@ -7,7 +7,7 @@
 #define u32 uint
 #define u8 uint8_t
 
-out vec4 FragColor;
+out vec4 FragOut;
 
 uniform vec3 origin;
 uniform vec3 cameraDir;
@@ -27,10 +27,8 @@ layout (packed, binding = 2) buffer layoutArrays {
 };
 
 
-int width = 1920;
-int halfWidth = width/2;
-int height = 991;
-int halfHeight = height/2;
+int width = 1920 >> 2;
+int height = 1080 >> 2;
 
 float aspect_ratio = float(height) / width;
 
@@ -155,32 +153,11 @@ mat4 rotationMatrix(vec3 axis, float angle) {
                 0.0,                                0.0,                                0.0,                                1.0);
 }
 
-void setFragToVec(vec3 vec) {
-    FragColor = vec4(vec.xyz,0);
-}
-
-const int BITS_PER_COLOR = 21;
-const int COLOR_RANGE = 1 << BITS_PER_COLOR;
-const int COLOR_MASK = COLOR_RANGE - 1;
-const double SCALED_COLOR = 1.0 / COLOR_RANGE;
-
-vec4 color_int_to_vec4(u64 color) {
-    return vec4((color >> (BITS_PER_COLOR * 2)) * SCALED_COLOR,
-        ((color >> BITS_PER_COLOR) & COLOR_MASK) * SCALED_COLOR,
-        (color & COLOR_MASK) * SCALED_COLOR,
-        1.0
-    );
-}
 
 uint mortonPos = 0;
 
 void main()
 {
-
-    if (renderPosData == 0 && distance(gl_FragCoord.xy, mousePos) < 3) {
-        FragColor = vec4(1,1,1,1);
-        return;
-    }
 
     stack[0] = 0;
     depth = 0;
@@ -190,8 +167,8 @@ void main()
     mortonPos = originMortonPos;
     currentMortonPos = mortonPos;
 
-    if (getBlock()) {
-        FragColor = color_int_to_vec4(color);
+    if (getBlock() != -1) {
+        FragOut = vec4(0);
         return;
     }
 
@@ -223,63 +200,17 @@ void main()
     pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
 
     bool set = false;
-    for (int i = 0; i < 200; i++) {
+    for (int i = 0; i < 100; i++) {
 
         nextIntersectDDA();
 
-        color = getBlock();
-        if (color != -1) {
-            FragColor = color_int_to_vec4(color);
-            set = true;
-            break;
+        if (getBlock() != -1) {
+            FragOut = vec4((pos.exact-origin)*ray.delta,distance(pos.exact,origin));
+            return;
         }
     }
 
-    if (!set) {
-        genSkyBox();
-    }
-
-    { // debug data
-        if (renderPosData == 1)
-            FragColor = vec4(pos.round.x,pos.round.y,pos.round.z,0);
-        else if (renderPosData == 2)
-            FragColor = vec4(ray.dir.x,ray.dir.y,ray.dir.z,0);
-        else if (renderPosData == 3)
-            setFragToVec(projection_plane_center);
-        else if (renderPosData == 4)
-            FragColor = vec4(projection_plane_left,projection_plane_width);
-        else if (renderPosData == 5)
-            FragColor = vec4(ray.delta.x,ray.delta.y,ray.delta.z,0);
-        else if (renderPosData == 6)
-            FragColor = vec4(origin.xyz,0);
-        else if (renderPosData == 7)
-            setFragToVec(cameraDir);
-        else if (renderPosData == 8)
-            setFragToVec(trunc(origin.xyz));
-        else if (renderPosData == 9) {
-            FragColor = vec4(
-                int(bitCount(int(nodes[0].y))),
-                int(bitCount(int(nodes[0].x >> 32))),
-                int(bitCount(int(nodes[0].x))),
-                int(bitCount(int(nodes[0].y >> 32)))
-            );
-        } else if (renderPosData == 10)
-            setFragToVec(vec3(stack[3],stack[4],stack[5]));
-        
-    }
-}
-
-float sigmoid(float x, float scale, float dropOffSteepness) {
-    return abs(1.0/(1+exp(-x*dropOffSteepness))*scale);
-}
-
-void genSkyBox() {
-    if (ray.dir.y < 0) ray.dir.y *= 1.4;
-    float haze = (0.1-abs(clamp(ray.dir.y,-.3,.3))) * 0.8 + 0.1;
-    float modifier = sigmoid(1-(haze*2),1.0,2.0);
-    vec3 hazeMask = vec3(haze);
-    vec3 skyDefaultColor = vec3(0.2,0.4,1);
-    FragColor = vec4((skyDefaultColor + clamp(haze,0,1) * 3)*modifier,1);
+    FragOut = vec4((pos.exact-origin)*ray.delta,distance(pos.exact,origin));
 }
 
 void nextIntersectDDA() {

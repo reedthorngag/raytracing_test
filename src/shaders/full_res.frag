@@ -14,7 +14,6 @@ uniform vec3 cameraDir;
 uniform vec2 mousePos;
 uniform int renderPosData;
 uniform uint rootNodeIndex;
-uniform uint originMortonPos;
 
 uniform sampler2D startPoints;
 
@@ -30,16 +29,16 @@ layout (packed, binding = 2) buffer layoutArrays {
 
 
 int width = 1920;
-int halfWidth = width/2;
-int height = 991;
-int halfHeight = height/2;
+int height = 1080;
+int sourceWidth = width >> 2;
+int sourceHeight = height >> 2;
 
 float aspect_ratio = float(height) / width;
 
-double pixelWidth = 1.0/width;
-double pixelHeight = 1.0/height;
-
-double scale = 1.0/100;
+float pixelWidth = 1.0/width;
+float pixelHeight = 1.0/height;
+float sourcePixelWidth = 1.0/sourceWidth;
+float sourcePixelHeight = 1.0/sourceHeight;
 
 float projection_plane_width = 1 * tan(radians(45));
 float projection_plane_height = projection_plane_width * aspect_ratio;
@@ -100,12 +99,12 @@ Ray buildRay(vec3 dir) {
         ray.step.z = -1;
         //ray.sign.z = 1 << 31;
 
-    ray.ratioYtoX = matchSign(makeRatio(dir.y,dir.x),ray.step.y);
-    ray.ratioYtoZ = matchSign(makeRatio(dir.y,dir.z),ray.step.y);
-    ray.ratioXtoY = matchSign(makeRatio(dir.x,dir.y),ray.step.x);
-    ray.ratioXtoZ = matchSign(makeRatio(dir.x,dir.z),ray.step.x);
-    ray.ratioZtoX = matchSign(makeRatio(dir.z,dir.x),ray.step.z);
-    ray.ratioZtoY = matchSign(makeRatio(dir.z,dir.y),ray.step.z);
+    // ray.ratioYtoX = matchSign(makeRatio(dir.y,dir.x),ray.step.y);
+    // ray.ratioYtoZ = matchSign(makeRatio(dir.y,dir.z),ray.step.y);
+    // ray.ratioXtoY = matchSign(makeRatio(dir.x,dir.y),ray.step.x);
+    // ray.ratioXtoZ = matchSign(makeRatio(dir.x,dir.z),ray.step.x);
+    // ray.ratioZtoX = matchSign(makeRatio(dir.z,dir.x),ray.step.z);
+    // ray.ratioZtoY = matchSign(makeRatio(dir.z,dir.y),ray.step.z);
 
     ray.delta.x = 1/dir.x;
     ray.delta.y = 1/dir.y;
@@ -176,8 +175,18 @@ vec4 color_int_to_vec4(u64 color) {
 
 uint mortonPos = 0;
 
-void main()
-{
+vec2[] checkPosOffsets = {
+    vec2(sourcePixelWidth,0),
+    vec2(-sourcePixelWidth,0),
+    vec2(sourcePixelHeight,0),
+    vec2(-sourcePixelHeight,0),
+    vec2(sourcePixelWidth,sourceHeight),
+    vec2(-sourcePixelWidth,sourceHeight),
+    vec2(sourcePixelWidth,-sourceHeight),
+    vec2(-sourcePixelWidth,-sourceHeight),
+};
+
+void main() {
 
     if (renderPosData == 0 && distance(gl_FragCoord.xy, mousePos) < 3) {
         FragColor = vec4(1,1,1,1);
@@ -187,9 +196,51 @@ void main()
     stack[0] = 0;
     depth = 0;
 
-    pos.round = ivec3(floor(origin));
+    vec2 FragCoord = vec2(
+        gl_FragCoord.x * pixelWidth,
+        gl_FragCoord.y * pixelHeight
+    );
 
-    mortonPos = originMortonPos;
+    vec3 camLeft = cross(cameraDir,vec3(0,1,0));
+    vec3 camUp = cross(cameraDir,camLeft);
+    vec3 projection_plane_center = cameraDir;
+    vec3 projection_plane_left = normalize(cross(projection_plane_center, vec3(0,1,0)));
+    vec3 projection_plane_intersect = normalize(projection_plane_center + 
+        (projection_plane_left * -(projection_plane_width * (FragCoord.x - 0.5))) + 
+        cross(projection_plane_center, projection_plane_left) * (-FragCoord.y + 0.5) * projection_plane_height);
+    
+
+    ray = buildRay(projection_plane_intersect);
+
+    vec4 sourceRay = texture(startPoints,FragCoord);
+
+    for (int i = 0; i < checkPosOffsets.length(); i++) {
+
+        vec4 tex = texture(startPoints,FragCoord + checkPosOffsets[i]);
+        if (tex.w < sourceRay.w) sourceRay = tex;
+    }
+
+    pos.exact = origin + sourceRay.xyz*ray.dir;
+    pos.round = ivec3(floor(pos.exact));
+
+    int n = pos.round.x;
+    n = (n | (n << 16)) & 0x030000FF;
+    n = (n | (n <<  8)) & 0x0300F00F;
+    n = (n | (n <<  4)) & 0x030C30C3;
+    int x = n;
+
+    n = pos.round.y;
+    n = (n | (n << 16)) & 0x030000FF;
+    n = (n | (n <<  8)) & 0x0300F00F;
+    n = (n | (n <<  4)) & 0x030C30C3;
+    int y = n;
+
+    n = pos.round.z;
+    n = (n | (n << 16)) & 0x030000FF;
+    n = (n | (n <<  8)) & 0x0300F00F;
+    n = (n | (n <<  4)) & 0x030C30C3;
+
+    mortonPos = (n << 4) | (y << 2) | x;
     currentMortonPos = mortonPos;
 
     u64 color = getBlock();
@@ -197,23 +248,6 @@ void main()
         FragColor = color_int_to_vec4(color);
         return;
     }
-
-    vec3 camLeft = cross(cameraDir,vec3(0,1,0));
-    vec3 camUp = cross(cameraDir,camLeft);
-
-    float FragCoordX = float(gl_FragCoord.x * pixelWidth) - 0.5;
-    float FragCoordY = float(gl_FragCoord.y * pixelHeight) - 0.5;
-    
-    vec3 projection_plane_center = cameraDir;
-    vec3 projection_plane_left = normalize(cross(projection_plane_center, vec3(0,1,0)));
-    vec3 projection_plane_intersect = normalize(projection_plane_center + 
-        (projection_plane_left * -(projection_plane_width * FragCoordX)) + 
-        cross(projection_plane_center, projection_plane_left) * -FragCoordY * projection_plane_height);
-    
-
-    ray = buildRay(projection_plane_intersect);
-
-    pos.exact = origin;
     
     if (ray.step.x < 0) pos.exact.x -= 1;
     if (ray.step.y < 0) pos.exact.y -= 1;
@@ -226,7 +260,7 @@ void main()
     pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
 
     bool set = false;
-    for (int i = 0; i < 200; i++) {
+    for (int i = 0; i < 100; i++) {
 
         nextIntersectDDA();
 
@@ -324,42 +358,42 @@ void nextIntersectDDA() {
 }
 
 // need to work out how to update pos.deltaPos more efficiently if possible
-void nextIntersect(int step) {
+// void nextIntersect(int step) {
 
-    ivec3 steps = ray.step * step;
+//     ivec3 steps = ray.step * step;
 
-    float xDst = (pos.round.x + steps.x) - pos.exact.x;
-    float yDst = (pos.round.y + steps.y) - pos.exact.y;
-    float zDst = (pos.round.z + steps.z) - pos.exact.z;
+//     float xDst = (pos.round.x + steps.x) - pos.exact.x;
+//     float yDst = (pos.round.y + steps.y) - pos.exact.y;
+//     float zDst = (pos.round.z + steps.z) - pos.exact.z;
 
-    if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
+//     if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
 
-        pos.exact.x += xDst;
-        pos.round.x += steps.x;
-        xDst = abs(xDst);
-        pos.exact.y += xDst * ray.ratioYtoX;
-        pos.exact.z += xDst * ray.ratioZtoX;
+//         pos.exact.x += xDst;
+//         pos.round.x += steps.x;
+//         xDst = abs(xDst);
+//         pos.exact.y += xDst * ray.ratioYtoX;
+//         pos.exact.z += xDst * ray.ratioZtoX;
 
-    } else if (pos.deltaPos.y < pos.deltaPos.z) {
+//     } else if (pos.deltaPos.y < pos.deltaPos.z) {
         
-        pos.exact.y += yDst;
-        pos.round.y += steps.y;
-        yDst = abs(yDst);
-        pos.exact.x += yDst * ray.ratioXtoY;
-        pos.exact.z += yDst * ray.ratioZtoY;
+//         pos.exact.y += yDst;
+//         pos.round.y += steps.y;
+//         yDst = abs(yDst);
+//         pos.exact.x += yDst * ray.ratioXtoY;
+//         pos.exact.z += yDst * ray.ratioZtoY;
 
-    } else {
-        pos.exact.z += zDst;
-        pos.round.z += steps.z;
-        zDst = abs(zDst);
-        pos.exact.x += zDst * ray.ratioXtoZ;
-        pos.exact.y += zDst * ray.ratioYtoZ;
-    }
+//     } else {
+//         pos.exact.z += zDst;
+//         pos.round.z += steps.z;
+//         zDst = abs(zDst);
+//         pos.exact.x += zDst * ray.ratioXtoZ;
+//         pos.exact.y += zDst * ray.ratioYtoZ;
+//     }
 
-    pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
-    pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
-    pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
-}
+//     pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
+//     pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
+//     pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
+// }
 
 int[] divideBy6Lookup = {
     0,0,0,0,0,0,

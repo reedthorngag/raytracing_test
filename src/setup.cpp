@@ -202,7 +202,7 @@ bool setupProgram1() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB32I, width>>2, height>>2);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width>>2, height>>2);
 
     glGenFramebuffers(1, &lowResPassFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, lowResPassFBO);
@@ -256,7 +256,7 @@ bool setupOpenGl() {
 
     if (!setupProgram1()) return false;
 
-    //if (!setupProgram2()) return false;
+    if (!setupProgram2()) return false;
 
     return true;
 }
