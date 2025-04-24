@@ -129,8 +129,8 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mod
         // released
         switch (button) {
             case GLFW_MOUSE_BUTTON_1:
+                glfwSetCursorPos(window,halfWidth,halfHeight);
                 mouseLocked = !mouseLocked;
-                glfwSetCursorPos(window,halfWidth,halfWidth);
                 break;
             
             case GLFW_MOUSE_BUTTON_2: {

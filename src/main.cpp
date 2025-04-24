@@ -66,16 +66,19 @@ u32 getMortonPos(glm::vec3 pos) {
     int n = p.x;
     n = (n | (n << 16)) & 0x030000FF;
     n = (n | (n <<  8)) & 0x0300F00F;
+    n = (n | (n <<  4)) & 0x030C30C3;
     u32 x = n;
 
     n = p.y;
     n = (n | (n << 16)) & 0x030000FF;
     n = (n | (n <<  8)) & 0x0300F00F;
+    n = (n | (n <<  4)) & 0x030C30C3;
     u32 y = n;
 
     n = p.z;
     n = (n | (n << 16)) & 0x030000FF;
     n = (n | (n <<  8)) & 0x0300F00F;
+    n = (n | (n <<  4)) & 0x030C30C3;
 
     return (n << 8) | (y << 4) | x;
 }
@@ -93,7 +96,7 @@ void render() {
     glUniform3f(glGetUniformLocation(program, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
     glUniform2f(glGetUniformLocation(program, "mousePos"), mouse.x, mouse.y);
     glUniform1i(glGetUniformLocation(program, "renderPosData"), sendDebugFrame);
-    //glUniform1i(glGetUniformLocation(program, "mortonPosOrigin"), getMortonPos(cameraPos));
+    glUniform1ui(glGetUniformLocation(program, "originMortonPos"), getMortonPos(cameraPos));
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
