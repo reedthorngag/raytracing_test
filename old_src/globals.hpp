@@ -14,7 +14,7 @@ const double halfWidth = HEIGHT/2.0;
 
 struct Global {
     GLFWwindow* window;
-    GLuint program;
+    GLuint program2;
 };
 
 const glm::vec3 startPos(0);

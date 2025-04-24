@@ -33,6 +33,8 @@ GLuint mouseHitPosTex;
 GLuint pixelsDataFBO;
 GLuint mouseHitPosFBO;
 
+GLuint lowResPassFBO;
+
 Chunk* chunk;
 
 const char* debugFrameTypeString[] {
@@ -54,7 +56,7 @@ void dumpPixelData() {
 
     glReadPixels(mouse.x,mouse.y,1,1,GL_RGBA,GL_FLOAT,&buffer);
 
-    checkGlError("glReadPixels");
+    checkGlError(program2,"glReadPixels");
 
     printf("\rdebug frame: %s: %f %f %f %f (mouse pos: %lf, %lf)\n",debugFrameTypeString[sendDebugFrame],buffer[0],buffer[1],buffer[2],buffer[3],mouse.x,mouse.y);
     printf("\rnode data: %u %llu %u\n",((Node*)nodeBlocks[0].ptr)->branch.flags,((Node*)nodeBlocks[0].ptr)->branch.bitmap,((Node*)nodeBlocks[0].ptr)->branch.children);
@@ -85,6 +87,21 @@ u32 getMortonPos(glm::vec3 pos) {
 
 void render() {
 
+    glUseProgram(program1);
+
+    glUniform3f(glGetUniformLocation(program2, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
+    glUniform3f(glGetUniformLocation(program2, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
+    glUniform2f(glGetUniformLocation(program2, "mousePos"), mouse.x, mouse.y);
+    glUniform1i(glGetUniformLocation(program2, "renderPosData"), sendDebugFrame);
+    glUniform1ui(glGetUniformLocation(program2, "originMortonPos"), getMortonPos(cameraPos));
+
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    
+    glUseProgram(program2);
+
     if (sendDebugFrame) {
         glBindFramebuffer(GL_FRAMEBUFFER, pixelsDataFBO);
     }
@@ -92,17 +109,9 @@ void render() {
     glClearColor(1,1,1,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUniform3f(glGetUniformLocation(program, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
-    glUniform3f(glGetUniformLocation(program, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
-    glUniform2f(glGetUniformLocation(program, "mousePos"), mouse.x, mouse.y);
-    glUniform1i(glGetUniformLocation(program, "renderPosData"), sendDebugFrame);
-    glUniform1ui(glGetUniformLocation(program, "originMortonPos"), getMortonPos(cameraPos));
-
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    checkGlError("glDrawArrays");
 
     if (sendDebugFrame) {  
         dumpPixelData();

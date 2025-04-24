@@ -132,34 +132,57 @@ bool linkProgram(GLuint program) {
 }
 
 void reloadShaders() {
-    GLuint oldProgram = program;
+    GLuint oldProgram1 = program1;
+    GLuint oldProgram2 = program2;
 
     if (setupOpenGl()) {
-        glDeleteProgram(program);
+        glDeleteProgram(program1);
+        glDeleteProgram(program2);
         printf("Shaders successfully reloaded!    \n");
-    } else
-        program = oldProgram;
+    } else {
+        program1 = oldProgram1;
+        program2 = oldProgram2;
+    }
+}
+
+
+bool setupProgram1() {
+    program1 = glCreateProgram();
+    
+    GLuint shader1 = loadShader(program1, "../src/shaders/low_res.frag", GL_FRAGMENT_SHADER);
+    if (!shader1) return false;
+    
+    GLuint shader2 = loadShader(program1, "../src/shaders/shader.vert", GL_VERTEX_SHADER);
+    if (!shader2) return false;
+
+    if (!linkProgram(program1))
+        return false;
+
+    glDetachShader(program1, shader1);
+    glDetachShader(program1, shader2);
+
+    
 }
 
 bool setupOpenGl() {
 
-    program = glCreateProgram();
-    
-    GLuint shader1 = loadShader(program, "../src/shaders/frag_shader.glsl", GL_FRAGMENT_SHADER);
-    if (!shader1) return false;
-    
-    GLuint shader2 = loadShader(program, "../src/shaders/vertex_shader.glsl", GL_VERTEX_SHADER);
-    if (!shader2) return false;
-
-    if (!linkProgram(program))
-        return false;
-
-    glDetachShader(program, shader1);
-    glDetachShader(program, shader2);
-
     glEnable(GL_DEPTH_TEST);
 
-    glUseProgram(program);
+    if (!setupProgram1()) return false;
+
+    program2 = glCreateProgram();
+    
+    shader1 = loadShader(program2, "../src/shaders/full_res.frag", GL_FRAGMENT_SHADER);
+    if (!shader1) return false;
+    
+    shader2 = loadShader(program2, "../src/shaders/shader.vert", GL_VERTEX_SHADER);
+    if (!shader2) return false;
+
+    if (!linkProgram(program2))
+        return false;
+
+    glDetachShader(program2, shader1);
+    glDetachShader(program2, shader2);    
 
     return true;
 }

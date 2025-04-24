@@ -19,4 +19,6 @@ glm::vec3 cameraDir(1,0,1);
 glm::vec3 cameraPos(35,50,35);
 
 GLFWwindow* window;
-GLuint program;
+
+GLuint program1;
+GLuint program2;

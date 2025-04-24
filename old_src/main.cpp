@@ -148,7 +148,7 @@ int main() {
     createWindow();
     loadShaders();
 
-    glUseProgram(global.program);
+    glUseProgram(global.program2);
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1,&VBO);

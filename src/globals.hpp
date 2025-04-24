@@ -17,9 +17,11 @@ extern double halfWidth;
 extern double halfHeight;
 
 extern GLFWwindow* window;
-extern GLuint program;
 
-inline void checkGlErrorFunc(const char* id) {
+extern GLuint program1;
+extern GLuint program2;
+
+inline void checkGlErrorFunc(GLuint program, const char* id) {
     int error = glGetError();
     if (error != GL_NO_ERROR) {
         GLint maxLength = 0;
@@ -33,7 +35,7 @@ inline void checkGlErrorFunc(const char* id) {
 }
 
 // so it is easy to disable/effectively remove later
-#define checkGlError(id) checkGlErrorFunc(id)
+#define checkGlError(program, id) checkGlErrorFunc(program, id)
 
 
 
