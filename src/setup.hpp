@@ -18,6 +18,9 @@ extern GLuint pixelsDataFBO;
 extern GLuint lowResPassTex;
 extern GLuint lowResPassFBO;
 
+extern GLuint midResPassTex;
+extern GLuint midResPassFBO;
+
 void glfwErrorCallback(int errorCode, const char* errorMessage);
 
 void glfwMonitorCallback(GLFWmonitor* monitor, int event);

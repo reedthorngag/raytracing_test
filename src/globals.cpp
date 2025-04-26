@@ -22,3 +22,4 @@ GLFWwindow* window;
 
 GLuint program1;
 GLuint program2;
+GLuint program3;

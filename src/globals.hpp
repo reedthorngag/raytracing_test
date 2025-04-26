@@ -20,6 +20,7 @@ extern GLFWwindow* window;
 
 extern GLuint program1;
 extern GLuint program2;
+extern GLuint program3;
 
 inline void checkGlErrorFunc(GLuint program, const char* id) {
     int error = glGetError();

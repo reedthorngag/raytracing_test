@@ -135,7 +135,6 @@ int depth;
 u64 getBlock();
 void nextIntersect(int step);
 void nextIntersectDDA();
-void genSkyBox();
 
 vec4 r = vec4(1,0,0,1);
 vec4 g = vec4(0,1,0,1);
@@ -172,17 +171,18 @@ void main()
         return;
     }
 
+    vec2 FragCoord = vec2(
+        gl_FragCoord.x * pixelWidth,
+        gl_FragCoord.y * pixelHeight
+    );
+
     vec3 camLeft = cross(cameraDir,vec3(0,1,0));
     vec3 camUp = cross(cameraDir,camLeft);
-
-    float FragCoordX = float(gl_FragCoord.x * pixelWidth) - 0.5;
-    float FragCoordY = float(gl_FragCoord.y * pixelHeight) - 0.5;
-    
     vec3 projection_plane_center = cameraDir;
     vec3 projection_plane_left = normalize(cross(projection_plane_center, vec3(0,1,0)));
     vec3 projection_plane_intersect = normalize(projection_plane_center + 
-        (projection_plane_left * -(projection_plane_width * FragCoordX)) + 
-        cross(projection_plane_center, projection_plane_left) * -FragCoordY * projection_plane_height);
+        (projection_plane_left * -(projection_plane_width * (FragCoord.x - 0.5))) + 
+        cross(projection_plane_center, projection_plane_left) * (-FragCoord.y + 0.5) * projection_plane_height);
     
 
     ray = buildRay(projection_plane_intersect);
@@ -249,59 +249,6 @@ void nextIntersectDDA() {
         mortonPos |= n << 4;
 
     }
-}
-
-// need to work out how to update pos.deltaPos more efficiently if possible
-void nextIntersect(int step) {
-
-    ivec3 steps = ray.step * step;
-
-    float xDst = (pos.round.x + steps.x) - pos.exact.x;
-    float yDst = (pos.round.y + steps.y) - pos.exact.y;
-    float zDst = (pos.round.z + steps.z) - pos.exact.z;
-
-    if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
-
-        pos.exact.x += xDst;
-        pos.round.x += steps.x;
-        xDst = abs(xDst);
-        pos.exact.y += xDst * ray.ratioYtoX;
-        pos.exact.z += xDst * ray.ratioZtoX;
-
-    } else if (pos.deltaPos.y < pos.deltaPos.z) {
-        
-        pos.exact.y += yDst;
-        pos.round.y += steps.y;
-        yDst = abs(yDst);
-        pos.exact.x += yDst * ray.ratioXtoY;
-        pos.exact.z += yDst * ray.ratioZtoY;
-
-    } else {
-        pos.exact.z += zDst;
-        pos.round.z += steps.z;
-        zDst = abs(zDst);
-        pos.exact.x += zDst * ray.ratioXtoZ;
-        pos.exact.y += zDst * ray.ratioYtoZ;
-    }
-
-    pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
-    pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
-    pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
-}
-
-int[] divideBy6Lookup = {
-    0,0,0,0,0,0,
-    1,1,1,1,1,1,
-    2,2,2,2,2,2,
-    3,3,3,3,3,3,
-    4,4,4,4,4,4,
-    5,5,5,5,5,5,
-};
-
-int findMSBb(int n) {
-    for (int i = 31; i >= 0; i--)
-        if (((n >> i) & 1) == 1) return i;
-    return -1;
 }
 
 u64 getBlock() {

@@ -22,6 +22,9 @@ GLuint mouseHitPosFBO;
 GLuint lowResPassTex;
 GLuint lowResPassFBO;
 
+GLuint midResPassTex;
+GLuint midResPassFBO;
+
 void glfwErrorCallback(int errorCode, const char* errorMessage) {
     printf("glfw error: %d %s\n", errorCode, errorMessage);
 }
@@ -151,15 +154,15 @@ bool linkProgram(GLuint program) {
 
 void reloadShaders() {
     GLuint oldProgram1 = program1;
-    GLuint oldProgram2 = program2;
+    GLuint oldProgram2 = program3;
 
     if (setupOpenGl()) {
         glDeleteProgram(program1);
-        glDeleteProgram(program2);
+        glDeleteProgram(program3);
         printf("Shaders successfully reloaded!    \n");
     } else {
         program1 = oldProgram1;
-        program2 = oldProgram2;
+        program3 = oldProgram2;
     }
 }
 
@@ -216,34 +219,71 @@ bool setupProgram1() {
 }
 
 bool setupProgram2() {
-
-
-    program2 = glCreateProgram();
+    program3 = glCreateProgram();
     
-    GLuint shader1 = loadShader(program2, "../src/shaders/full_res.frag", GL_FRAGMENT_SHADER);
+    GLuint shader1 = loadShader(program3, "../src/shaders/mid_res.frag", GL_FRAGMENT_SHADER);
     if (!shader1) return false;
     
-    GLuint shader2 = loadShader(program2, "../src/shaders/shader.vert", GL_VERTEX_SHADER);
+    GLuint shader2 = loadShader(program3, "../src/shaders/shader.vert", GL_VERTEX_SHADER);
     if (!shader2) return false;
 
-    if (!linkProgram(program2))
+    if (!linkProgram(program3))
         return false;
 
-    glDetachShader(program2, shader1);
-    glDetachShader(program2, shader2);
+    glDetachShader(program3, shader1);
+    glDetachShader(program3, shader2);
 
-    glUseProgram(program2);
+    glUseProgram(program3);
+
+    glGenTextures(1,&midResPassTex);
+    glBindTexture(GL_TEXTURE_2D, midResPassTex);
+    checkGlError(program3,"glBindTexture");
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width>>1, height>>1);
+
+    glGenFramebuffers(1, &midResPassFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, midResPassFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,midResPassTex,0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    return true;
+    
+}
+
+bool setupProgram3() {
+
+
+    program3 = glCreateProgram();
+    
+    GLuint shader1 = loadShader(program3, "../src/shaders/full_res.frag", GL_FRAGMENT_SHADER);
+    if (!shader1) return false;
+    
+    GLuint shader2 = loadShader(program3, "../src/shaders/shader.vert", GL_VERTEX_SHADER);
+    if (!shader2) return false;
+
+    if (!linkProgram(program3))
+        return false;
+
+    glDetachShader(program3, shader1);
+    glDetachShader(program3, shader2);
+
+    glUseProgram(program3);
 
     glGenTextures(1,&pixelsDataTex);
     glBindTexture(GL_TEXTURE_2D, pixelsDataTex);
-    checkGlError(program2,"glBindTexture");
+    checkGlError(program3,"glBindTexture");
 
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
 
     glGenFramebuffers(1, &pixelsDataFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, pixelsDataFBO);
     glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,pixelsDataTex,0);
-    //printf("Framebuffer status: %d\n",glCheckFramebufferStatus(GL_FRAMEBUFFER));
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -252,11 +292,13 @@ bool setupProgram2() {
 
 bool setupOpenGl() {
 
-    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);
 
     if (!setupProgram1()) return false;
 
     if (!setupProgram2()) return false;
+
+    if (!setupProgram3()) return false;
 
     return true;
 }

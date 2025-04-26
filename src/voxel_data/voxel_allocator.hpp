@@ -55,7 +55,7 @@ inline void updateSsboData() {
             printf("Uploading array block %d to gpu!\n",n);
             glBufferSubData(GL_SHADER_STORAGE_BUFFER, i << BLOCK_SIZE_BITS, BLOCK_SIZE, arrayBlocks[i].ptr);
             DEBUG(2) checkGlError(program1, "Upload array data");
-            DEBUG(2) checkGlError(program2, "Upload array data");
+            DEBUG(2) checkGlError(program3, "Upload array data");
         }
 
 
@@ -75,7 +75,7 @@ inline void updateSsboData() {
             printf("Uploading node block %d to gpu!\n",n);
             glBufferSubData(GL_SHADER_STORAGE_BUFFER, i << BLOCK_SIZE_BITS, BLOCK_SIZE, nodeBlocks[i].ptr);
             DEBUG(2) checkGlError(program1,"Upload node data");
-            DEBUG(2) checkGlError(program2,"Upload node data");
+            DEBUG(2) checkGlError(program3,"Upload node data");
         }
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
