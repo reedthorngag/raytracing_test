@@ -219,25 +219,25 @@ bool setupProgram1() {
 }
 
 bool setupProgram2() {
-    program3 = glCreateProgram();
+    program2 = glCreateProgram();
     
-    GLuint shader1 = loadShader(program3, "../src/shaders/mid_res.frag", GL_FRAGMENT_SHADER);
+    GLuint shader1 = loadShader(program2, "../src/shaders/mid_res.frag", GL_FRAGMENT_SHADER);
     if (!shader1) return false;
     
-    GLuint shader2 = loadShader(program3, "../src/shaders/shader.vert", GL_VERTEX_SHADER);
+    GLuint shader2 = loadShader(program2, "../src/shaders/shader.vert", GL_VERTEX_SHADER);
     if (!shader2) return false;
 
-    if (!linkProgram(program3))
+    if (!linkProgram(program2))
         return false;
 
-    glDetachShader(program3, shader1);
-    glDetachShader(program3, shader2);
+    glDetachShader(program2, shader1);
+    glDetachShader(program2, shader2);
 
-    glUseProgram(program3);
+    glUseProgram(program2);
 
     glGenTextures(1,&midResPassTex);
     glBindTexture(GL_TEXTURE_2D, midResPassTex);
-    checkGlError(program3,"glBindTexture");
+    checkGlError(program2,"glBindTexture");
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
