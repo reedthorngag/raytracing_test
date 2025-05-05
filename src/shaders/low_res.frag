@@ -7,7 +7,8 @@
 #define u32 uint
 #define u8 uint8_t
 
-out vec4 FragOut;
+out layout (location = 0) vec4 FragOut;
+out layout (location = 1) vec4 FragOut2;
 
 uniform vec3 origin;
 uniform vec3 cameraDir;
@@ -18,11 +19,11 @@ uniform uint originMortonPos;
 
 in vec4 gl_FragCoord;
 
-layout (std430, binding = 3) buffer layoutNodes {
+layout (std430, binding = 3) readonly buffer layoutNodes {
     u64vec2 nodes[];
 };
 
-layout (packed, binding = 2) buffer layoutArrays {
+layout (packed, binding = 2) readonly buffer layoutArrays {
     uint[64] children_array[];
 };
 
@@ -215,6 +216,7 @@ void main()
         pos.exact = pos.round + vec3(fract(ray.ratioZtoX),fract(ray.ratioZtoY),0);
     }
     FragOut = vec4(abs(pos.exact-origin), distance(pos.exact,origin));
+    FragOut = vec4(ray.dir,0);
 }
 
 void nextIntersectDDA() {

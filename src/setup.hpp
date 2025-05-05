@@ -16,6 +16,7 @@ extern GLuint pixelsDataTex;
 extern GLuint pixelsDataFBO;
 
 extern GLuint lowResPassTex;
+extern GLuint lowResPassTex2;
 extern GLuint lowResPassFBO;
 
 extern GLuint midResPassTex;

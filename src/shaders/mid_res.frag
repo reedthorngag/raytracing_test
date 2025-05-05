@@ -14,6 +14,7 @@ uniform vec3 cameraDir;
 uniform uint rootNodeIndex;
 
 uniform sampler2D startPoints;
+uniform sampler2D startPoints2;
 
 in vec4 gl_FragCoord;
 
@@ -211,7 +212,6 @@ void main()
         if (tex.w < sourceRay.w) sourceRay = tex;
     }
 
-    vec3 dist = sourceRay.xyz 
     pos.exact = origin + sourceRay.xyz*ray.dir;
     pos.round = ivec3(floor(pos.exact));
 
@@ -261,7 +261,7 @@ void main()
         }
     }
 
-    FragOut = vec4(0);//vec4((pos.round-origin)*ray.delta,distance(pos.round,origin));
+    FragOut = vec4(0,0,1.0-texture(startPoints2,FragCoord).z,1);//vec4((pos.round-origin)*ray.delta,distance(pos.round,origin));
 }
 
 void nextIntersectDDA() {
