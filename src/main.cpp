@@ -74,7 +74,7 @@ void render() {
 
     glUseProgram(program1);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, lowResPassFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);//lowResPassFBO);
 
     glUniform3f(glGetUniformLocation(program1, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
     glUniform3f(glGetUniformLocation(program1, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
@@ -85,7 +85,7 @@ void render() {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-
+    return;
     glUseProgram(program2);
 
     glBindFramebuffer(GL_FRAMEBUFFER, midResPassFBO);
@@ -95,8 +95,6 @@ void render() {
     glUniform2f(glGetUniformLocation(program2, "mousePos"), mouse.x, mouse.y);
 
     glBindTexture(GL_TEXTURE_2D, lowResPassTex);
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 
@@ -114,8 +112,6 @@ void render() {
     glUniform1i(glGetUniformLocation(program3, "renderPosData"), sendDebugFrame);
 
     glBindTexture(GL_TEXTURE_2D, midResPassTex);
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     if (sendDebugFrame) {  
@@ -134,11 +130,10 @@ int main() {
         exit(1);
 
 
-    glUseProgram(program1);
     glBindVertexArray(VAO);
     initTetraHexaTree();
     initVoxelDataAllocator();
-    checkGlError(program1, "createSsbo");
+    checkGlError(0, "createSsbo");
 
     printf("generating chunk...\n");
     double start = glfwGetTime();
@@ -167,7 +162,6 @@ int main() {
         //glfwWaitEvents();
         start = glfwGetTime();
 
-        glUseProgram(program1);
         updateSsboData();
 
         render();

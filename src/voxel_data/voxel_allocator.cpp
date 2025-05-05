@@ -18,9 +18,7 @@ int arrayFreeListPop = 0;
 int arrayNextFreeListIndex = 0;
 int arrayFirstFreeIndex = 0;
 
-GLuint nodeSsbo;
 u32 currentNodeSsboSize = 0;
-GLuint arraySsbo;
 u32 currentArraySsboSize = 0;
 
 Ptr allocNode() {

@@ -35,8 +35,6 @@ float aspect_ratio = float(height) / width;
 double pixelWidth = 1.0/width;
 double pixelHeight = 1.0/height;
 
-double scale = 1.0/100;
-
 float projection_plane_width = 1 * tan(radians(45));
 float projection_plane_height = projection_plane_width * aspect_ratio;
 
@@ -158,6 +156,26 @@ uint mortonPos = 0;
 void main()
 {
 
+    if (gl_FragCoord.x > width) {
+        if (gl_FragCoord.x < width + 100*pixelWidth) {
+            FragOut = r;
+            return;
+        } else {
+            FragOut = vec4(0);
+            return;
+        }
+    }
+
+    if (gl_FragCoord.y > height) {
+        if (gl_FragCoord.y < height + 100*pixelWidth) {
+            FragOut = r;
+            return;
+        } else {
+            FragOut = vec4(0);
+            return;
+        }
+    }
+
     stack[0] = 0;
     depth = 0;
 
@@ -205,12 +223,12 @@ void main()
         nextIntersectDDA();
 
         if (getBlock() != -1) {
-            FragOut = vec4((pos.exact-origin)*ray.delta,distance(pos.exact,origin));
+            FragOut = vec4(distance(pos.round,origin)); //vec4((pos.exact-origin)*ray.delta,distance(pos.exact,origin));
             return;
         }
     }
 
-    FragOut = vec4((pos.exact-origin)*ray.delta,distance(pos.exact,origin));
+    FragOut = vec4(0);//vec4((pos.exact-origin)*ray.delta,distance(pos.exact,origin));
 }
 
 void nextIntersectDDA() {

@@ -22,6 +22,9 @@ extern GLuint program1;
 extern GLuint program2;
 extern GLuint program3;
 
+extern GLuint arraySsbo;
+extern GLuint nodeSsbo;
+
 inline void checkGlErrorFunc(GLuint program, const char* id) {
     int error = glGetError();
     if (error != GL_NO_ERROR) {
