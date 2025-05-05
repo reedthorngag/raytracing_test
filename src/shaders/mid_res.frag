@@ -165,10 +165,28 @@ vec2[] checkPosOffsets = {
 
 void main()
 {
+    if (gl_FragCoord.x > width) {
+        if (gl_FragCoord.y < height + 10 && gl_FragCoord.x < width + 10) {
+            FragOut = vec4(1);
+            return;
+        } else {
+            FragOut = vec4(0);
+            return;
+        }
+    }
+
+    if (gl_FragCoord.y > height) {
+        if (gl_FragCoord.x < width + 10 && gl_FragCoord.y < height + 10) {
+            FragOut = vec4(1);
+            return;
+        } else {
+            FragOut = vec4(0);
+            return;
+        }
+    }
+
     stack[0] = 0;
     depth = 0;
-
-    pos.round = ivec3(floor(origin));
 
     vec2 FragCoord = vec2(
         gl_FragCoord.x * pixelWidth,
@@ -193,8 +211,8 @@ void main()
         if (tex.w < sourceRay.w) sourceRay = tex;
     }
 
-    pos.exact = origin + sourceRay.xyz*ray.dir - ray.step*0.5;
-    pos.round = ivec3(floor(pos.exact));
+    pos.exact = origin + sourceRay.xyz*ray.dir;
+    pos.round = ivec3(pos.exact);
 
     int n = pos.round.x;
     n = (n | (n << 16)) & 0x030000FF;
@@ -237,12 +255,12 @@ void main()
         nextIntersectDDA();
 
         if (getBlock() != -1) {
-            FragOut = vec4((pos.exact-origin)*ray.delta,distance(pos.exact,origin));
+            FragOut = vec4(distance(pos.round,origin));//vec4((pos.round-origin)*ray.delta,distance(pos.round,origin));
             return;
         }
     }
 
-    FragOut = vec4((pos.exact-origin)*ray.delta,distance(pos.exact,origin));
+    FragOut = vec4(0);//vec4((pos.round-origin)*ray.delta,distance(pos.round,origin));
 }
 
 void nextIntersectDDA() {

@@ -74,7 +74,7 @@ void render() {
 
     glUseProgram(program1);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);//lowResPassFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, lowResPassFBO);
 
     glUniform3f(glGetUniformLocation(program1, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
     glUniform3f(glGetUniformLocation(program1, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
@@ -85,10 +85,9 @@ void render() {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    return;
     glUseProgram(program2);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, midResPassFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);//midResPassFBO);
 
     glUniform3f(glGetUniformLocation(program2, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
     glUniform3f(glGetUniformLocation(program2, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
@@ -97,7 +96,7 @@ void render() {
     glBindTexture(GL_TEXTURE_2D, lowResPassTex);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-
+    return;
     glUseProgram(program3);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

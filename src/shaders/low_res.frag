@@ -156,26 +156,6 @@ uint mortonPos = 0;
 void main()
 {
 
-    if (gl_FragCoord.x > width) {
-        if (gl_FragCoord.x < width + 100*pixelWidth) {
-            FragOut = r;
-            return;
-        } else {
-            FragOut = vec4(0);
-            return;
-        }
-    }
-
-    if (gl_FragCoord.y > height) {
-        if (gl_FragCoord.y < height + 100*pixelWidth) {
-            FragOut = r;
-            return;
-        } else {
-            FragOut = vec4(0);
-            return;
-        }
-    }
-
     stack[0] = 0;
     depth = 0;
 
@@ -218,17 +198,17 @@ void main()
     pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
 
     bool set = false;
-    for (int i = 0; i < 30; i++) {
+    for (int i = 0; i < 100; i++) {
 
         nextIntersectDDA();
 
         if (getBlock() != -1) {
-            FragOut = vec4(distance(pos.round,origin)); //vec4((pos.exact-origin)*ray.delta,distance(pos.exact,origin));
+            FragOut = vec4(abs(pos.round-origin)*ray.absDelta, distance(pos.round,origin));
             return;
         }
     }
 
-    FragOut = vec4(0);//vec4((pos.exact-origin)*ray.delta,distance(pos.exact,origin));
+    FragOut = vec4(abs(pos.round-origin)*ray.absDelta,distance(pos.round,origin));
 }
 
 void nextIntersectDDA() {
