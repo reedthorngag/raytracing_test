@@ -203,12 +203,18 @@ void main()
         nextIntersectDDA();
 
         if (getBlock() != -1) {
-            FragOut = vec4(abs(pos.round-origin)*ray.absDelta, distance(pos.round,origin));
-            return;
+            break;
         }
     }
 
-    FragOut = vec4(abs(pos.round-origin)*ray.absDelta,distance(pos.round,origin));
+    if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
+        pos.exact = pos.round + vec3(0,fract(ray.ratioXtoY),fract(ray.ratioXtoZ));
+    } else if (pos.deltaPos.y < pos.deltaPos.z) {
+        pos.exact = pos.round + vec3(fract(ray.ratioYtoX),0,fract(ray.ratioYtoZ));
+    } else {
+        pos.exact = pos.round + vec3(fract(ray.ratioZtoX),fract(ray.ratioZtoY),0);
+    }
+    FragOut = vec4(abs(pos.exact-origin), distance(pos.exact,origin));
 }
 
 void nextIntersectDDA() {

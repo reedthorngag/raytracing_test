@@ -211,8 +211,9 @@ void main()
         if (tex.w < sourceRay.w) sourceRay = tex;
     }
 
+    vec3 dist = sourceRay.xyz 
     pos.exact = origin + sourceRay.xyz*ray.dir;
-    pos.round = ivec3(pos.exact);
+    pos.round = ivec3(floor(pos.exact));
 
     int n = pos.round.x;
     n = (n | (n << 16)) & 0x030000FF;
