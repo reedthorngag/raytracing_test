@@ -206,13 +206,17 @@ void main()
     ray = buildRay(projection_plane_intersect);
 
     vec4 sourceRay = texture(startPoints,FragCoord);
+    vec4 sourceRayP2 = texture(startPoints2,FragCoord);
 
     for (int i = 0; i < checkPosOffsets.length(); i++) {
         vec4 tex = texture(startPoints,FragCoord + checkPosOffsets[i]);
-        if (tex.w < sourceRay.w) sourceRay = tex;
+        if (tex.w < sourceRay.w) {
+            sourceRay = tex;
+            sourceRayP2 = texture(startPoints2,FragCoord + checkPosOffsets[i]);
+        }
     }
 
-    pos.exact = origin + sourceRay.xyz*ray.dir;
+    pos.exact = origin + sourceRay.xyz*ray.dir*0.95;// - sourceRay.xyz*(ray.dir-sourceRayP2.xyz);
     pos.round = ivec3(floor(pos.exact));
 
     int n = pos.round.x;
@@ -261,7 +265,7 @@ void main()
         }
     }
 
-    FragOut = vec4(0,0,1.0-texture(startPoints2,FragCoord).z,1);//vec4((pos.round-origin)*ray.delta,distance(pos.round,origin));
+    FragOut = vec4(0,0,1-texture(startPoints,FragCoord).y,1);//vec4((pos.round-origin)*ray.delta,distance(pos.round,origin));
 }
 
 void nextIntersectDDA() {

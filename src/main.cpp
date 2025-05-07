@@ -93,10 +93,10 @@ void render() {
     glUniform3f(glGetUniformLocation(program2, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
     glUniform2f(glGetUniformLocation(program2, "mousePos"), mouse.x, mouse.y);
 
-    glBindTexture(GL_TEXTURE_2D, lowResPassTex);
-    glActiveTexture(1);
     glBindTexture(GL_TEXTURE_2D, lowResPassTex2);
-    glActiveTexture(0);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, lowResPassTex);
+    glActiveTexture(GL_TEXTURE0);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     return;
