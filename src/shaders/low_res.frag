@@ -215,8 +215,8 @@ void main()
     } else {
         pos.exact = pos.round + vec3(fract(ray.ratioZtoX),fract(ray.ratioZtoY),0);
     }
-    FragOut2 = vec4(abs(pos.exact-origin), distance(pos.exact,origin));
-    FragOut = vec4(ray.dir,0);
+    FragOut = vec4(abs(pos.exact-origin), distance(pos.exact,origin));
+    FragOut2 = vec4(ray.dir,0);
 }
 
 void nextIntersectDDA() {

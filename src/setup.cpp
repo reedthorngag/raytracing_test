@@ -247,7 +247,7 @@ bool createDependencies() {
     glGenFramebuffers(1, &lowResPassFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, lowResPassFBO);
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,lowResPassTex,0);
-    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D,lowResPassTex,0);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D,lowResPassTex2,0);
 
     GLenum drawBuffers[]{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
     glDrawBuffers(2, drawBuffers);

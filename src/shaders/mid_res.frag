@@ -216,7 +216,7 @@ void main()
         }
     }
 
-    pos.exact = origin + sourceRay.xyz*ray.dir*0.95;// - sourceRay.xyz*(ray.dir-sourceRayP2.xyz);
+    pos.exact = origin + sourceRay.xyz - sourceRay.xyz*(sourceRayP2.xyz-ray.dir);
     pos.round = ivec3(floor(pos.exact));
 
     int n = pos.round.x;
@@ -265,7 +265,7 @@ void main()
         }
     }
 
-    FragOut = vec4(0,0,1-texture(startPoints,FragCoord).y,1);//vec4((pos.round-origin)*ray.delta,distance(pos.round,origin));
+    FragOut = vec4(abs(sourceRay.xyz - sourceRay.xyz*(sourceRayP2.xyz - ray.dir))*1000,0);//vec4(0,0,1-texture(startPoints,FragCoord).y,1);//vec4((pos.round-origin)*ray.delta,distance(pos.round,origin));
 }
 
 void nextIntersectDDA() {
