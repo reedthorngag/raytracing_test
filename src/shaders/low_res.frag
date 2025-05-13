@@ -209,12 +209,16 @@ void main()
     }
 
     if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
-        pos.exact = pos.round + vec3(0,fract(ray.ratioXtoY),fract(ray.ratioXtoZ));
+        pos.round.x += ray.step.x;
+        pos.exact = vec3(pos.round.x,ray.ratioXtoY,ray.ratioXtoZ);
     } else if (pos.deltaPos.y < pos.deltaPos.z) {
-        pos.exact = pos.round + vec3(fract(ray.ratioYtoX),0,fract(ray.ratioYtoZ));
+        pos.round.y += ray.step.y;
+        pos.exact = vec3(ray.ratioYtoX,pos.round.y,ray.ratioYtoZ);
     } else {
-        pos.exact = pos.round + vec3(fract(ray.ratioZtoX),fract(ray.ratioZtoY),0);
+        pos.round.z += ray.step.z;
+        pos.exact = vec3(ray.ratioZtoX,ray.ratioZtoY,pos.round.z);
     }
+    pos.exact -= ray.dir;
     FragOut = vec4(abs(pos.exact-origin), distance(pos.exact,origin));
     FragOut2 = vec4(ray.dir,0);
 }

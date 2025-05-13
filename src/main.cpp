@@ -172,7 +172,7 @@ int main() {
         i %= averageSize;
         double out = 0;
         for (int n = 0; n < averageSize && times[n]; n++) out += times[n];
-        printf("\rrender time: %dms (%d fps) rotationXY: %lf, %lf camPos: %lf, %lf, %lf    ",(int)(out/(double)averageSize*1000),(int)(1000/(out/(double)averageSize * 1000)),rotationY,rotationX,cameraPos.x,cameraPos.y,cameraPos.z);
+        printf("\rrender time: %dms (%d fps) rotationXY: %lf, %lf camPos: %lf, %lf, %lf    ",(int)(out/(double)averageSize*1000),(int)(1000.0/(double)(out/(double)averageSize * 1000)),rotationY,rotationX,cameraPos.x,cameraPos.y,cameraPos.z);
 
         glfwSwapBuffers(window);
         //glFinish();
