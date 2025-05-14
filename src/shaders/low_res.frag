@@ -210,13 +210,13 @@ void main()
 
     if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
         pos.round.x += ray.step.x;
-        pos.exact = vec3(pos.round.x,ray.ratioXtoY,ray.ratioXtoZ);
+        pos.exact = pos.round.x * vec3(1,ray.ratioXtoY,ray.ratioXtoZ);
     } else if (pos.deltaPos.y < pos.deltaPos.z) {
         pos.round.y += ray.step.y;
-        pos.exact = vec3(ray.ratioYtoX,pos.round.y,ray.ratioYtoZ);
+        pos.exact = pos.round.y * vec3(ray.ratioYtoX,1,ray.ratioYtoZ);
     } else {
         pos.round.z += ray.step.z;
-        pos.exact = vec3(ray.ratioZtoX,ray.ratioZtoY,pos.round.z);
+        pos.exact = pos.round.z * vec3(ray.ratioZtoX,ray.ratioZtoY,1);
     }
     pos.exact -= ray.dir;
     FragOut = vec4(abs(pos.exact-origin), distance(pos.exact,origin));

@@ -265,7 +265,7 @@ void main()
         }
     }
 
-    FragOut = vec4(abs(sourceRay.xyz - sourceRay.xyz*(sourceRayP2.xyz - ray.dir))*1000,0);//vec4(0,0,1-texture(startPoints,FragCoord).y,1);//vec4((pos.round-origin)*ray.delta,distance(pos.round,origin));
+    FragOut = vec4(abs(sourceRay.xyz*(ray.dir - sourceRayP2.xyz))*0.001,0);
 }
 
 void nextIntersectDDA() {
