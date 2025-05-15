@@ -16,6 +16,8 @@ extern int height;
 extern double halfWidth;
 extern double halfHeight;
 
+extern bool dimensionsChanged;
+
 extern GLFWwindow* window;
 
 extern GLuint program1;

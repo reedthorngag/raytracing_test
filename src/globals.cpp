@@ -7,6 +7,8 @@ int height;
 double halfWidth;
 double halfHeight;
 
+bool dimensionsChanged = true;
+
 Mouse mouse;
 
 double lastMouseUpdate = 0;

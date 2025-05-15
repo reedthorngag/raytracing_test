@@ -41,7 +41,6 @@ void dumpPixelData() {
     checkGlError(program3,"glReadPixels");
 
     printf("\rdebug frame: %s: %f %f %f %f (mouse pos: %lf, %lf)\n",debugFrameTypeString[sendDebugFrame],buffer[0],buffer[1],buffer[2],buffer[3],mouse.x,mouse.y);
-    printf("\rnode data: %u %llu %u\n",((Node*)nodeBlocks[0].ptr)->branch.flags,((Node*)nodeBlocks[0].ptr)->branch.bitmap,((Node*)nodeBlocks[0].ptr)->branch.children);
 }
 
 u32 getMortonPos(glm::vec3 pos) {
@@ -74,53 +73,70 @@ void render() {
 
     glUseProgram(program1);
 
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, lowResPassFBO);
+    //glBindFramebuffer(GL_DRAW_FRAMEBUFFER, lowResPassFBO);
+    if (sendDebugFrame) {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pixelsDataFBO);
+    }
 
     glUniform3f(glGetUniformLocation(program1, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
     glUniform3f(glGetUniformLocation(program1, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
     glUniform2f(glGetUniformLocation(program1, "mousePos"), mouse.x, mouse.y);
     glUniform1ui(glGetUniformLocation(program1, "originMortonPos"), getMortonPos(cameraPos));
+    glUniform1i(glGetUniformLocation(program1, "renderPosData"), sendDebugFrame);
+    if (dimensionsChanged) {
+        glUniform2ui(glGetUniformLocation(program1, "size"), width, height);
+        glUniform2f(glGetUniformLocation(program1, "projPlane"), glm::tan(glm::radians(45.0)),glm::tan(glm::radians(45.0))*((float)height)/width);
+        dimensionsChanged = false;
+    }
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    glUseProgram(program2);
-
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);//midResPassFBO);
-
-    glUniform3f(glGetUniformLocation(program2, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
-    glUniform3f(glGetUniformLocation(program2, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
-    glUniform2f(glGetUniformLocation(program2, "mousePos"), mouse.x, mouse.y);
-
-    glBindTexture(GL_TEXTURE_2D, lowResPassTex);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, lowResPassTex2);
-    glActiveTexture(GL_TEXTURE0);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    return;
-    glUseProgram(program3);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    if (sendDebugFrame) {
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pixelsDataFBO);
-    }
-
-    glUniform3f(glGetUniformLocation(program3, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
-    glUniform3f(glGetUniformLocation(program3, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
-    glUniform2f(glGetUniformLocation(program3, "mousePos"), mouse.x, mouse.y);
-    glUniform1i(glGetUniformLocation(program3, "renderPosData"), sendDebugFrame);
-
-    glBindTexture(GL_TEXTURE_2D, midResPassTex);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    DEBUG(3) checkGlError(program1,"glDrawArrays1");
 
     if (sendDebugFrame) {  
         dumpPixelData();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         sendDebugFrame = 0;
     }
+
+    // glUseProgram(program2);
+
+    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);//midResPassFBO);
+
+    // glUniform3f(glGetUniformLocation(program2, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
+    // glUniform3f(glGetUniformLocation(program2, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
+    // glUniform2f(glGetUniformLocation(program2, "mousePos"), mouse.x, mouse.y);
+
+    // glBindTexture(GL_TEXTURE_2D, lowResPassTex);
+    // glActiveTexture(GL_TEXTURE1);
+    // glBindTexture(GL_TEXTURE_2D, lowResPassTex2);
+    // glActiveTexture(GL_TEXTURE0);
+    // glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    // return;
+    // glUseProgram(program3);
+
+    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // if (sendDebugFrame) {
+    //     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pixelsDataFBO);
+    // }
+
+    // glUniform3f(glGetUniformLocation(program3, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
+    // glUniform3f(glGetUniformLocation(program3, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
+    // glUniform2f(glGetUniformLocation(program3, "mousePos"), mouse.x, mouse.y);
+    // glUniform1i(glGetUniformLocation(program3, "renderPosData"), sendDebugFrame);
+
+    // glBindTexture(GL_TEXTURE_2D, midResPassTex);
+    // glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    // DEBUG(3) checkGlError(program1,"glDrawArrays3");
+
+    // if (sendDebugFrame) {  
+    //     dumpPixelData();
+    //     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //     sendDebugFrame = 0;
+    // }
 }
 
 int main() {
