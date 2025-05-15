@@ -154,6 +154,10 @@ vec4 color_int_to_vec4(u64 color) {
     );
 }
 
+u64 vec4_to_color_int(vec4 color) {
+    return (u64(color.x) << 42) | (u64(color.x) << 21) | u64(color.x);
+}
+
 float sigmoid(float x, float scale, float dropOffSteepness) {
     return abs(1.0/(1+exp(-x*dropOffSteepness))*scale);
 }
@@ -172,12 +176,6 @@ vec4 g = vec4(0,1,0,1);
 vec4 b = vec4(0,0,1,1);
 
 vec3 lastHit = vec3(0);
-
-vec3[] ratioMap = {
-    vec3(1,ray.ratioXtoY,ray.ratioXtoZ),
-    vec3(ray.ratioYtoX,1,ray.ratioYtoZ),
-    vec3(ray.ratioZtoX,ray.ratioZtoY,1)
-};
 
 u64 castRay(vec3 dir, vec3 startPos, uint maxSteps) {
     buildRay(dir);
@@ -216,29 +214,51 @@ mat3 computeTransformMat(vec3 normal)
     return mat3(xAxis, yAxis, zAxis);
 }
 
-// fibonacci sphere algorithm from stack overflow https://stackoverflow.com/a/26127012/15233212
-// ported to glsl and modified by me
-float phi = radians(180) * (sqrt(5.0) - 1.0); // golden angle in radians
+
+vec3[] hemisphereDirs = {
+    vec3(0.07430756460710652,0.97875,-0.19111991874778692),
+    vec3(-0.3150707529400007,0.93625,0.15545532522825017),
+    vec3(0.43068766605847436,0.89375,0.12537572255067567),
+    vec3(-0.27244438490890477,0.8512500000000001,-0.4484946985546301),
+    vec3(-0.11439109511443586,0.8087500000000001,0.5769212380026584),
+    vec3(0.517891665482911,0.76625,-0.380327701230579),
+    vec3(-0.6860266781979666,0.7237500000000001,-0.07452069712947905),
+    vec3(0.48323377346512497,0.68125,0.5498941331589711),
+    vec3(0.015898658644648525,0.63875,-0.769250069972893),
+    vec3(-0.5543988637067352,0.5962500000000001,0.5806271070322852),
+    vec3(0.8308218084042563,0.5537500000000001,-0.05564225175063546),
+    vec3(-0.6710951947823731,0.51125,-0.5368935434888453),
+    vec3(0.13585390932049551,0.46875000000000006,0.8728213750947776),
+    vec3(0.5011950375796783,0.4262499999999999,-0.7530700311428579),
+    vec3(-0.8965402339742274,0.38375000000000004,0.22124996353770887),
+    vec3(0.8250469005357429,0.3412500000000001,0.4503843352253316),
+    vec3(-0.3087795461729986,0.29875,-0.9029970262216798),
+    vec3(-0.38720001271637,0.25625000000000003,0.8856704170584241),
+    vec3(0.8931680415940547,0.2137499999999999,-0.39567889376998755),
+    vec3(-0.9337752751575846,0.17125,-0.31422471736700947),
+};
+
+vec3[] ratioMap = {
+    vec3(1,ray.ratioXtoY,ray.ratioXtoZ),
+    vec3(ray.ratioYtoX,1,ray.ratioYtoZ),
+    vec3(ray.ratioZtoX,ray.ratioZtoY,1)
+};
 
 u64 raycastHemisphere(u64 color) {
 
-    vec3 lastHitVal = pos.round * lastHit;
-    vec3 pos = max() * ratioMap[];
-    vec3 normal = -ray.step * lastHit;
+    vec3 tmp = lastHit * vec3(0,1,2);
+    int index = int(max(tmp.x,max(tmp.y,tmp.z)));
+
+    vec3 pos = pos.round[index] * ratioMap[index];
+    vec3 normal = ray.step * lastHit;
     mat3 transformMat = computeTransformMat(normal);
 
     int numRays = 20;
+
     for (int i = 0; i < numRays; i++) {
-        y = 1 - float(i) / (numRays - 1) * 2; // y goes from 1 to -1
-        radius = sqrt(1-y*y);
 
-        theta = phi * i;
-
-        x = cos(theta) * radius;
-        z = sin(theta) * radius;
-
-        u64 color2 = castRay(transformMat * vec3(x,y,z), pos, 10);
-        if (color2 == color) color = g;
+        u64 color2 = castRay(hemisphereDirs[i], pos, 5);
+        if (color2 == color) color = vec4_to_color_int(g);
     }
 
     return color;

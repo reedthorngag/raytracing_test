@@ -299,10 +299,10 @@ void reloadShaders() {
     GLuint oldProgram2 = program2;
     GLuint oldProgram3 = program3;
 
-    if (setupProgram1() && setupProgram2() && setupProgram3()) {
+    if (setupProgram1()){;// && setupProgram2() && setupProgram3()) {
         glDeleteProgram(oldProgram1);
-        glDeleteProgram(oldProgram2);
-        glDeleteProgram(oldProgram3);
+        //glDeleteProgram(oldProgram2);
+        //glDeleteProgram(oldProgram3);
         printf("Shaders successfully reloaded!    \n");
     } else {
         program1 = oldProgram1;
@@ -310,6 +310,6 @@ void reloadShaders() {
         program3 = oldProgram3;
     }
 
-    glUseProgram(program3);
+    glUseProgram(program1);//3);
 }
 
