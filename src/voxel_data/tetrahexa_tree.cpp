@@ -209,7 +209,7 @@ void putBlock(Pos pos, Block block, int targetDepth) {
                 deleteChildren(stack[depth]);
                 stack[depth].ptr->leaf.packedColor = block.color;
                 stack[depth].ptr->leaf.flags = 1 | block.flags;
-                stack[depth].ptr->leaf.metadata =block.metadata;
+                stack[depth].ptr->leaf.metadata = block.metadata;
                 stack[depth].block->modified = true;
                 return;
             }
