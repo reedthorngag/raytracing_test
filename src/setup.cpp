@@ -157,6 +157,7 @@ bool linkProgram(GLuint program) {
     return true;
 }
 
+#include <fstream>
 bool setupProgram1() {
     program1 = glCreateProgram();
     
@@ -171,6 +172,19 @@ bool setupProgram1() {
 
     glDetachShader(program1, shader1);
     glDetachShader(program1, shader2);
+
+    const size_t MAX_SIZE = 1<<24;
+    char* binary = new char[MAX_SIZE];
+    GLenum format;
+    GLint length;
+    printf("hi1\n");
+    glGetProgramBinary(program1,MAX_SIZE,&length,&format,binary);
+    checkGlError(program1,"getBinary");
+    printf("hi\n");
+
+
+    std::ofstream binaryfile("bin.txt");
+    binaryfile.write(binary,length);
 
     return true;
 }

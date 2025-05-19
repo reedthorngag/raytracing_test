@@ -279,7 +279,7 @@ void reflectRay(u64 color) {
     ivec3 inverter = map[int(max(tmp.x,max(tmp.y,tmp.z)))];
     ray.step *= inverter;
     ray.dir *= inverter;
-    ray.delta *= inverter;
+    //ray.delta *= inverter; // not needed currently, only castRay uses it
     finalColorMod -= clamp(color_int_to_vec3(color).xyz * (1.0 - lastHitMetadata), 0.1, 1.0); // min is 0.1 because it wouldn't hit zero irl, but light scattering isnt implemented yet
 }
 
@@ -326,25 +326,36 @@ void main()
     pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
     pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
 
-    u64 color;
+    u64 color = -1;
+    uint i = 0;
 
-    bool set = false;
-    for (int i = 0; i < 100; i++) {
+    while (i < 100) {
 
-        color = getBlock();
-        if (color != -1) {
-            //color = raycastHemisphere(color);
-            if ((lastHitFlags & 0x2) > 0) {
-                reflectRay(color);
-            } else if ((lastHitFlags & 0x4) > 0) {
-                refractRay(color);
-            } else {
-                FragColor = color_int_to_vec3(color) * finalColorMod;
-                return;
-            }
+        while (color == -1 && i < 100) {
+            color = getBlock();
+            nextIntersectDDA();
+            i++;
+        }
+        
+        if (i == 100) break;
+
+        if ((lastHitFlags & 0x2) > 0) {
+            vec3 tmp = lastHit * vec3(0,1,2);
+            ivec3 inverter = map[int(max(tmp.x,max(tmp.y,tmp.z)))];
+            ray.step *= inverter;
+            ray.dir *= inverter;
+            //ray.delta *= inverter; // not needed currently, only castRay uses it
+            finalColorMod -= clamp(color_int_to_vec3(color).xyz * (1.0 - lastHitMetadata), 0.1, 1.0);
+            //reflectRay(color);
+
+        } else if ((lastHitFlags & 0x4) > 0) {
+            refractRay(color);
+
+        } else {
+            FragColor = color_int_to_vec3(color) * finalColorMod;
+            return;
         }
 
-        nextIntersectDDA();
     }
 
     FragColor = genSkyBox() * finalColorMod;
