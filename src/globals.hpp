@@ -72,8 +72,9 @@ enum properties {
 };
 
 struct Block {
-    u32 properties;
+    u32 flags;
     u64 color;
+    float metadata;
 };
 
 extern Block hotbar[];

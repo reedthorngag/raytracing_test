@@ -29,21 +29,34 @@ GLuint program3;
 GLuint arraySsbo;
 GLuint nodeSsbo;
 
-//shit code warning, its "temporary" though (yea right)
+// bad code warning, its "temporary" though (yea right)
 Block hotbar[] {
     Block{
         NONE,
-        RGB_TO_U64(255,0,0)
+        RGB_TO_U64(255,0,0),
+        0
     },
     Block{
         NONE,
-        RGB_TO_U64(0,255,0)
+        RGB_TO_U64(0,255,0),
+        0
     },
     Block{
         REFLECTIVE,
-        RGB_TO_U64(0,0,0)
+        RGB_TO_U64(255,0,0),
+        0.9
+    },
+    Block{
+        REFLECTIVE,
+        RGB_TO_U64(255,255,255),
+        0.9
+    },
+    Block{
+        REFLECTIVE,
+        RGB_TO_U64(0,0,0),
+        0.9
     },
 };
 
-int hotbarLength = 3;
+int hotbarLength = sizeof(hotbar)/sizeof(Block);
 int currentSelected;

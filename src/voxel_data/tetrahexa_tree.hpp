@@ -1,6 +1,6 @@
 
-
 #include "../types.hpp"
+#include "../globals.hpp"
 #include "types.hpp"
 
 const int maxDepth = 6;
@@ -13,7 +13,7 @@ void initTetraHexaTree();
 
 void traverseTree(Pos* pos, int count);
 
-void putBlock(Pos pos, u64 color, u32 properties, int targetDepth);
+void putBlock(Pos pos, Block block, int targetDepth);
 
 void deleteChildren(Ptr node);
 

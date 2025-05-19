@@ -233,7 +233,7 @@ bool createDependencies() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB32F, width, height);
 
     glGenTextures(1,&posAndNormalTex);
     glBindTexture(GL_TEXTURE_2D, posAndNormalTex);

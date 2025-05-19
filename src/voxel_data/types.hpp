@@ -26,20 +26,23 @@ struct Pos {
     }
 };
 
+struct __attribute__((packed)) Branch {
+    u64 bitmap;
+    u32 flags;
+    u32 children;
+};
+
+struct __attribute__((packed)) Leaf {
+    u64 packedColor;
+    u32 flags;
+    float metadata;
+};
 
 // lowest bit in flags is set in leaf
 struct Node {
     union {
-        struct __attribute__((packed)) {
-            u64 bitmap;
-            u32 flags;
-            u32 children;
-        } branch;
-        struct __attribute__((packed)) {
-            u64 packedColor;
-            u32 flags;
-            u32 properties;
-        } leaf;
+        Branch branch;
+        Leaf leaf;
     };
 } __attribute__((packed));
 
