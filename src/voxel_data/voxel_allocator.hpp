@@ -14,8 +14,8 @@ const int MAX_BLOCKS = 1 << (32-BLOCK_SIZE_BITS); // 1024
 const int BLOCK_SIZE = 1 << BLOCK_SIZE_BITS; // 4194304
 const int BLOCK_SIZE_MASK = BLOCK_SIZE - 1;
 
-extern Block nodeBlocks[]; // 1024
-extern Block arrayBlocks[]; // 1024
+extern BlockPtr nodeBlocks[]; // 1024
+extern BlockPtr arrayBlocks[]; // 1024
 
 const int FREE_LIST_SIZE = 1 << 12; // 4096
 const int FREE_LIST_SIZE_MASK = FREE_LIST_SIZE - 1;
@@ -99,11 +99,11 @@ inline Ptr convertToArrayPtr(u32 index) {
 }
 
 inline void mallocNodeBlock(int n) {
-    nodeBlocks[n] = Block{(u8*)malloc(BLOCK_SIZE),false};
+    nodeBlocks[n] = BlockPtr{(u8*)malloc(BLOCK_SIZE),false};
 }
 
 inline void mallocArrayBlock(int n) {
-    arrayBlocks[n] = Block{(u8*)malloc(BLOCK_SIZE),false};
+    arrayBlocks[n] = BlockPtr{(u8*)malloc(BLOCK_SIZE),false};
 }
 
 Ptr allocNode();

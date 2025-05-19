@@ -136,7 +136,7 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mod
             case GLFW_MOUSE_BUTTON_2: {
                 printf("\rMouse pos: %lf, %lf\n",mouse.x,mouse.y);
                 glm::ivec3 pos = RAY_CASTER::castRayFromCam(20);
-                putBlock(Pos{pos.x,pos.y,pos.z},RGB_TO_U64(255,0,0),6);
+                putBlock(Pos{pos.x,pos.y,pos.z},hotbar[currentSelected].color,hotbar[currentSelected].properties,6);
                 printf("\rPut block at %d,%d,%d!\n",pos.x,pos.y,pos.z);
                 break;
             }
@@ -159,6 +159,15 @@ void glfwMousePosCallback(GLFWwindow* window, double x, double y) {
     mouse.x = x;
     mouse.y = height-y;
     lastMouseUpdate = glfwGetTime();
+}
+
+void glfwScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+    if (yoffset > 0 && currentSelected > 0) {
+        currentSelected--;
+    } else if (yoffset < 0 && currentSelected < hotbarLength - 1) {
+        currentSelected++;
+    }
+    printf("\rCurrently selected block: %d  \n",currentSelected);
 }
 
 

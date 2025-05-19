@@ -26,6 +26,10 @@ GLuint lowResPassFBO;
 GLuint midResPassTex;
 GLuint midResPassFBO;
 
+GLuint colorBufferTex;
+GLuint posAndNormalTex;
+GLuint secondaryRaysFBO;
+
 void glfwErrorCallback(int errorCode, const char* errorMessage) {
     printf("glfw error: %d %s\n", errorCode, errorMessage);
 }
@@ -153,7 +157,6 @@ bool linkProgram(GLuint program) {
     return true;
 }
 
-
 bool setupProgram1() {
     program1 = glCreateProgram();
     
@@ -224,13 +227,34 @@ bool createDependencies() {
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+    glGenTextures(1,&colorBufferTex);
+    glBindTexture(GL_TEXTURE_2D, colorBufferTex);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
+
+    glGenTextures(1,&posAndNormalTex);
+    glBindTexture(GL_TEXTURE_2D, posAndNormalTex);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
+
+    glGenFramebuffers(1, &secondaryRaysFBO);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, secondaryRaysFBO);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,colorBufferTex,0);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D,posAndNormalTex,0);
+
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
     // glGenTextures(1,&lowResPassTex);
     // glBindTexture(GL_TEXTURE_2D, lowResPassTex);
 
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     // glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width>>2, height>>2);
 
@@ -239,13 +263,11 @@ bool createDependencies() {
 
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     // glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width>>2, height>>2);
 
     // glGenFramebuffers(1, &lowResPassFBO);
-    // glBindFramebuffer(GL_FRAMEBUFFER, lowResPassFBO);
+    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, lowResPassFBO);
     // glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,lowResPassTex,0);
     // glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D,lowResPassTex2,0);
 
@@ -258,14 +280,12 @@ bool createDependencies() {
 
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     // glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width>>1, height>>1);
 
     // glGenFramebuffers(1, &midResPassFBO);
-    // glBindFramebuffer(GL_FRAMEBUFFER, midResPassFBO);
-    // glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,midResPassTex,0);
+    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, midResPassFBO);
+    // glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,midResPassTex,0);
 
 
     // glGenTextures(1,&pixelsDataTex);
@@ -274,8 +294,8 @@ bool createDependencies() {
     // glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
 
     // glGenFramebuffers(1, &pixelsDataFBO);
-    // glBindFramebuffer(GL_FRAMEBUFFER, pixelsDataFBO);
-    // glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,pixelsDataTex,0);
+    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pixelsDataFBO);
+    // glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,pixelsDataTex,0);
 
     return true;
 }

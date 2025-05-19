@@ -7,7 +7,8 @@
 #define u32 uint
 #define u8 uint8_t
 
-out vec4 FragColor;
+out layout (location = 0) vec4 FragColor;
+out layout (location = 1) vec4 PosAndNormal;
 //out layout (location = 0) vec4 FragOut;
 //out layout (location = 1) vec4 FragOut2;
 
@@ -124,6 +125,7 @@ uint currentMortonPos;
 int posOffset;
 int depth;
 uint mortonPos = 0;
+uint lastHitProperties = 0;
 
 u64 getBlock();
 void nextIntersect(int step);
@@ -257,11 +259,29 @@ u64 raycastHemisphere(u64 color) {
 
     for (int i = 0; i < numRays; i++) {
 
-        u64 color2 = castRay(hemisphereDirs[i], pos, 5);
+        u64 color2 = castRay(hemisphereDirs[i], pos, 1);
         if (color2 == color) color = vec4_to_color_int(g);
     }
 
     return color;
+}
+
+ivec3[] map = {
+    ivec3(-1,1,1),
+    ivec3(1,-1,1),
+    ivec3(1,1,-1)
+};
+
+void reflectRay() {
+    vec3 tmp = lastHit * vec3(0,1,2);
+    ivec3 inverter = map[int(max(tmp.x,max(tmp.y,tmp.z)))];
+    ray.step *= inverter;
+    ray.dir *= inverter;
+    ray.delta *= inverter;
+}
+
+void refractRay() {
+
 }
 
 void main()
@@ -317,9 +337,15 @@ void main()
 
         color = getBlock();
         if (color != -1) {
-            color = raycastHemisphere(color);
-            FragColor = color_int_to_vec4(color);
-            return;
+            //color = raycastHemisphere(color);
+            if ((lastHitProperties & 0x2) > 0) {
+                reflectRay();
+            } else if ((lastHitProperties & 0x4) > 0) {
+                refractRay();
+            } else {
+                FragColor = color_int_to_vec4(color);
+                return;
+            }
         }
     }
 
@@ -414,6 +440,7 @@ u64 getBlock() {
         u64vec2 node = nodes[stack[depth]];
         
         if ((node.y & 1) == 1) {
+            lastHitProperties = uint(node.y >> 32);
             return node.x;
 
         } else if ((node.x >> index & 1) == 0) {

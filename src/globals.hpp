@@ -2,6 +2,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
+#include "types.hpp"
 
 #ifndef _GLOBALS
 #define _GLOBALS
@@ -62,6 +63,23 @@ extern unsigned int sendDebugFrame;
 
 extern glm::vec3 cameraDir;
 extern glm::vec3 cameraPos;
+
+enum properties {
+    NONE = 0,
+    CLEAR = 0x1,
+    REFLECTIVE = 0x2,
+    LUMINESCENT = 0x4
+};
+
+struct Block {
+    u32 properties;
+    u64 color;
+};
+
+extern Block hotbar[];
+
+extern int hotbarLength;
+extern int currentSelected;
 
 #endif
 

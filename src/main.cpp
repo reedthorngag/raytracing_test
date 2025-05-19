@@ -165,6 +165,7 @@ int main() {
     glfwSetKeyCallback(window,glfwCharCallback);
     glfwSetCursorPosCallback(window,glfwMousePosCallback);
     glfwSetMouseButtonCallback(window, glfwMouseButtonCallback);
+    glfwSetScrollCallback(window, glfwScrollCallback);
 
     glfwSwapInterval(1);
 

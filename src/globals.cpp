@@ -28,3 +28,22 @@ GLuint program3;
 
 GLuint arraySsbo;
 GLuint nodeSsbo;
+
+//shit code warning, its "temporary" though (yea right)
+Block hotbar[] {
+    Block{
+        NONE,
+        RGB_TO_U64(255,0,0)
+    },
+    Block{
+        NONE,
+        RGB_TO_U64(0,255,0)
+    },
+    Block{
+        REFLECTIVE,
+        RGB_TO_U64(0,0,0)
+    },
+};
+
+int hotbarLength = 3;
+int currentSelected;

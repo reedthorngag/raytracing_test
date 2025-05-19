@@ -14,3 +14,4 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mod
 
 void glfwMousePosCallback(GLFWwindow* window, double x, double y);
 
+void glfwScrollCallback(GLFWwindow* window, double xoffset, double yoffset);

@@ -38,12 +38,12 @@ struct Node {
         struct __attribute__((packed)) {
             u64 packedColor;
             u32 flags;
-            u32 spare;
+            u32 properties;
         } leaf;
     };
 } __attribute__((packed));
 
-struct Block {
+struct BlockPtr {
     u8* ptr;
     bool modified;
 };
@@ -51,7 +51,7 @@ struct Block {
 struct Ptr {
     u32 index;
     Node* ptr;
-    Block* block;
+    BlockPtr* block;
 };
 
 #endif

@@ -2,8 +2,8 @@
 #include "voxel_allocator.hpp"
 
 
-Block nodeBlocks[MAX_BLOCKS]{};
-Block arrayBlocks[MAX_BLOCKS]{};
+BlockPtr nodeBlocks[MAX_BLOCKS]{};
+BlockPtr arrayBlocks[MAX_BLOCKS]{};
 
 u32 nodeFreeList[FREE_LIST_SIZE_MASK];
 u32 arrayFreeList[FREE_LIST_SIZE_MASK];
