@@ -44,7 +44,7 @@ Block hotbar[] {
     Block{
         REFLECTIVE,
         RGB_TO_U64(255,0,0),
-        0.9
+        0.5
     },
     Block{
         REFLECTIVE,

@@ -126,7 +126,7 @@ int posOffset;
 int depth;
 uint mortonPos = 0;
 
-vec3 lastHit = vec3(0);
+ivec3 lastHit;
 uint lastHitFlags = 0;
 float lastHitMetadata = 0;
 
@@ -326,34 +326,33 @@ void main()
     pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
     pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
 
-    u64vec2 block = u64vec2(-1,0);
     uint i = 0;
+
+    u64vec2 block = getBlock();
 
     while (i < 100) {
 
-        while (block.x == -1 && i < 100) {
-            block = getBlock();
+        do {
             nextIntersectDDA();
-            i++;
-        }
-        
-        if (i == 100) break;
+            block = getBlock();
+        } while (block.x == -1 && i++ < 100);
+
+        if (i == 101) break;
 
         if ((block.y & 0x2) > 0) {
-            ray.step *= ivec3(lastHit);
+            ray.step *= lastHit;
             ray.dir *= lastHit;
-            //ray.delta *= inverter; // not needed currently, only castRay uses it
-            //finalColorMod -= max(color_int_to_vec3(color) * (1.0 - lastHitMetadata), 0.1);
+            finalColorMod = max((vec3(1) - color_int_to_vec3(block.x)) * (float(block.y >> 32)), 0.1);
             //reflectRay(color);
 
         } else if ((block.y & 0x4) > 0) {
-            refractRay(block.x);
+            // refractRay(block.x);
+            break;
 
         } else {
             FragColor = color_int_to_vec3(block.x) * finalColorMod;
             return;
         }
-
     }
 
     FragColor = genSkyBox() * finalColorMod;
@@ -393,7 +392,7 @@ void nextIntersectDDA() {
         mortonPos &= 0xFCF3CF3C;
         mortonPos |= n;
 
-        lastHit = vec3(-1,1,1);
+        lastHit = ivec3(-1,1,1);
 
     } else if (pos.deltaPos.y < pos.deltaPos.z) {
         pos.round.y += ray.step.y;
@@ -406,7 +405,7 @@ void nextIntersectDDA() {
         mortonPos &= 0xFCF3CF3C << 2 | 0x3;
         mortonPos |= n << 2;
 
-        lastHit = vec3(1,-1,1);
+        lastHit = ivec3(1,-1,1);
 
     } else {
         pos.round.z += ray.step.z;
@@ -419,7 +418,7 @@ void nextIntersectDDA() {
         mortonPos &= 0xFCF3CF3C << 4 | 0xf;
         mortonPos |= n << 4;
 
-        lastHit = vec3(1,1,-1);
+        lastHit = ivec3(1,1,-1);
     }
 }
 
