@@ -21,9 +21,10 @@ extern bool dimensionsChanged;
 
 extern GLFWwindow* window;
 
-extern GLuint program1;
-extern GLuint program2;
-extern GLuint program3;
+extern GLuint lowResProgram;
+extern GLuint midResProgram;
+extern GLuint fullResProgram;
+extern GLuint lightScatteringProgram;
 
 extern GLuint arraySsbo;
 extern GLuint nodeSsbo;

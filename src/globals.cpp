@@ -20,9 +20,10 @@ glm::vec3 cameraPos(35,50,35);
 
 GLFWwindow* window;
 
-GLuint program1;
-GLuint program2;
-GLuint program3;
+GLuint lowResProgram;
+GLuint midResProgram;
+GLuint fullResProgram;
+GLuint lightScatteringProgram;
 
 GLuint arraySsbo;
 GLuint nodeSsbo;

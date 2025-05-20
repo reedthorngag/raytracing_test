@@ -4,6 +4,8 @@
 #include "shaders/load_shader.hpp"
 #include "globals.hpp"
 
+#include <fstream>
+
 float vertices[] = {
     -1, -1, 0.0,
     -1,  1, 0.0,
@@ -27,7 +29,8 @@ GLuint midResPassTex;
 GLuint midResPassFBO;
 
 GLuint colorBufferTex;
-GLuint posAndNormalTex;
+GLuint posTex;
+GLuint normalTex;
 GLuint secondaryRaysFBO;
 
 void glfwErrorCallback(int errorCode, const char* errorMessage) {
@@ -157,29 +160,28 @@ bool linkProgram(GLuint program) {
     return true;
 }
 
-#include <fstream>
 bool setupProgram1() {
-    program1 = glCreateProgram();
+    lowResProgram = glCreateProgram();
     
-    GLuint shader1 = loadShader(program1, "../src/shaders/low_res.frag", GL_FRAGMENT_SHADER);
+    GLuint shader1 = loadShader(lowResProgram, "../src/shaders/low_res.frag", GL_FRAGMENT_SHADER);
     if (!shader1) return false;
     
-    GLuint shader2 = loadShader(program1, "../src/shaders/shader.vert", GL_VERTEX_SHADER);
+    GLuint shader2 = loadShader(lowResProgram, "../src/shaders/shader.vert", GL_VERTEX_SHADER);
     if (!shader2) return false;
 
-    if (!linkProgram(program1))
+    if (!linkProgram(lowResProgram))
         return false;
 
-    glDetachShader(program1, shader1);
-    glDetachShader(program1, shader2);
+    glDetachShader(lowResProgram, shader1);
+    glDetachShader(lowResProgram, shader2);
 
     DEBUG(3) {
         const size_t MAX_SIZE = 1<<24;
         char* binary = new char[MAX_SIZE];
         GLenum format;
         GLint length;
-        glGetProgramBinary(program1,MAX_SIZE,&length,&format,binary);
-        checkGlError(program1,"getBinary");
+        glGetProgramBinary(lowResProgram,MAX_SIZE,&length,&format,binary);
+        checkGlError(lowResProgram,"getBinary");
 
         std::ofstream binaryfile("bin.txt");
         binaryfile.write(binary,length);
@@ -189,19 +191,19 @@ bool setupProgram1() {
 }
 
 bool setupProgram2() {
-    program2 = glCreateProgram();
+    midResProgram = glCreateProgram();
     
-    GLuint shader1 = loadShader(program2, "../src/shaders/mid_res.frag", GL_FRAGMENT_SHADER);
+    GLuint shader1 = loadShader(midResProgram, "../src/shaders/mid_res.frag", GL_FRAGMENT_SHADER);
     if (!shader1) return false;
     
-    GLuint shader2 = loadShader(program2, "../src/shaders/shader.vert", GL_VERTEX_SHADER);
+    GLuint shader2 = loadShader(midResProgram, "../src/shaders/shader.vert", GL_VERTEX_SHADER);
     if (!shader2) return false;
 
-    if (!linkProgram(program2))
+    if (!linkProgram(midResProgram))
         return false;
 
-    glDetachShader(program2, shader1);
-    glDetachShader(program2, shader2);
+    glDetachShader(midResProgram, shader1);
+    glDetachShader(midResProgram, shader2);
 
     return true;
     
@@ -209,19 +211,38 @@ bool setupProgram2() {
 
 bool setupProgram3() {
 
-    program3 = glCreateProgram();
+    fullResProgram = glCreateProgram();
     
-    GLuint shader1 = loadShader(program3, "../src/shaders/full_res.frag", GL_FRAGMENT_SHADER);
+    GLuint shader1 = loadShader(fullResProgram, "../src/shaders/full_res.frag", GL_FRAGMENT_SHADER);
     if (!shader1) return false;
     
-    GLuint shader2 = loadShader(program3, "../src/shaders/shader.vert", GL_VERTEX_SHADER);
+    GLuint shader2 = loadShader(fullResProgram, "../src/shaders/shader.vert", GL_VERTEX_SHADER);
     if (!shader2) return false;
 
-    if (!linkProgram(program3))
+    if (!linkProgram(fullResProgram))
         return false;
 
-    glDetachShader(program3, shader1);
-    glDetachShader(program3, shader2);
+    glDetachShader(fullResProgram, shader1);
+    glDetachShader(fullResProgram, shader2);
+
+    return true;
+}
+
+bool setupProgram4() {
+
+    lightScatteringProgram = glCreateProgram();
+    
+    GLuint shader1 = loadShader(lightScatteringProgram, "../src/shaders/light_scattering.frag", GL_FRAGMENT_SHADER);
+    if (!shader1) return false;
+    
+    GLuint shader2 = loadShader(lightScatteringProgram, "../src/shaders/shader.vert", GL_VERTEX_SHADER);
+    if (!shader2) return false;
+
+    if (!linkProgram(lightScatteringProgram))
+        return false;
+
+    glDetachShader(lightScatteringProgram, shader1);
+    glDetachShader(lightScatteringProgram, shader2);
 
     return true;
 }
@@ -246,20 +267,29 @@ bool createDependencies() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB32F, width, height);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
 
-    glGenTextures(1,&posAndNormalTex);
-    glBindTexture(GL_TEXTURE_2D, posAndNormalTex);
+    glGenTextures(1,&posTex);
+    glBindTexture(GL_TEXTURE_2D, posTex);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB32F, width, height);
+
+    glGenTextures(1,&normalTex);
+    glBindTexture(GL_TEXTURE_2D, normalTex);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB32F, width, height);
 
     glGenFramebuffers(1, &secondaryRaysFBO);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, secondaryRaysFBO);
-    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,colorBufferTex,0);
-    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D,posAndNormalTex,0);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D, colorBufferTex,0);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D, posTex,0);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT2,GL_TEXTURE_2D, normalTex,0);
 
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
@@ -320,6 +350,7 @@ bool setupOpenGl() {
     if (!setupProgram1()) return false;
     //if (!setupProgram2()) return false;
     //if (!setupProgram3()) return false;
+    if (!setupProgram4()) return false;
 
     if (!createDependencies()) return false;
 
@@ -328,19 +359,22 @@ bool setupOpenGl() {
 
 void reloadShaders() {
     glUseProgram(0);
-    GLuint oldProgram1 = program1;
-    GLuint oldProgram2 = program2;
-    GLuint oldProgram3 = program3;
+    GLuint oldProgram1 = lowResProgram;
+    GLuint oldProgram2 = midResProgram;
+    GLuint oldProgram3 = fullResProgram;
+    GLuint oldProgram4 = lightScatteringProgram;
 
-    if (setupProgram1()){;// && setupProgram2() && setupProgram3()) {
+    if (setupProgram1() && setupProgram4()){;// && setupProgram2() && setupProgram3()) {
         glDeleteProgram(oldProgram1);
         //glDeleteProgram(oldProgram2);
         //glDeleteProgram(oldProgram3);
+        glDeleteProgram(oldProgram4);
         printf("Shaders successfully reloaded!    \n");
     } else {
-        program1 = oldProgram1;
-        program2 = oldProgram2;
-        program3 = oldProgram3;
+        lowResProgram = oldProgram1;
+        midResProgram = oldProgram2;
+        fullResProgram = oldProgram3;
+        lightScatteringProgram = oldProgram4;
     }
 }
 

@@ -7,23 +7,13 @@
 #define u32 uint
 #define u8 uint8_t
 
-out layout (location = 0) vec4 FragColor;
-out layout (location = 1) vec3 PosOut;
-out layout (location = 2) vec3 NormalOut;
-//out layout (location = 0) vec4 FragOut;
-//out layout (location = 1) vec4 FragOut2;
-
-uniform vec3 origin;
-uniform vec3 cameraDir;
-uniform vec2 mousePos;
-uniform int renderPosData;
-uniform uint rootNodeIndex;
-uniform uint originMortonPos;
-uniform vec2 pixelSize;
-uniform vec2 projPlaneSize;
 uniform uvec2 resolution;
 
-in vec4 gl_FragCoord;
+uniform sampler2D fragColor;
+uniform sampler2D startPoint;
+uniform sampler2D normal;
+
+out vec3 FragColor;
 
 layout (std430, binding = 3) readonly buffer layoutNodes {
     u64vec2 nodes[];
@@ -33,6 +23,9 @@ layout (packed, binding = 2) readonly buffer layoutArrays {
     uint[64] children_array[];
 };
 
+vec3 r = vec3(1,0,0);
+vec3 g = vec3(0,1,0);
+vec3 b = vec3(0,0,1);
 
 struct Ray {
     vec3 dir;
@@ -52,22 +45,6 @@ struct Ray {
 
     dvec3 absDelta;
 };
-
-double ifZeroMakeOne(double n) {
-    return n == 0 ? 1 : n;
-}
-
-double matchSign(double a, double sign) {
-    if ((a < 0 && sign < 0) || (a > 0 && sign > 0)) return a;
-    return -a;
-}
-
-double makeRatio(double a, double b) {
-    if ((a < 0 && b > 0) || (a > 0 && b < 0)) {
-        //a += -b;b = 0;//return abs(a + -b);
-    }
-    return abs(a) / abs(ifZeroMakeOne(b));
-}
 
 Ray buildRay(vec3 dir) {
     Ray ray;
@@ -89,13 +66,6 @@ Ray buildRay(vec3 dir) {
     if (dir.z < 0)
         ray.step.z = -1;
         //ray.sign.z = 1 << 31;
-
-    ray.ratioYtoX = matchSign(makeRatio(dir.y,dir.x),ray.step.y);
-    ray.ratioYtoZ = matchSign(makeRatio(dir.y,dir.z),ray.step.y);
-    ray.ratioXtoY = matchSign(makeRatio(dir.x,dir.y),ray.step.x);
-    ray.ratioXtoZ = matchSign(makeRatio(dir.x,dir.z),ray.step.x);
-    ray.ratioZtoX = matchSign(makeRatio(dir.z,dir.x),ray.step.z);
-    ray.ratioZtoY = matchSign(makeRatio(dir.z,dir.y),ray.step.z);
 
     ray.delta.x = 1/dir.x;
     ray.delta.y = 1/dir.y;
@@ -127,25 +97,14 @@ int posOffset;
 int depth;
 uint mortonPos = 0;
 
+uint originMortonPos;
+
 ivec3 lastHit;
 uint lastHitFlags = 0;
 float lastHitMetadata = 0;
 
 u64vec2 getBlock();
-void nextIntersect(int step);
 void nextIntersectDDA();
-
-mat4 rotationMatrix(vec3 axis, float angle) {
-    axis = normalize(axis);
-    float s = sin(angle);
-    float c = cos(angle);
-    float oc = 1.0 - c;
-    
-    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
-                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
-                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
-                0.0,                                0.0,                                0.0,                                1.0);
-}
 
 const int BITS_PER_COLOR = 21;
 const int COLOR_RANGE = 1 << BITS_PER_COLOR;
@@ -163,49 +122,6 @@ u64 vec3_to_color_int(vec3 color) {
     return (u64(color.x) << 42) | (u64(color.x) << 21) | u64(color.x);
 }
 
-float sigmoid(float x, float scale, float dropOffSteepness) {
-    return abs(1.0/(1+exp(-x*dropOffSteepness))*scale);
-}
-
-vec3 genSkyBox() {
-    if (ray.dir.y < 0) ray.dir.y *= 1.4;
-    float haze = (0.1-abs(clamp(ray.dir.y,-.3,.3))) * 0.8 + 0.1;
-    float modifier = sigmoid(1-(haze*2),1.0,2.0);
-    vec3 hazeMask = vec3(haze);
-    vec3 skyDefaultColor = vec3(0.2,0.4,1);
-    return (skyDefaultColor + clamp(haze,0,1) * 3) * modifier;
-}
-
-vec3 r = vec3(1,0,0);
-vec3 g = vec3(0,1,0);
-vec3 b = vec3(0,0,1);
-
-u64 castRay(vec3 dir, vec3 startPos, uint maxSteps) {
-    buildRay(dir);
-    pos.exact = startPos;
-    pos.round = ivec3(floor(startPos));
-
-    if (ray.step.x < 0) pos.exact.x -= 1;
-    if (ray.step.y < 0) pos.exact.y -= 1;
-    if (ray.step.z < 0) pos.exact.z -= 1;
-
-    pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
-    pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
-    pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
-
-    for (int i = 0; i < 100; i++) {
-
-        nextIntersectDDA();
-
-        u64vec2 block = getBlock();
-        if (block.x != -1) {
-            return block.x;
-        }
-    }
-
-    return -1;
-}
-
 // generate transform matrix code adapted from https://columbusutrigas.com/posts/rtgi/
 mat3 computeTransformMat(vec3 normal)
 {
@@ -216,7 +132,6 @@ mat3 computeTransformMat(vec3 normal)
 
     return mat3(xAxis, yAxis, zAxis);
 }
-
 
 vec3[] hemisphereDirs = {
     vec3(0.07430756460710652,0.97875,-0.19111991874778692),
@@ -247,32 +162,6 @@ vec3[] ratioMap = {
     vec3(ray.ratioZtoX,ray.ratioZtoY,1)
 };
 
-u64 raycastHemisphere(u64 color) {
-
-    vec3 tmp = lastHit * vec3(0,1,2);
-    int index = int(tmp.x + tmp.y + tmp.z);
-
-    vec3 pos = pos.round[index] * ratioMap[index];
-    vec3 normal = ray.step * lastHit;
-    mat3 transformMat = computeTransformMat(normal);
-
-    int numRays = 20;
-
-    for (int i = 0; i < numRays; i++) {
-
-        u64 color2 = castRay(hemisphereDirs[i], pos, 1);
-        if (color2 == color) color = vec3_to_color_int(g);
-    }
-
-    return color;
-}
-
-ivec3[] map = {
-    ivec3(-1,1,1),
-    ivec3(1,-1,1),
-    ivec3(1,1,-1)
-};
-
 vec3 finalColorMod = vec3(1);
 
 void reflectRay(u64vec2 block) {
@@ -286,71 +175,31 @@ void refractRay(u64 color) {
 
 }
 
-void main()
-{
+u64 castRay(vec3 dir, vec3 startPos, uint maxSteps) {
 
-    if (renderPosData == 0 && distance(gl_FragCoord.xy, mousePos) <= 3) {
-        FragColor = vec4(1,1,1,0);
-        return;
-    }
+    buildRay(dir);
+    pos.exact = startPos;
+    pos.round = ivec3(floor(startPos));
 
-    float pixelWidth = 1.0/resolution.x;
-    float pixelHeight = 1.0/resolution.y;
-
-    stack[0] = 0;
-    depth = 0;
-
-    pos.round = ivec3(floor(origin));
-
-    mortonPos = originMortonPos;
-    currentMortonPos = mortonPos;
-
-    vec2 FragCoord = gl_FragCoord.xy * vec2(pixelWidth,pixelHeight);//pixelSize;
-
-    vec3 camLeft = cross(cameraDir,vec3(0,1,0));
-    vec3 camUp = cross(cameraDir,camLeft);
-    vec3 projection_plane_center = cameraDir;
-    vec3 projection_plane_left = cross(projection_plane_center, vec3(0,1,0));
-    vec3 projection_plane_intersect = normalize(projection_plane_center + 
-        (projection_plane_left * -(projPlaneSize.x * (FragCoord.x - 0.5))) + 
-        cross(projection_plane_center, projection_plane_left) * (-FragCoord.y + 0.5) * projPlaneSize.y);
-    
-
-    ray = buildRay(projection_plane_intersect);
-
-    pos.exact = origin;
-    
     if (ray.step.x < 0) pos.exact.x -= 1;
     if (ray.step.y < 0) pos.exact.y -= 1;
     if (ray.step.z < 0) pos.exact.z -= 1;
-
-    int step = 1;
 
     pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
     pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
     pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
 
-    uint i = 0;
-
     float currentRefractiveIndex = 1.0;
 
-    u64vec2 block = getBlock();
-    if (block.x != -1) {
-        if ((block.y & 0x4) == 1) {
-            currentRefractiveIndex = float(block.y >> 32);
-        } else {
-            FragColor = vec4(color_int_to_vec3(block.x),0);
-            return;
-        }
-    }
+    u64vec2 block;
+    uint i = 0;
 
-    const uint numSteps = 200;
-    while (i < numSteps) {
+    while (i < maxSteps) {
 
         do {
             nextIntersectDDA();
             block = getBlock();
-        } while (block.x == -1 && i++ < numSteps);
+        } while (block.x == -1 && i++ < maxSteps);
 
         if (block.x == -1) break;
 
@@ -362,36 +211,71 @@ void main()
             break;
 
         } else {
-            break;
+            return block.x;
         }
     }
 
-    if (block.x != -1) {
-        FragColor = vec4(color_int_to_vec3(block.x) * finalColorMod, 1);
+    return -1;
+}
 
-        vec3 tmp = lastHit * vec3(0,1,2);
-        int index = int(tmp.x + tmp.y + tmp.z);
+vec3 raycastHemisphere(vec3 color, vec3 startPos, vec3 normal) {
 
-        PosOut = pos.round[index] * ratioMap[index];
-        NormalOut = ray.step * -min(lastHit,0);
-    } else {
-        FragColor = vec4(genSkyBox() * finalColorMod, 0);
+    currentMortonPos = mortonPos;
+
+    mat3 transformMat = computeTransformMat(normal);
+
+    const int numRays = 20;
+
+    for (int i = 0; i < numRays; i++) {
+
+        mortonPos = originMortonPos;
+        u64 color2 = castRay(hemisphereDirs[i], startPos, 5);
+        if (color2 != -1) color = b;
     }
 
-    // if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
-    //     pos.round.x += ray.step.x;
-    //     pos.exact = pos.round.x * vec3(1,ray.ratioXtoY,ray.ratioXtoZ);
-    // } else if (pos.deltaPos.y < pos.deltaPos.z) {
-    //     pos.round.y += ray.step.y;
-    //     pos.exact = pos.round.y * vec3(ray.ratioYtoX,1,ray.ratioYtoZ);
-    // } else {
-    //     pos.round.z += ray.step.z;
-    //     pos.exact = pos.round.z * vec3(ray.ratioZtoX,ray.ratioZtoY,1);
-    // }
-    // pos.exact -= ray.dir;
-    // FragOut = vec4(abs(pos.exact-origin), distance(pos.exact,origin));
-    // FragOut2 = vec4(ray.dir,0);
+    return color;
 }
+
+void main() {
+
+    vec2 fragCoord = gl_FragCoord.xy * (1.0/resolution);
+
+    vec4 color = texture(fragColor, fragCoord);
+    if (color.w == 0) {
+        FragColor = color.xyz;
+        return;
+    }
+
+    vec3 startPos = texture(startPoint,fragCoord).xyz;
+
+    stack[0] = 0;
+    depth = 0;
+
+    ivec3 pos = ivec3(floor(startPos));
+
+    int n = pos.x;
+    n = (n | (n << 16)) & 0x030000FF;
+    n = (n | (n <<  8)) & 0x0300F00F;
+    n = (n | (n <<  4)) & 0x030C30C3;
+    int x = n;
+
+    n = pos.y;
+    n = (n | (n << 16)) & 0x030000FF;
+    n = (n | (n <<  8)) & 0x0300F00F;
+    n = (n | (n <<  4)) & 0x030C30C3;
+    int y = n;
+
+    n = pos.z;
+    n = (n | (n << 16)) & 0x030000FF;
+    n = (n | (n <<  8)) & 0x0300F00F;
+    n = (n | (n <<  4)) & 0x030C30C3;
+
+    mortonPos = (n << 4) | (y << 2) | x;
+    originMortonPos = mortonPos;
+
+    FragColor = raycastHemisphere(texture(fragColor, fragCoord).xyz, startPos, texture(normal,fragCoord).xyz);
+}
+
 
 void nextIntersectDDA() {
 
@@ -475,3 +359,4 @@ u64vec2 getBlock() {
 
     return u64vec2(0,0);
 }
+
