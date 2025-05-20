@@ -173,18 +173,17 @@ bool setupProgram1() {
     glDetachShader(program1, shader1);
     glDetachShader(program1, shader2);
 
-    const size_t MAX_SIZE = 1<<24;
-    char* binary = new char[MAX_SIZE];
-    GLenum format;
-    GLint length;
-    printf("hi1\n");
-    glGetProgramBinary(program1,MAX_SIZE,&length,&format,binary);
-    checkGlError(program1,"getBinary");
-    printf("hi\n");
+    DEBUG(3) {
+        const size_t MAX_SIZE = 1<<24;
+        char* binary = new char[MAX_SIZE];
+        GLenum format;
+        GLint length;
+        glGetProgramBinary(program1,MAX_SIZE,&length,&format,binary);
+        checkGlError(program1,"getBinary");
 
-
-    std::ofstream binaryfile("bin.txt");
-    binaryfile.write(binary,length);
+        std::ofstream binaryfile("bin.txt");
+        binaryfile.write(binary,length);
+    }
 
     return true;
 }
@@ -343,7 +342,5 @@ void reloadShaders() {
         program2 = oldProgram2;
         program3 = oldProgram3;
     }
-
-    glUseProgram(program1);//3);
 }
 

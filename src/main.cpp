@@ -17,6 +17,8 @@ extern "C" {
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
+extern void enableReportGlErrors();
+
 Chunk* chunk;
 
 const char* debugFrameTypeString[] {
@@ -147,6 +149,7 @@ int main() {
     if (!setupOpenGl())
         exit(1);
 
+    DEBUG(1) enableReportGlErrors();
 
     glBindVertexArray(VAO);
     initTetraHexaTree();
@@ -175,9 +178,6 @@ int main() {
 
     while (!glfwWindowShouldClose(window)) {
 
-        glfwPollEvents();
-        doInputUpdates(glfwGetTime() - start);
-
         //glfwWaitEvents();
         start = glfwGetTime();
 
@@ -185,13 +185,17 @@ int main() {
 
         render();
 
+        glfwSwapBuffers(window);
+
+        glfwPollEvents();
+        doInputUpdates(glfwGetTime() - start);
+
         times[i++] = glfwGetTime()-start;
         i %= averageSize;
         double out = 0;
         for (int n = 0; n < averageSize && times[n]; n++) out += times[n];
         printf("\rrender time: %dms (%d fps) rotationXY: %lf, %lf camPos: %lf, %lf, %lf    ",(int)(out/(double)averageSize*1000),(int)(1000.0/(double)((out/(double)averageSize) * 1000)),rotationY,rotationX,cameraPos.x,cameraPos.y,cameraPos.z);
 
-        glfwSwapBuffers(window);
         //glFinish();
     }
 

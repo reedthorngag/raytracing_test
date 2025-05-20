@@ -11,8 +11,6 @@ bool dimensionsChanged = true;
 
 Mouse mouse;
 
-double lastMouseUpdate = 0;
-
 bool mouseLocked = false;
 
 unsigned int sendDebugFrame = 0;
@@ -44,7 +42,7 @@ Block hotbar[] {
     Block{
         REFLECTIVE,
         RGB_TO_U64(255,0,0),
-        0.5
+        0.9
     },
     Block{
         REFLECTIVE,
@@ -52,7 +50,7 @@ Block hotbar[] {
         0.9
     },
     Block{
-        REFLECTIVE,
+        REFRACTIVE,
         RGB_TO_U64(0,0,0),
         0.9
     },

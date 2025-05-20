@@ -55,8 +55,6 @@ struct Mouse {
 
 extern Mouse mouse;
 
-extern double lastMouseUpdate;
-
 extern bool mouseLocked;
 
 extern unsigned int sendDebugFrame;
@@ -66,9 +64,9 @@ extern glm::vec3 cameraPos;
 
 enum properties {
     NONE = 0,
-    CLEAR = 0x1,
     REFLECTIVE = 0x2,
-    LUMINESCENT = 0x4
+    REFRACTIVE = 0x4,
+    LUMINESCENT = 0x8
 };
 
 struct Block {

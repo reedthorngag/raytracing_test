@@ -155,10 +155,12 @@ void glfwMousePosCallback(GLFWwindow* window, double x, double y) {
         double yDelta = halfHeight - y;
         rotateCamera(xDelta * -0.1, yDelta * -0.1); // invert x
         glfwSetCursorPos(window,halfWidth,halfHeight);
+        mouse.x = halfWidth;
+        mouse.y = halfHeight;
+    } else {
+        mouse.x = x;
+        mouse.y = height-y;
     }
-    mouse.x = x;
-    mouse.y = height-y;
-    lastMouseUpdate = glfwGetTime();
 }
 
 void glfwScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {

@@ -274,14 +274,12 @@ ivec3[] map = {
 
 vec3 finalColorMod = vec3(1);
 
-// void reflectRay(u64 color) {
-//     vec3 tmp = lastHit * vec3(0,1,2);
-//     ivec3 inverter = map[int(max(tmp.x,max(tmp.y,tmp.z)))];
-//     ray.step *= inverter;
-//     ray.dir *= inverter;
-//     //ray.delta *= inverter; // not needed currently, only castRay uses it
-//     finalColorMod -= clamp(color_int_to_vec3(color).xyz * (1.0 - lastHitMetadata), 0.1, 1.0); // min is 0.1 because it wouldn't hit zero irl, but light scattering isnt implemented yet
-// }
+void reflectRay(u64vec2 block) {
+    pos.deltaPos += ray.absDelta * min(lastHit, 0);
+    ray.step *= lastHit;
+    ray.dir *= lastHit;
+    finalColorMod *= vec3(1) - ((vec3(1) - color_int_to_vec3(block.x)) * (1 - float(block.y >> 32)));
+}
 
 void refractRay(u64 color) {
 
@@ -289,6 +287,11 @@ void refractRay(u64 color) {
 
 void main()
 {
+
+    if (renderPosData == 0 && distance(gl_FragCoord.xy, mousePos) <= 3) {
+        FragColor = vec3(1);
+        return;
+    }
 
     float pixelWidth = 1.0/size.x;
     float pixelHeight = 1.0/size.y;
@@ -328,25 +331,33 @@ void main()
 
     uint i = 0;
 
-    u64vec2 block = getBlock();
+    float currentRefractiveIndex = 1.0;
 
-    while (i < 100) {
+    u64vec2 block = getBlock();
+    if (block.x != -1) {
+        if ((block.y & 0x4) == 1) {
+            currentRefractiveIndex = float(block.y >> 32);
+        } else {
+            FragColor = color_int_to_vec3(block.x);
+            return;
+        }
+    }
+
+    const uint numSteps = 200;
+    while (i < numSteps) {
 
         do {
             nextIntersectDDA();
             block = getBlock();
-        } while (block.x == -1 && i++ < 100);
+        } while (block.x == -1 && i++ < numSteps);
 
-        if (i == 101) break;
+        if (block.x == -1) break;
 
-        if ((block.y & 0x2) > 0) {
-            ray.step *= lastHit;
-            ray.dir *= lastHit;
-            finalColorMod = max((vec3(1) - color_int_to_vec3(block.x)) * (float(block.y >> 32)), 0.1);
-            //reflectRay(color);
+        uint flags = uint(block.y) & 0x7;
+        if (flags == 0x3) {
+            reflectRay(block);
 
-        } else if ((block.y & 0x4) > 0) {
-            // refractRay(block.x);
+        } else if (flags == 0x5) {
             break;
 
         } else {
@@ -425,17 +436,15 @@ void nextIntersectDDA() {
 u64vec2 getBlock() {
     
     currentMortonPos ^= mortonPos;
-    int n = 0;
-    int mask = 0x3f << (MAX_DEPTH-2) * 6;
-    while (n < depth && (currentMortonPos & mask) == 0) {
-        n++;
-        mask >>= 6;
+    int n = MAX_DEPTH-1;
+    while (currentMortonPos != 0) {
+        n--;
+        currentMortonPos >>= 6;
     }
 
     currentMortonPos = mortonPos;
 
-    if (n < depth)
-       depth = n;
+    depth = n < depth ? n : depth;
 
     posOffset = (MAX_DEPTH-1 - depth) * 6;
 
@@ -443,14 +452,16 @@ u64vec2 getBlock() {
 
         u64vec2 node = nodes[stack[depth]];
         
-        if ((node.y & 1) == 1) {
+        uint a = uint(node.y & 1);
+        if (a == 1) {
             return node;
         }
 
         posOffset -= 6;
         uint index = (mortonPos >> posOffset) & 0x3f;
 
-        if ((node.x >> index & 1) == 0) {
+        a = uint(node.x >> index & 1);
+        if (a == 0) {
             return u64vec2(-1,0);
         }
 
