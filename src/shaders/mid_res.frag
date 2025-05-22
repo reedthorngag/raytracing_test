@@ -130,7 +130,7 @@ Ray ray;
 const int MAX_DEPTH = 6;
 
 u32 stack[MAX_DEPTH];
-uint currentMortonPos;
+uint currentMortonPos = 0;
 int posOffset;
 int depth;
 
@@ -237,7 +237,6 @@ void main()
     n = (n | (n <<  4)) & 0x030C30C3;
 
     mortonPos = (n << 4) | (y << 2) | x;
-    currentMortonPos = mortonPos;
 
     if (sourceRay == vec4(0) || getBlock() != -1) {
         FragOut = vec4(0);

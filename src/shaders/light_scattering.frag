@@ -92,8 +92,7 @@ Ray ray;
 const int MAX_DEPTH = 6;
 
 u32 stack[MAX_DEPTH];
-uint currentMortonPos;
-int posOffset;
+uint currentMortonPos = 0;
 int depth;
 uint mortonPos = 0;
 
@@ -177,7 +176,7 @@ void refractRay(u64 color) {
 
 u64 castRay(vec3 dir, vec3 startPos, uint maxSteps) {
 
-    buildRay(dir);
+    ray = buildRay(dir);
     pos.exact = startPos;
     pos.round = ivec3(floor(startPos));
 
@@ -201,7 +200,9 @@ u64 castRay(vec3 dir, vec3 startPos, uint maxSteps) {
             block = getBlock();
         } while (block.x == -1 && i++ < maxSteps);
 
-        if (block.x == -1) break;
+        if (block.x == -1) {
+            return -1;
+        }
 
         uint flags = uint(block.y) & 0x7;
         if (flags == 0x3) {
@@ -220,8 +221,6 @@ u64 castRay(vec3 dir, vec3 startPos, uint maxSteps) {
 
 vec3 raycastHemisphere(vec3 color, vec3 startPos, vec3 normal) {
 
-    currentMortonPos = mortonPos;
-
     mat3 transformMat = computeTransformMat(normal);
 
     const int numRays = 20;
@@ -229,9 +228,13 @@ vec3 raycastHemisphere(vec3 color, vec3 startPos, vec3 normal) {
     for (int i = 0; i < numRays; i++) {
 
         mortonPos = originMortonPos;
-        u64 color2 = castRay(hemisphereDirs[i], startPos, 5);
+        u64 color2 = castRay(transformMat * hemisphereDirs[i], startPos, 5);
         if (color2 != -1) color = b;
     }
+
+    mortonPos = originMortonPos;
+    u64 color2 = castRay(normal, startPos, 10);
+    if (color2 != -1) color = b;
 
     return color;
 }
@@ -243,6 +246,11 @@ void main() {
     vec4 color = texture(fragColor, fragCoord);
     if (color.w == 0) {
         FragColor = color.xyz;
+        return;
+    }
+
+    if (texture(normal, fragCoord).z < 0) {
+        FragColor = b;
         return;
     }
 
@@ -333,7 +341,7 @@ u64vec2 getBlock() {
 
     depth = n < depth ? n : depth;
 
-    posOffset = (MAX_DEPTH-1 - depth) * 6;
+    uint posOffset = (MAX_DEPTH-1 - depth) * 6;
 
     while (depth < MAX_DEPTH) {
 

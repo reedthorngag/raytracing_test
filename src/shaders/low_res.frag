@@ -122,8 +122,7 @@ Ray ray;
 const int MAX_DEPTH = 6;
 
 u32 stack[MAX_DEPTH];
-uint currentMortonPos;
-int posOffset;
+uint currentMortonPos = 0;
 int depth;
 uint mortonPos = 0;
 
@@ -303,7 +302,6 @@ void main()
     pos.round = ivec3(floor(origin));
 
     mortonPos = originMortonPos;
-    currentMortonPos = mortonPos;
 
     vec2 FragCoord = gl_FragCoord.xy * vec2(pixelWidth,pixelHeight);//pixelSize;
 
@@ -323,8 +321,6 @@ void main()
     if (ray.step.x < 0) pos.exact.x -= 1;
     if (ray.step.y < 0) pos.exact.y -= 1;
     if (ray.step.z < 0) pos.exact.z -= 1;
-
-    int step = 1;
 
     pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
     pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
@@ -369,11 +365,11 @@ void main()
     if (block.x != -1) {
         FragColor = vec4(color_int_to_vec3(block.x) * finalColorMod, 1);
 
-        vec3 tmp = lastHit * vec3(0,1,2);
+        vec3 tmp = -min(lastHit,0) * vec3(0,1,2);
         int index = int(tmp.x + tmp.y + tmp.z);
 
         PosOut = pos.round[index] * ratioMap[index];
-        NormalOut = ray.step * -min(lastHit,0);
+        NormalOut = vec3(0,0,-1);//min(lastHit,0);
     } else {
         FragColor = vec4(genSkyBox() * finalColorMod, 0);
     }
@@ -449,7 +445,7 @@ u64vec2 getBlock() {
 
     depth = n < depth ? n : depth;
 
-    posOffset = (MAX_DEPTH-1 - depth) * 6;
+    uint posOffset = (MAX_DEPTH-1 - depth) * 6;
 
     while (depth < MAX_DEPTH) {
 
