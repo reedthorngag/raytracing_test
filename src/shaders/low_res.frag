@@ -41,12 +41,9 @@ struct Ray {
 
     ivec3 sign;
 
-    double ratioYtoX;
-    double ratioYtoZ;
-    double ratioXtoY;
-    double ratioXtoZ;
-    double ratioZtoX;
-    double ratioZtoY;
+    dvec3 ratiosX;
+    dvec3 ratiosY;
+    dvec3 ratiosZ;
 
     dvec3 delta;
 
@@ -90,12 +87,21 @@ Ray buildRay(vec3 dir) {
         ray.step.z = -1;
         //ray.sign.z = 1 << 31;
 
-    ray.ratioYtoX = matchSign(makeRatio(dir.y,dir.x),ray.step.y);
-    ray.ratioYtoZ = matchSign(makeRatio(dir.y,dir.z),ray.step.y);
-    ray.ratioXtoY = matchSign(makeRatio(dir.x,dir.y),ray.step.x);
-    ray.ratioXtoZ = matchSign(makeRatio(dir.x,dir.z),ray.step.x);
-    ray.ratioZtoX = matchSign(makeRatio(dir.z,dir.x),ray.step.z);
-    ray.ratioZtoY = matchSign(makeRatio(dir.z,dir.y),ray.step.z);
+    ray.ratiosX = dvec3(
+        1,
+        matchSign(makeRatio(dir.x,dir.y),ray.step.x),
+        matchSign(makeRatio(dir.x,dir.z),ray.step.x)
+    );
+    ray.ratiosY = dvec3(
+        matchSign(makeRatio(dir.y,dir.x),ray.step.y),
+        1,
+        matchSign(makeRatio(dir.y,dir.z),ray.step.y)
+    );
+    ray.ratiosZ = dvec3(
+        matchSign(makeRatio(dir.z,dir.x),ray.step.z),
+        matchSign(makeRatio(dir.z,dir.y),ray.step.z),
+        1
+    );
 
     ray.delta.x = 1/dir.x;
     ray.delta.y = 1/dir.y;
@@ -178,99 +184,6 @@ vec3 genSkyBox() {
 vec3 r = vec3(1,0,0);
 vec3 g = vec3(0,1,0);
 vec3 b = vec3(0,0,1);
-
-u64 castRay(vec3 dir, vec3 startPos, uint maxSteps) {
-    buildRay(dir);
-    pos.exact = startPos;
-    pos.round = ivec3(floor(startPos));
-
-    if (ray.step.x < 0) pos.exact.x -= 1;
-    if (ray.step.y < 0) pos.exact.y -= 1;
-    if (ray.step.z < 0) pos.exact.z -= 1;
-
-    pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
-    pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
-    pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
-
-    for (int i = 0; i < 100; i++) {
-
-        nextIntersectDDA();
-
-        u64vec2 block = getBlock();
-        if (block.x != -1) {
-            return block.x;
-        }
-    }
-
-    return -1;
-}
-
-// generate transform matrix code adapted from https://columbusutrigas.com/posts/rtgi/
-mat3 computeTransformMat(vec3 normal)
-{
-    const vec3 up = vec3(0,1,0);
-    const vec3 xAxis = normalize(cross(up, normal));
-    const vec3 yAxis = cross(normal, xAxis);
-    const vec3 zAxis = normal;
-
-    return mat3(xAxis, yAxis, zAxis);
-}
-
-
-vec3[] hemisphereDirs = {
-    vec3(0.07430756460710652,0.97875,-0.19111991874778692),
-    vec3(-0.3150707529400007,0.93625,0.15545532522825017),
-    vec3(0.43068766605847436,0.89375,0.12537572255067567),
-    vec3(-0.27244438490890477,0.8512500000000001,-0.4484946985546301),
-    vec3(-0.11439109511443586,0.8087500000000001,0.5769212380026584),
-    vec3(0.517891665482911,0.76625,-0.380327701230579),
-    vec3(-0.6860266781979666,0.7237500000000001,-0.07452069712947905),
-    vec3(0.48323377346512497,0.68125,0.5498941331589711),
-    vec3(0.015898658644648525,0.63875,-0.769250069972893),
-    vec3(-0.5543988637067352,0.5962500000000001,0.5806271070322852),
-    vec3(0.8308218084042563,0.5537500000000001,-0.05564225175063546),
-    vec3(-0.6710951947823731,0.51125,-0.5368935434888453),
-    vec3(0.13585390932049551,0.46875000000000006,0.8728213750947776),
-    vec3(0.5011950375796783,0.4262499999999999,-0.7530700311428579),
-    vec3(-0.8965402339742274,0.38375000000000004,0.22124996353770887),
-    vec3(0.8250469005357429,0.3412500000000001,0.4503843352253316),
-    vec3(-0.3087795461729986,0.29875,-0.9029970262216798),
-    vec3(-0.38720001271637,0.25625000000000003,0.8856704170584241),
-    vec3(0.8931680415940547,0.2137499999999999,-0.39567889376998755),
-    vec3(-0.9337752751575846,0.17125,-0.31422471736700947),
-};
-
-vec3[] ratioMap = {
-    vec3(1,ray.ratioXtoY,ray.ratioXtoZ),
-    vec3(ray.ratioYtoX,1,ray.ratioYtoZ),
-    vec3(ray.ratioZtoX,ray.ratioZtoY,1)
-};
-
-u64 raycastHemisphere(u64 color) {
-
-    vec3 tmp = lastHit * vec3(0,1,2);
-    int index = int(tmp.x + tmp.y + tmp.z);
-
-    vec3 pos = pos.round[index] * ratioMap[index];
-    vec3 normal = ray.step * lastHit;
-    mat3 transformMat = computeTransformMat(normal);
-
-    int numRays = 20;
-
-    for (int i = 0; i < numRays; i++) {
-
-        u64 color2 = castRay(hemisphereDirs[i], pos, 1);
-        if (color2 == color) color = vec3_to_color_int(g);
-    }
-
-    return color;
-}
-
-ivec3[] map = {
-    ivec3(-1,1,1),
-    ivec3(1,-1,1),
-    ivec3(1,1,-1)
-};
 
 vec3 finalColorMod = vec3(1);
 
@@ -368,7 +281,16 @@ void main()
         vec3 tmp = -min(lastHit,0) * vec3(0,1,2);
         int index = int(tmp.x + tmp.y + tmp.z);
 
-        PosOut = pos.round[index] * ratioMap[index];
+        int val = abs(pos.round[index]);
+        if (index == 0)
+            PosOut = vec3(val * ray.ratiosX * ray.step);
+        else if (index == 1)
+            PosOut = vec3(val * ray.ratiosY * ray.step);
+        else if (index == 2)
+            PosOut = vec3(val * ray.ratiosZ * ray.step);
+        
+        if (pos.round != ivec3(floor(PosOut))) FragColor = vec4(g,0);
+        
         NormalOut = -min(lastHit,0) * ray.step;
     } else {
         FragColor = vec4(genSkyBox() * finalColorMod, 0);

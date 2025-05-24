@@ -226,12 +226,12 @@ vec3 raycastHemisphere(vec3 color, vec3 startPos, vec3 normal) {
 
     mat3 transformMat = computeTransformMat(normal);
 
-    const int numRays = 1;
+    const int numRays = 20;
 
     for (int i = 0; i < numRays; i++) {
 
         mortonPos = originMortonPos;
-        u64 color2 = castRay(vec3(0,0,1), startPos, 5);
+        u64 color2 = castRay(hemisphereDirs[i].xzy, startPos, 5);
         if (color2 != -1) color = b;
     }
 
@@ -248,7 +248,7 @@ void main() {
         return;
     }
 
-    vec3 startPos = origin;//texture(startPoint,fragCoord).xyz;
+    vec3 startPos = texture(startPoint,fragCoord).xyz;
 
     stack[0] = 0;
     depth = 0;
@@ -274,21 +274,6 @@ void main() {
 
     mortonPos = (n << 4) | (y << 2) | x;
     originMortonPos = mortonPos;
-
-    // ray = buildRay()
-
-    // u64vec2 block;
-
-    // for (int i=0; i < 50; i++) {
-    //     nextIntersectDDA();
-    //     block = getBlock();
-    //     if (block.x != -1) {
-    //         FragColor = r;
-    //         return;
-    //     }
-    // }
-    // FragColor = b;
-    // return;
 
     FragColor = raycastHemisphere(color.xyz, startPos, texture(normal,fragCoord).xyz);
 }
