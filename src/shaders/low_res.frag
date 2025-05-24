@@ -369,7 +369,7 @@ void main()
         int index = int(tmp.x + tmp.y + tmp.z);
 
         PosOut = pos.round[index] * ratioMap[index];
-        NormalOut = vec3(0,0,-1);//min(lastHit,0);
+        NormalOut = -min(lastHit,0) * ray.step;
     } else {
         FragColor = vec4(genSkyBox() * finalColorMod, 0);
     }

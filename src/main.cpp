@@ -69,13 +69,17 @@ u32 getMortonPos(glm::vec3 pos) {
 }
 
 void render() {
+    if (secondaryRaysFBO == 0 || normalTex == 0) {
+        printf("FUCK\n");
+        exit(1);
+    }
 
     glClearColor(1,1,1,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(lowResProgram);
 
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, secondaryRaysFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, secondaryRaysFBO);
 
     glUniform3f(glGetUniformLocation(lowResProgram, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
     glUniform3f(glGetUniformLocation(lowResProgram, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
@@ -95,12 +99,15 @@ void render() {
     
     glUseProgram(lightScatteringProgram);
 
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     if (dimensionsChanged) {
         glUniform2ui(glGetUniformLocation(lightScatteringProgram, "resolution"), width, height);
         dimensionsChanged = false;
     }
+
+    glUniform3f(glGetUniformLocation(lightScatteringProgram, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
+
 
     glBindTexture(GL_TEXTURE_2D, colorBufferTex);
     glActiveTexture(GL_TEXTURE1);
@@ -110,7 +117,7 @@ void render() {
     glActiveTexture(GL_TEXTURE0);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    DEBUG(3) checkGlError(lowResProgram,"glDrawArrays2");
+    DEBUG(3) checkGlError(lightScatteringProgram,"glDrawArrays2");
 
     // glUseProgram(midResProgram);
 

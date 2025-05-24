@@ -8,10 +8,11 @@
 #define u8 uint8_t
 
 uniform uvec2 resolution;
+uniform vec3 origin;
 
-uniform sampler2D fragColor;
-uniform sampler2D startPoint;
-uniform sampler2D normal;
+uniform layout (binding = 0) sampler2D fragColor;
+uniform layout (binding = 1) sampler2D startPoint;
+uniform layout (binding = 2) sampler2D normal;
 
 out vec3 FragColor;
 
@@ -200,20 +201,22 @@ u64 castRay(vec3 dir, vec3 startPos, uint maxSteps) {
             block = getBlock();
         } while (block.x == -1 && i++ < maxSteps);
 
-        if (block.x == -1) {
-            return -1;
-        }
 
-        uint flags = uint(block.y) & 0x7;
-        if (flags == 0x3) {
-            reflectRay(block);
+        return block.x;
+        // if (block.x == -1) {
+        //     return -1;
+        // }
 
-        } else if (flags == 0x5) {
-            break;
+        // uint flags = uint(block.y) & 0x7;
+        // if (flags == 0x3) {
+        //     reflectRay(block);
 
-        } else {
-            return block.x;
-        }
+        // } else if (flags == 0x5) {
+        //     break;
+
+        // } else {
+        //     return block.x;
+        // }
     }
 
     return -1;
@@ -223,18 +226,14 @@ vec3 raycastHemisphere(vec3 color, vec3 startPos, vec3 normal) {
 
     mat3 transformMat = computeTransformMat(normal);
 
-    const int numRays = 20;
+    const int numRays = 1;
 
     for (int i = 0; i < numRays; i++) {
 
         mortonPos = originMortonPos;
-        u64 color2 = castRay(transformMat * hemisphereDirs[i], startPos, 5);
+        u64 color2 = castRay(vec3(0,0,1), startPos, 5);
         if (color2 != -1) color = b;
     }
-
-    mortonPos = originMortonPos;
-    u64 color2 = castRay(normal, startPos, 10);
-    if (color2 != -1) color = b;
 
     return color;
 }
@@ -249,12 +248,7 @@ void main() {
         return;
     }
 
-    if (texture(normal, fragCoord).z < 0) {
-        FragColor = b;
-        return;
-    }
-
-    vec3 startPos = texture(startPoint,fragCoord).xyz;
+    vec3 startPos = origin;//texture(startPoint,fragCoord).xyz;
 
     stack[0] = 0;
     depth = 0;
@@ -281,7 +275,22 @@ void main() {
     mortonPos = (n << 4) | (y << 2) | x;
     originMortonPos = mortonPos;
 
-    FragColor = raycastHemisphere(texture(fragColor, fragCoord).xyz, startPos, texture(normal,fragCoord).xyz);
+    // ray = buildRay()
+
+    // u64vec2 block;
+
+    // for (int i=0; i < 50; i++) {
+    //     nextIntersectDDA();
+    //     block = getBlock();
+    //     if (block.x != -1) {
+    //         FragColor = r;
+    //         return;
+    //     }
+    // }
+    // FragColor = b;
+    // return;
+
+    FragColor = raycastHemisphere(color.xyz, startPos, texture(normal,fragCoord).xyz);
 }
 
 
