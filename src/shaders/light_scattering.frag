@@ -60,13 +60,10 @@ Ray buildRay(vec3 dir) {
 
     if (dir.x < 0)
         ray.step.x = -1;
-        //ray.sign.x = 1 << 31;
     if (dir.y < 0)
         ray.step.y = -1;
-        //ray.sign.y = 1 << 31;
     if (dir.z < 0)
         ray.step.z = -1;
-        //ray.sign.z = 1 << 31;
 
     ray.delta.x = 1/dir.x;
     ray.delta.y = 1/dir.y;

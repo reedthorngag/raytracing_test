@@ -55,15 +55,14 @@ double ifZeroMakeOne(double n) {
 }
 
 double matchSign(double a, double sign) {
-    if ((a < 0 && sign < 0) || (a > 0 && sign > 0)) return a;
-    return -a;
+    return a * sign;
 }
 
 double makeRatio(double a, double b) {
-    if ((a < 0 && b > 0) || (a > 0 && b < 0)) {
-        //a += -b;b = 0;//return abs(a + -b);
+    if (b == 0) {
+        return 0;
     }
-    return abs(a) / abs(ifZeroMakeOne(b));
+    return abs(a) / abs(b);
 }
 
 Ray buildRay(vec3 dir) {
@@ -89,17 +88,17 @@ Ray buildRay(vec3 dir) {
 
     ray.ratiosX = dvec3(
         1,
-        matchSign(makeRatio(dir.x,dir.y),ray.step.x),
-        matchSign(makeRatio(dir.x,dir.z),ray.step.x)
+        makeRatio(dir.x,dir.y) * ray.step.y,
+        makeRatio(dir.x,dir.z) * ray.step.z
     );
     ray.ratiosY = dvec3(
-        matchSign(makeRatio(dir.y,dir.x),ray.step.y),
+        makeRatio(dir.y,dir.x) * ray.step.x,
         1,
-        matchSign(makeRatio(dir.y,dir.z),ray.step.y)
+        makeRatio(dir.y,dir.z) * ray.step.z
     );
     ray.ratiosZ = dvec3(
-        matchSign(makeRatio(dir.z,dir.x),ray.step.z),
-        matchSign(makeRatio(dir.z,dir.y),ray.step.z),
+        makeRatio(dir.z,dir.x) * ray.step.x,
+        makeRatio(dir.z,dir.y) * ray.step.y,
         1
     );
 
@@ -281,15 +280,15 @@ void main()
         vec3 tmp = -min(lastHit,0) * vec3(0,1,2);
         int index = int(tmp.x + tmp.y + tmp.z);
 
-        int val = abs(pos.round[index]);
+        int val = abs(pos.round[index]-int(floor(origin[index])));
         if (index == 0)
-            PosOut = vec3(val * ray.ratiosX * ray.step);
+            PosOut = vec3(val * ray.ratiosX);
         else if (index == 1)
-            PosOut = vec3(val * ray.ratiosY * ray.step);
+            PosOut = vec3(val * ray.ratiosY);
         else if (index == 2)
-            PosOut = vec3(val * ray.ratiosZ * ray.step);
+            PosOut = vec3(val * ray.ratiosZ);
         
-        if (pos.round != ivec3(floor(PosOut))) FragColor = vec4(g,0);
+        if (distance(abs(pos.round).z,abs(ivec3(floor(PosOut+origin))).z) > 2) FragColor = vec4(g,0);
         
         NormalOut = -min(lastHit,0) * ray.step;
     } else {
