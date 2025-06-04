@@ -87,19 +87,19 @@ Ray buildRay(vec3 dir) {
         //ray.sign.z = 1 << 31;
 
     ray.ratiosX = dvec3(
-        1,
+        ray.step.x,
         makeRatio(dir.x,dir.y) * ray.step.y,
         makeRatio(dir.x,dir.z) * ray.step.z
     );
     ray.ratiosY = dvec3(
         makeRatio(dir.y,dir.x) * ray.step.x,
-        1,
+        ray.step.y,
         makeRatio(dir.y,dir.z) * ray.step.z
     );
     ray.ratiosZ = dvec3(
         makeRatio(dir.z,dir.x) * ray.step.x,
         makeRatio(dir.z,dir.y) * ray.step.y,
-        1
+        ray.step.z
     );
 
     ray.delta.x = 1/dir.x;
@@ -257,6 +257,7 @@ void main()
 
         do {
             nextIntersectDDA();
+            //nextIntersect(1);
             block = getBlock();
         } while (block.x == -1 && i++ < numSteps);
 
@@ -277,22 +278,24 @@ void main()
     if (block.x != -1) {
         FragColor = vec4(color_int_to_vec3(block.x) * finalColorMod, 1);
 
-        vec3 tmp = -min(lastHit,0) * vec3(0,1,2);
-        int index = int(tmp.x + tmp.y + tmp.z);
+        // vec3 tmp = -min(lastHit,0) * vec3(0,1,2);
+        // int index = int(tmp.x + tmp.y + tmp.z);
 
-        int val = abs(pos.round[index]-int(floor(origin[index])));
-        if (index == 0)
-            PosOut = vec3(val * ray.ratiosX);
-        else if (index == 1)
-            PosOut = vec3(val * ray.ratiosY);
-        else if (index == 2)
-            PosOut = vec3(val * ray.ratiosZ);
+        // int val = abs(pos.round[index]-int(floor(origin[index])));
+        // if (index == 0)
+        //     PosOut = vec3(val * ray.ratiosX);
+        // else if (index == 1)
+        //     PosOut = vec3(val * ray.ratiosY);
+        // else if (index == 2)
+        //     PosOut = vec3(val * ray.ratiosZ);
         
-        if (distance(abs(pos.round).z,abs(ivec3(floor(PosOut+origin))).z) > 2) FragColor = vec4(g,0);
+        // if (distance(abs(pos.round).z,abs(ivec3(floor(PosOut+origin))).z) > 2) FragColor = vec4(g,0);
+
+        PosOut = pos.exact;
         
         NormalOut = -min(lastHit,0) * ray.step;
     } else {
-        FragColor = vec4(genSkyBox() * finalColorMod, 0);
+        FragColor = vec4(genSkyBox() * finalColorMod, 0); 
     }
 
     // if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
@@ -308,6 +311,61 @@ void main()
     // pos.exact -= ray.dir;
     // FragOut = vec4(abs(pos.exact-origin), distance(pos.exact,origin));
     // FragOut2 = vec4(ray.dir,0);
+}
+
+void nextIntersect(int step) {
+
+    ivec3 steps = ray.step * step;
+
+    float xDst = abs((pos.round.x + steps.x) - pos.exact.x);
+    float yDst = abs((pos.round.y + steps.y) - pos.exact.y);
+    float zDst = abs((pos.round.z + steps.z) - pos.exact.z);
+
+    if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
+
+        pos.exact += vec3(xDst * ray.ratiosX);
+        pos.round.x += steps.x;
+        
+        uint n = pos.round.x;
+        n = (n | (n << 16)) & 0x030000FF;
+        n = (n | (n <<  8)) & 0x0300F00F;
+        n = (n | (n <<  4)) & 0x030C30C3;
+        mortonPos &= 0xFCF3CF3C;
+        mortonPos |= n;
+
+        lastHit = ivec3(-1,1,1);
+
+    } else if (pos.deltaPos.y < pos.deltaPos.z) {
+        
+        pos.exact += vec3(yDst * ray.ratiosY);
+        pos.round.y += steps.y;
+
+        uint n = pos.round.y;
+        n = (n | (n << 16)) & 0x030000FF;
+        n = (n | (n <<  8)) & 0x0300F00F;
+        n = (n | (n <<  4)) & 0x030C30C3;
+        mortonPos &= 0xFCF3CF3C;
+        mortonPos |= n;
+
+        lastHit = ivec3(1,-1,1);
+
+    } else {
+        pos.exact += vec3(zDst * ray.ratiosZ);
+        pos.round.z += steps.z;
+
+        uint n = pos.round.z;
+        n = (n | (n << 16)) & 0x030000FF;
+        n = (n | (n <<  8)) & 0x0300F00F;
+        n = (n | (n <<  4)) & 0x030C30C3;
+        mortonPos &= 0xFCF3CF3C;
+        mortonPos |= n;
+
+        lastHit = ivec3(1,1,-1);
+    }
+
+    pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
+    pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
+    pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
 }
 
 void nextIntersectDDA() {

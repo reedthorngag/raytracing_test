@@ -235,6 +235,8 @@ vec3 raycastHemisphere(vec3 color, vec3 startPos, vec3 normal) {
     return color;
 }
 
+// light intensity = max(0, dot(normal, dirToLight))
+
 void main() {
 
     vec2 fragCoord = gl_FragCoord.xy * (1.0/resolution);
