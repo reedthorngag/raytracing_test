@@ -22,6 +22,7 @@ uniform uint originMortonPos;
 uniform vec2 pixelSize;
 uniform vec2 projPlaneSize;
 uniform uvec2 resolution;
+uniform vec3 sunDir;
 
 in vec4 gl_FragCoord;
 
@@ -87,19 +88,19 @@ Ray buildRay(vec3 dir) {
         //ray.sign.z = 1 << 31;
 
     ray.ratiosX = dvec3(
-        ray.step.x,
+        1,
         makeRatio(dir.y,dir.x),
         makeRatio(dir.z,dir.x)
     );
     ray.ratiosY = dvec3(
         makeRatio(dir.x,dir.y),
-        ray.step.y,
+        1,
         makeRatio(dir.z,dir.y)
     );
     ray.ratiosZ = dvec3(
         makeRatio(dir.x,dir.z),
         makeRatio(dir.y,dir.z),
-        ray.step.z
+        1
     );
 
     // ray.ratiosX = dvec3(
@@ -184,16 +185,20 @@ u64 vec3_to_color_int(vec3 color) {
 }
 
 float sigmoid(float x, float scale, float dropOffSteepness) {
-    return abs(1.0/(1+exp(-x*dropOffSteepness))*scale);
+    return 1.0/(1+exp(-x*dropOffSteepness))*scale;
 }
 
 vec3 genSkyBox() {
     if (ray.dir.y < 0) ray.dir.y *= 1.4;
     float haze = (0.1-abs(clamp(ray.dir.y,-.3,.3))) * 0.8 + 0.1;
-    float modifier = sigmoid(1-(haze*2),1.0,2.0);
-    vec3 hazeMask = vec3(haze);
+    float modifier = clamp(sigmoid(1-(haze*2),1.0,2.0), 0, 1);
+
     vec3 skyDefaultColor = vec3(0.2,0.4,1);
-    return (skyDefaultColor + clamp(haze,0,1) * 3) * modifier;
+
+    float b = distance(ray.dir, sunDir) * 50;
+    vec3 sun = vec3(1,1,0) * (sigmoid(1.5-b,1,1.6));
+
+    return (skyDefaultColor + clamp(haze,0,1) * 3) * modifier + sun;
 }
 
 vec3 r = vec3(1,0,0);
@@ -211,6 +216,13 @@ void reflectRay(u64vec2 block) {
 
 void refractRay(u64 color) {
 
+}
+
+vec3 calcLightIntensity(vec3 color, vec3 normal, vec3 lightDir) {
+
+    float intensity = max(0.5, dot(normal, lightDir));
+
+    return color * intensity;
 }
 
 void main()
@@ -298,13 +310,13 @@ void main()
     }
 
     if (block.x != -1) {
-        FragColor = vec4(color_int_to_vec3(block.x) * finalColorMod, 1);
+        FragColor = vec4(calcLightIntensity(color_int_to_vec3(block.x),-min(lastHit,0),sunDir) * finalColorMod, 0);
 
         vec3 tmp = -min(lastHit,0) * vec3(0,1,2);
         int index = int(tmp.x + tmp.y + tmp.z);
 
         float val = pos.round[index]-origin[index];
-        
+
         if (index == 0)
             PosOut = vec3(val * ray.ratiosX);
         else if (index == 1)
@@ -312,7 +324,7 @@ void main()
         else if (index == 2)
             PosOut = vec3(val * ray.ratiosZ);
         
-        if (distance(abs(pos.round).z,abs(ivec3(floor(PosOut+origin))).z) > 0) FragColor = vec4(g,0);
+        //if (distance(abs(pos.round).z,abs(ivec3(floor(PosOut+origin))).z) > 0) FragColor = vec4(g,0);
 
         PosOut = pos.exact;
         

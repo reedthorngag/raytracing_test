@@ -89,7 +89,8 @@ void render() {
     glUniform2f(glGetUniformLocation(lowResProgram, "mousePos"), mouse.x, mouse.y);
     glUniform1ui(glGetUniformLocation(lowResProgram, "originMortonPos"), getMortonPos(cameraPos));
     glUniform1i(glGetUniformLocation(lowResProgram, "renderPosData"), sendDebugFrame);
-    
+    glUniform3f(glGetUniformLocation(lowResProgram, "sunDir"), sun.x, sun.y, sun.z);
+
     if (dimensionsChanged) {
         glUniform2ui(glGetUniformLocation(lowResProgram, "resolution"), width, height);
         glUniform2f(glGetUniformLocation(lowResProgram, "projPlaneSize"), glm::tan(glm::radians(45.0)), glm::tan(glm::radians(45.0)) * ((float)height)/width);

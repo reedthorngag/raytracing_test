@@ -63,6 +63,8 @@ extern unsigned int sendDebugFrame;
 extern glm::vec3 cameraDir;
 extern glm::vec3 cameraPos;
 
+extern glm::vec3 sun;
+
 enum properties {
     NONE = 0,
     REFLECTIVE = 0x2,

@@ -18,6 +18,8 @@ unsigned int sendDebugFrame = 0;
 glm::vec3 cameraDir(1,0,1);
 glm::vec3 cameraPos(35,50,35);
 
+glm::vec3 sun = glm::normalize(glm::vec3(2.0,1.0,4.0));
+
 GLFWwindow* window;
 
 GLuint lowResProgram;
