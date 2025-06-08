@@ -59,10 +59,10 @@ double matchSign(double a, double sign) {
 }
 
 double makeRatio(double a, double b) {
-    if (b == 0) {
+    if (a == 0 || b == 0) {
         return 0;
     }
-    return abs(a) / abs(b);
+    return a / b;
 }
 
 Ray buildRay(vec3 dir) {
@@ -88,19 +88,35 @@ Ray buildRay(vec3 dir) {
 
     ray.ratiosX = dvec3(
         ray.step.x,
-        makeRatio(dir.y,dir.x) * ray.step.y,
-        makeRatio(dir.z,dir.x) * ray.step.z
+        makeRatio(dir.y,dir.x),
+        makeRatio(dir.z,dir.x)
     );
     ray.ratiosY = dvec3(
-        makeRatio(dir.x,dir.y) * ray.step.x,
+        makeRatio(dir.x,dir.y),
         ray.step.y,
-        makeRatio(dir.z,dir.y) * ray.step.z
+        makeRatio(dir.z,dir.y)
     );
     ray.ratiosZ = dvec3(
-        makeRatio(dir.x,dir.z) * ray.step.x,
-        makeRatio(dir.y,dir.z) * ray.step.y,
+        makeRatio(dir.x,dir.z),
+        makeRatio(dir.y,dir.z),
         ray.step.z
     );
+
+    // ray.ratiosX = dvec3(
+    //     ray.step.x,
+    //     makeRatio(dir.x,dir.y) * ray.step.y,
+    //     makeRatio(dir.x,dir.z) * ray.step.z
+    // );
+    // ray.ratiosY = dvec3(
+    //     makeRatio(dir.y,dir.x) * ray.step.x,
+    //     ray.step.y,
+    //     makeRatio(dir.y,dir.z) * ray.step.z
+    // );
+    // ray.ratiosZ = dvec3(
+    //     makeRatio(dir.z,dir.x) * ray.step.x,
+    //     makeRatio(dir.z,dir.y) * ray.step.y,
+    //     ray.step.z
+    // );
 
     ray.delta.x = 1/dir.x;
     ray.delta.y = 1/dir.y;
@@ -228,6 +244,14 @@ void main()
 
     ray = buildRay(projection_plane_intersect);
 
+    if (renderPosData == 1) {
+        FragColor = vec4(ray.dir,5);
+        return;
+    } else if (renderPosData == 2) {
+        FragColor = vec4(ray.ratiosX,5);
+        return;
+    }
+
     pos.exact = origin;
     
     if (ray.step.x < 0) pos.exact.x -= 1;
@@ -279,7 +303,8 @@ void main()
         vec3 tmp = -min(lastHit,0) * vec3(0,1,2);
         int index = int(tmp.x + tmp.y + tmp.z);
 
-        float val = abs(pos.round[index]-origin[index]);
+        float val = pos.round[index]-origin[index];
+        
         if (index == 0)
             PosOut = vec3(val * ray.ratiosX);
         else if (index == 1)
@@ -287,7 +312,7 @@ void main()
         else if (index == 2)
             PosOut = vec3(val * ray.ratiosZ);
         
-        if (distance(abs(pos.round).z,abs(ivec3(floor(PosOut+origin))).z) > 2) FragColor = vec4(g,0);
+        if (distance(abs(pos.round).z,abs(ivec3(floor(PosOut+origin))).z) > 0) FragColor = vec4(g,0);
 
         PosOut = pos.exact;
         

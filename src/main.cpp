@@ -80,15 +80,25 @@ void render() {
     glUseProgram(lowResProgram);
 
     glBindFramebuffer(GL_FRAMEBUFFER, secondaryRaysFBO);
+    if (sendDebugFrame) {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pixelsDataFBO);
+    }
 
     glUniform3f(glGetUniformLocation(lowResProgram, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
     glUniform3f(glGetUniformLocation(lowResProgram, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
     glUniform2f(glGetUniformLocation(lowResProgram, "mousePos"), mouse.x, mouse.y);
     glUniform1ui(glGetUniformLocation(lowResProgram, "originMortonPos"), getMortonPos(cameraPos));
     glUniform1i(glGetUniformLocation(lowResProgram, "renderPosData"), sendDebugFrame);
+    
     if (dimensionsChanged) {
         glUniform2ui(glGetUniformLocation(lowResProgram, "resolution"), width, height);
         glUniform2f(glGetUniformLocation(lowResProgram, "projPlaneSize"), glm::tan(glm::radians(45.0)), glm::tan(glm::radians(45.0)) * ((float)height)/width);
+    }
+
+    if (sendDebugFrame) {  
+        dumpPixelData();
+        sendDebugFrame = 0;
+        return;
     }
 
     glBindVertexArray(VAO);
