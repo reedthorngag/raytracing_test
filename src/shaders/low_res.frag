@@ -201,6 +201,25 @@ vec3 genSkyBox() {
     return (skyDefaultColor + clamp(haze,0,1) * 3) * modifier + sun;
 }
 
+// uint reconstructExactPos() {
+
+//     vec3 tmp = -min(lastHit,0) * vec3(0,1,2);
+//     uint index = int(tmp.x + tmp.y + tmp.z);
+
+//     float val = pos.round[index]-origin[index];
+
+//     if (index == 0)
+//         pos.exact = vec3(val * ray.ratiosX);
+//     else if (index == 1)
+//         pos.exact = vec3(val * ray.ratiosY);
+//     else if (index == 2)
+//         pos.exact = vec3(val * ray.ratiosZ);
+
+//     pos.exact += origin;
+
+//     return index;
+// }
+
 vec3 r = vec3(1,0,0);
 vec3 g = vec3(0,1,0);
 vec3 b = vec3(0,0,1);
@@ -214,16 +233,47 @@ void reflectRay(u64vec2 block) {
     finalColorMod *= vec3(1) - ((vec3(1) - color_int_to_vec3(block.x)) * (1 - float(block.y >> 32)));
 }
 
-void refractRay(u64 color) {
+float currentRefractiveIndex = 1.0;
 
-}
+// void refractRay(float newRefractIndex) {
 
-vec3 calcLightIntensity(vec3 color, vec3 normal, vec3 lightDir) {
+//     if (currentRefractiveIndex == newRefractIndex) return;
 
-    float intensity = max(0.5, dot(normal, lightDir));
+//     uint index = reconstructExactPos();
+//     pos.round = ivec3(floor(origin));
 
-    return color * intensity;
-}
+//     vec3 normal = vec3(0);
+//     normal[index] = ray.step[index];
+
+//     float r = currentRefractiveIndex/newRefractIndex;
+
+//     float c1 = dot(normal, ray.dir);
+//     if (c1 < 0) {
+//         normal = -normal;
+//         c1 = dot(normal, ray.dir);
+//     }
+
+//     float c2 = sqrt(1-r*r*(1-c1*c1));
+
+//     ray.dir = r * ray.dir + (r*c1-c2) * normal;
+
+//     ray = buildRay(ray.dir);
+
+//     if (ray.step.x < 0) pos.exact.x -= 1;
+//     if (ray.step.y < 0) pos.exact.y -= 1;
+//     if (ray.step.z < 0) pos.exact.z -= 1;
+
+//     pos.deltaPos = ray.absDelta - (pos.exact - pos.round) * ray.delta;
+
+//     currentRefractiveIndex = newRefractIndex;
+// }
+
+// vec3 calcLightIntensity(vec3 color, vec3 lightDir, uint index) {
+
+//     float intensity = max(0.5, lightDir[index]);
+
+//     return color * intensity;
+// }
 
 void main()
 {
@@ -274,8 +324,6 @@ void main()
 
     uint i = 0;
 
-    float currentRefractiveIndex = 1.0;
-
     u64vec2 block = getBlock();
     if (block.x != -1) {
         if ((block.y & 0x4) == 1) {
@@ -290,6 +338,7 @@ void main()
     while (i < numSteps) {
 
         do {
+            //if (currentRefractiveIndex != 1.0) refractRay(1.0);
             nextIntersectDDA();
             //nextIntersect(1);
             block = getBlock();
@@ -302,29 +351,20 @@ void main()
             reflectRay(block);
 
         } else if (flags == 0x5) {
-            break;
+            break;//refractRay(float(block.y >> 32));
 
         } else {
             break;
         }
+
+        // nextIntersectDDA();
+        // block = getBlock();
     }
 
     if (block.x != -1) {
-        FragColor = vec4(calcLightIntensity(color_int_to_vec3(block.x),-min(lastHit,0),sunDir) * finalColorMod, 0);
+        //uint index = reconstructExactPos();
 
-        vec3 tmp = -min(lastHit,0) * vec3(0,1,2);
-        int index = int(tmp.x + tmp.y + tmp.z);
-
-        float val = pos.round[index]-origin[index];
-
-        if (index == 0)
-            PosOut = vec3(val * ray.ratiosX);
-        else if (index == 1)
-            PosOut = vec3(val * ray.ratiosY);
-        else if (index == 2)
-            PosOut = vec3(val * ray.ratiosZ);
-        
-        //if (distance(abs(pos.round).z,abs(ivec3(floor(PosOut+origin))).z) > 0) FragColor = vec4(g,0);
+        FragColor = vec4(r,0);//vec4(calcLightIntensity(color_int_to_vec3(block.x),sunDir,index) * finalColorMod, 0);
 
         PosOut = pos.exact;
         

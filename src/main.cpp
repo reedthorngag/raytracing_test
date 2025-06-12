@@ -79,7 +79,7 @@ void render() {
 
     glUseProgram(lowResProgram);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, secondaryRaysFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);//secondaryRaysFBO);
     if (sendDebugFrame) {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pixelsDataFBO);
     }
@@ -106,6 +106,7 @@ void render() {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     DEBUG(3) checkGlError(lowResProgram,"glDrawArrays1");
+    return;
 
     
     glUseProgram(lightScatteringProgram);

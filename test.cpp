@@ -1,61 +1,67 @@
 #include <stdio.h>
-#include <stdint.h>
+#include <string.h>
+#include <time.h>
 
-struct Pos {
-    int x;
-    int y;
-    int z;
-};
+#define PASSWORD_LENGTH 13
+#define CHARSET "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+#define CHARSET_SIZE 62
 
-int getMortonPos(Pos pos) {
+const char *target_password = "Toiohomai1234";
 
-    int n = pos.x;
-    n = (n | (n << 16)) & 0x030000FF;
-    n = (n | (n <<  8)) & 0x0300F00F;
-    n = (n | (n <<  4)) & 0x030C30C3;
-    int x = n;
-
-    n = pos.y;
-    n = (n | (n << 16)) & 0x030000FF;
-    n = (n | (n <<  8)) & 0x0300F00F;
-    n = (n | (n <<  4)) & 0x030C30C3;
-    int y = n;
-
-    n = pos.z;
-    n = (n | (n << 16)) & 0x030000FF;
-    n = (n | (n <<  8)) & 0x0300F00F;
-    n = (n | (n <<  4)) & 0x030C30C3;
-
-    return (n << 4) | (y << 2) | x;
-}
+unsigned long long guess_count = 0; // Global counter
+unsigned long long guesses_100k = 0;
+time_t last_report_time;            // Time of last 100k report
 
 int main() {
+    char attempt[PASSWORD_LENGTH + 1];
+    int indices[PASSWORD_LENGTH] = {0};
+    unsigned long long guess_count = 0;
+    time_t last_report_time = time(NULL);
 
-    Pos pos{0x34,0x33,0x33};
+    printf("Starting brute-force...\n");
 
-    int m = getMortonPos(pos);
-    printf("%x\n",m);
+    attempt[PASSWORD_LENGTH] = '\0';
 
-    int i = 1;
-    int posOffset = i * 2;
-    int posOffset2 = i * 6;
+    while (1) {
+        // Build the attempt string from current indices
+        for (int i = 0; i < PASSWORD_LENGTH; i++) {
+            attempt[i] = CHARSET[indices[i]];
+        }
 
-    for (int i = 0; i < 10; i++) {
-        pos.z++;
-        int n = pos.z;
-        n = (n | (n << 16)) & 0x030000FF;
-        n = (n | (n <<  8)) & 0x0300F00F;
-        n = (n | (n <<  4)) & 0x030C30C3;
-        m &= 0xFCF3CF3C << 4 | 0xf;
-        m |= n << 4;
+        guess_count++;
 
-        Pos curr = Pos{(pos.x >> posOffset) & 0x3,(pos.y >> posOffset) & 0x3,(pos.z >> posOffset) & 0x3};
-        int index = curr.z << 4 | curr.y << 2 | curr.x;
+        // Check progress
+        if (guess_count == 1000000000) {
+            guesses_100k++;
+            time_t current_time = time(NULL);
+            double elapsed = difftime(current_time, last_report_time);
+            printf("1B guesses: %llu (%.0f seconds since last 1B)\n", guesses_100k, elapsed);
+            last_report_time = current_time;
+            guess_count = 0;
+        }
 
-        int index2 = (m >> posOffset2) & 0x3f;
+        // Check if password matches
+        if (strcmp(attempt, target_password) == 0) {
+            printf("Password found: %s\n1B guesses: %llu\n+ %llu guesses\n", attempt,guesses_100k, guess_count);
+            break;
+        }
 
-        if (m != getMortonPos(pos)) {
-            printf("%d %x %x\n",i,m,getMortonPos(pos));
+        // Increment base-CHARSET_SIZE counter
+        int pos = PASSWORD_LENGTH - 1;
+        while (pos >= 0) {
+            indices[pos]++;
+            if (indices[pos] < CHARSET_SIZE) {
+                break;
+            } else {
+                indices[pos] = 0;
+                pos--;
+            }
+        }
+
+        // If we've wrapped around past the first digit, we’re done
+        if (pos < 0) {
+            printf("Password not found.\n");
+            break;
         }
     }
 

@@ -55,7 +55,7 @@ Block hotbar[] {
     Block{
         REFRACTIVE,
         RGB_TO_U64(0,0,0),
-        0.9
+        1.5
     },
 };
 
