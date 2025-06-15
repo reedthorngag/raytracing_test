@@ -62,12 +62,11 @@ double matchSign(double a, double sign) {
     return a * sign;
 }
 
-double makeRatio(double a, double b) {
+double ratio(double a, double b) {
     if (a == 0 || b == 0) {
         return 0;
     }
-    int sign = (a < 0 ? -1 : 1);
-    return abs(a) / abs(b) * sign;
+    return abs(a) / abs(b);
 }
 
 Ray buildRay(vec3 dir) {
@@ -85,20 +84,20 @@ Ray buildRay(vec3 dir) {
         ray.step.z = -1;
 
     ray.ratiosX = dvec3(
-        ray.step.x,
-        makeRatio(dir.y,dir.x),
-        makeRatio(dir.z,dir.x)
-    );
+        1,
+        ratio(dir.y,dir.x),
+        ratio(dir.z,dir.x)
+    ) * ray.step;
     ray.ratiosY = dvec3(
-        makeRatio(dir.x,dir.y),
-        ray.step.y,
-        makeRatio(dir.z,dir.y)
-    );
+        ratio(dir.x,dir.y),
+        1,
+        ratio(dir.z,dir.y)
+    ) * ray.step;
     ray.ratiosZ = dvec3(
-        makeRatio(dir.x,dir.z),
-        makeRatio(dir.y,dir.z),
-        ray.step.z
-    );
+        ratio(dir.x,dir.z),
+        ratio(dir.y,dir.z),
+        1
+    ) * ray.step;
 
     ray.ratios = mat3(vec3(ray.ratiosX),vec3(ray.ratiosY),vec3(ray.ratiosZ));
 
@@ -338,7 +337,7 @@ void main()
     }
 
     //reconstructExactPos();
-    if (ivec3(floor(pos.exact))!=pos.round) {
+    if (ivec3(floor(pos.exact)) != pos.round) {
         FragColor = vec4(r,0);
     } else {
         FragColor = vec4(b,0);
