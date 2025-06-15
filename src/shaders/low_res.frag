@@ -74,21 +74,14 @@ Ray buildRay(vec3 dir) {
 
     ray.dir = dir;
 
-    ray.step.x = 1;
-    ray.step.y = 1;
-    ray.step.z = 1;
-
-    //ray.sign = dvec3(0);
+    ray.step = vec3(1);
 
     if (dir.x < 0)
         ray.step.x = -1;
-        //ray.sign.x = 1 << 31;
     if (dir.y < 0)
         ray.step.y = -1;
-        //ray.sign.y = 1 << 31;
     if (dir.z < 0)
         ray.step.z = -1;
-        //ray.sign.z = 1 << 31;
 
     ray.ratiosX = dvec3(
         1,
@@ -108,29 +101,8 @@ Ray buildRay(vec3 dir) {
 
     ray.ratios = mat3(vec3(ray.ratiosX),vec3(ray.ratiosY),vec3(ray.ratiosZ));
 
-    // ray.ratiosX = dvec3(
-    //     ray.step.x,
-    //     makeRatio(dir.x,dir.y) * ray.step.y,
-    //     makeRatio(dir.x,dir.z) * ray.step.z
-    // );
-    // ray.ratiosY = dvec3(
-    //     makeRatio(dir.y,dir.x) * ray.step.x,
-    //     ray.step.y,
-    //     makeRatio(dir.y,dir.z) * ray.step.z
-    // );
-    // ray.ratiosZ = dvec3(
-    //     makeRatio(dir.z,dir.x) * ray.step.x,
-    //     makeRatio(dir.z,dir.y) * ray.step.y,
-    //     ray.step.z
-    // );
-
-    ray.delta.x = 1/dir.x;
-    ray.delta.y = 1/dir.y;
-    ray.delta.z = 1/dir.z;
-
-    ray.absDelta.x = abs(ray.delta.x);
-    ray.absDelta.y = abs(ray.delta.y);
-    ray.absDelta.z = abs(ray.delta.z);
+    ray.delta = 1/dir;
+    ray.absDelta = abs(ray.delta);
 
     return ray;
 }
@@ -209,13 +181,6 @@ vec3 genSkyBox() {
 void reconstructExactPos() {
 
     float val = pos.round[lastHit] - origin[lastHit];
-
-    // if (lastHit == 0)
-    //     pos.exact = vec3(val * ray.ratiosX);
-    // else if (lastHit == 1)
-    //     pos.exact = vec3(val * ray.ratiosY);
-    // else if (lastHit == 2)
-    //     pos.exact = vec3(val * ray.ratiosZ);
 
     pos.exact = val * ray.ratios[lastHit];
 
@@ -349,7 +314,7 @@ void main()
     while (i++ < numSteps) {
 
         while (block.x == -1 && i++ < numSteps) {
-            if (currentRefractiveIndex != 1.0) refractRay(1.0);
+            //if (currentRefractiveIndex != 1.0) refractRay(1.0);
             nextIntersectDDA();
             block = getBlock();
         }
@@ -371,15 +336,24 @@ void main()
         block = getBlock();
     }
 
+    // reconstructExactPos();
+    // if (ivec3(floor(pos.exact))!=pos.round) {
+    //     FragColor = vec4(r,0);
+    // } else {
+    //     FragColor = vec4(b,0);
+    // }
+    // return;
+
     if (block.x != -1) {
         u64vec2 origBlock = block;
         uint origLastHit = lastHit;
         reconstructExactPos();
+        pos.exact = pos.round + fract(pos.exact);
 
-        // if (rayReflected) {
+        if (rayReflected) {
             FragColor = vec4(calcLightIntensity(color_int_to_vec3(block.x), sunDir, lastHit) * finalColorMod, 0);
             return;
-        // }
+        }
 
         if (!facingLightDir(sunDir, lastHit)) {
             FragColor = vec4(color_int_to_vec3(block.x) * 0.3, 0);
@@ -397,15 +371,16 @@ void main()
 
         int i = 50;
         block = u64vec2(-1);
+        nextIntersectDDA();
         while (block.x == -1 && i-- != 0) {
             nextIntersectDDA();
             block = getBlock();
         }
 
         if (block.x == -1) {
-            FragColor = vec4(b,0);//calcLightIntensity(color_int_to_vec3(origBlock.x), sunDir, origLastHit) * finalColorMod, 0);
+            FragColor = vec4(calcLightIntensity(color_int_to_vec3(origBlock.x), sunDir, 2) * finalColorMod, 0);
         } else {
-            FragColor = vec4(color_int_to_vec3(origBlock.x) * 0.3, 0);
+            FragColor = vec4(r,0);//color_int_to_vec3(origBlock.x) * 0.3, 0);
         }
 
         //PosOut = pos.exact;

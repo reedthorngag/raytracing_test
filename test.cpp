@@ -1,69 +1,134 @@
+#include <glm/glm.hpp>
 #include <stdio.h>
-#include <string.h>
-#include <time.h>
 
-#define PASSWORD_LENGTH 13
-#define CHARSET "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-#define CHARSET_SIZE 62
+using namespace glm;
 
-const char *target_password = "Toiohomai1234";
+struct Ray {
+    vec3 dir;
 
-unsigned long long guess_count = 0; // Global counter
-unsigned long long guesses_100k = 0;
-time_t last_report_time;            // Time of last 100k report
+    ivec3 step;
+
+    dvec3 ratiosX;
+    dvec3 ratiosY;
+    dvec3 ratiosZ;
+
+    dvec3 delta;
+
+    dvec3 absDelta;
+};
+
+double ratio(double a, double b) {
+    if (a == 0 || b == 0) {
+        return 0;
+    }
+    return a / b;
+}
+
+Ray buildRay(vec3 dir) {
+    Ray ray;
+
+    ray.dir = dir;
+
+    ray.step.x = 1;
+    ray.step.y = 1;
+    ray.step.z = 1;
+
+    if (dir.x < 0)
+        ray.step.x = -1;
+    if (dir.y < 0)
+        ray.step.y = -1;
+    if (dir.z < 0)
+        ray.step.z = -1;
+    
+    ray.ratiosX = dvec3(
+        1,
+        ratio(dir.y,dir.x),
+        ratio(dir.z,dir.x)
+    );
+    ray.ratiosY = dvec3(
+        ratio(dir.x,dir.y),
+        1,
+        ratio(dir.z,dir.y)
+    );
+    ray.ratiosZ = dvec3(
+        ratio(dir.x,dir.z),
+        ratio(dir.y,dir.z),
+        1
+    );
+
+    ray.delta.x = 1/dir.x;
+    ray.delta.y = 1/dir.y;
+    ray.delta.z = 1/dir.z;
+
+    ray.absDelta.x = abs(ray.delta.x);
+    ray.absDelta.y = abs(ray.delta.y);
+    ray.absDelta.z = abs(ray.delta.z);
+
+    return ray;
+}
+
+struct RayPos {
+    ivec3 round;
+    
+    dvec3 exact;
+
+    dvec3 deltaPos;
+};
 
 int main() {
-    char attempt[PASSWORD_LENGTH + 1];
-    int indices[PASSWORD_LENGTH] = {0};
-    unsigned long long guess_count = 0;
-    time_t last_report_time = time(NULL);
 
-    printf("Starting brute-force...\n");
+    glm::vec3 camDir = normalize(vec3(11,20,3));
+    printf("cam dir: %f, %f, %f\n",camDir.x,camDir.y,camDir.z);
+    glm::vec3 camPos = vec3(10.5, 12.1, 14.7);
 
-    attempt[PASSWORD_LENGTH] = '\0';
+    Ray ray = buildRay(camDir);
 
-    while (1) {
-        // Build the attempt string from current indices
-        for (int i = 0; i < PASSWORD_LENGTH; i++) {
-            attempt[i] = CHARSET[indices[i]];
-        }
+    RayPos pos;
+    pos.round = ivec3(trunc(camPos));
+    pos.exact = camPos;
 
-        guess_count++;
+    if (ray.step.x < 0) pos.exact.x -= 1;
+    if (ray.step.y < 0) pos.exact.y -= 1;
+    if (ray.step.z < 0) pos.exact.z -= 1;
 
-        // Check progress
-        if (guess_count == 1000000000) {
-            guesses_100k++;
-            time_t current_time = time(NULL);
-            double elapsed = difftime(current_time, last_report_time);
-            printf("1B guesses: %llu (%.0f seconds since last 1B)\n", guesses_100k, elapsed);
-            last_report_time = current_time;
-            guess_count = 0;
-        }
+    pos.deltaPos = ray.absDelta - (pos.exact - glm::dvec3(pos.round)) * ray.delta;
 
-        // Check if password matches
-        if (strcmp(attempt, target_password) == 0) {
-            printf("Password found: %s\n1B guesses: %llu\n+ %llu guesses\n", attempt,guesses_100k, guess_count);
-            break;
-        }
+    int lastHit = 0;
+    int steps = 500;
+    while (steps--) {
+        if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
+            pos.round.x += ray.step.x;
+            pos.deltaPos.x += ray.absDelta.x;
+            lastHit = 0;
 
-        // Increment base-CHARSET_SIZE counter
-        int pos = PASSWORD_LENGTH - 1;
-        while (pos >= 0) {
-            indices[pos]++;
-            if (indices[pos] < CHARSET_SIZE) {
-                break;
-            } else {
-                indices[pos] = 0;
-                pos--;
-            }
-        }
+        } else if (pos.deltaPos.y < pos.deltaPos.z) {
+            pos.round.y += ray.step.y;
+            pos.deltaPos.y += ray.absDelta.y;
+            lastHit = 1;
 
-        // If we've wrapped around past the first digit, we’re done
-        if (pos < 0) {
-            printf("Password not found.\n");
-            break;
+        } else {
+            pos.round.z += ray.step.z;
+            pos.deltaPos.z += ray.absDelta.z;
+            lastHit = 2;
         }
     }
 
+    printf("lastHit: %d\n",lastHit);
+    printf("pos.round: %d, %d, %d\n",pos.round.x,pos.round.y,pos.round.z);
+
+    double val = pos.round[lastHit] - floor(camPos[lastHit]);
+    if (lastHit == 0) {
+        printf("ray.ratiosX: %f, %f, %f\n",ray.ratiosX.x,ray.ratiosX.y,ray.ratiosX.z);
+        pos.exact = vec3(val * ray.ratiosX);
+    } else if (lastHit == 1) {
+        printf("ray.ratiosY: %f, %f, %f\n",ray.ratiosY.x,ray.ratiosY.y,ray.ratiosY.z);
+        pos.exact = vec3(val * ray.ratiosY);
+    } else if (lastHit == 2) {
+        printf("ray.ratiosZ: %f, %f, %f\n",ray.ratiosZ.x,ray.ratiosZ.y,ray.ratiosZ.z);
+        pos.exact = vec3(val * ray.ratiosZ);
+    }
+    pos.exact += camPos;
+
+    printf("pos.exact: %f, %f, %f\n",pos.exact.x,pos.exact.y,pos.exact.z);
     return 0;
 }
