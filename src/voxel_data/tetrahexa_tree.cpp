@@ -351,11 +351,12 @@ Block deleteBlock(Pos pos, int level) {
         if (depth == level) {
             Block block = Block{stack[depth].ptr->leaf.flags,stack[depth].ptr->leaf.packedColor,stack[depth].ptr->leaf.metadata};
             deleteChildren(stack[depth]);
+            stack[depth-1].ptr->branch.bitmap &= ~(1 << index);
             return block;
         }
     }
 
-    printf("Error: hit max depth without finding leaf node! (getBlock in tetrahexa_tree.cpp)\n");
+    printf("Error: hit max depth without finding leaf node! (deleteBlock in tetrahexa_tree.cpp)\n");
     exit(1);
 }
 

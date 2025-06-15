@@ -23,6 +23,7 @@ void rotateCamera(double xDelta, double yDelta) {
     if (rotationX > 180) rotationX -= 360;
     if (rotationX < -180) rotationX += 360;
     cameraDir = glm::rotateX(glm::vec3(0,0,1),(float)glm::radians(rotationY));
+    cameraDir = glm::normalize(cameraDir);
     cameraDir = glm::rotateY(cameraDir,(float)glm::radians(rotationX));
     cameraDir = glm::normalize(cameraDir);
 }
@@ -51,7 +52,7 @@ void doInputUpdates(double timeSinceLast) {
     double ms = timeSinceLast / 100000.0;
 
     glm::vec3 speed = glm::vec3(moveSpeed) * glm::vec3(ms);
-    if (keys[GLFW_KEY_LEFT_SHIFT]) speed *= 2;
+    if (keys[GLFW_KEY_LEFT_SHIFT]) speed *= 4;
 
     glm::vec3 cameraLeft = glm::cross(cameraDir,glm::vec3(0,1,0));
 

@@ -6,7 +6,7 @@
 
 #include "globals.hpp"
 #include "setup.hpp"
-#include "chunk.hpp"
+#include "world_gen.hpp"
 #include "input.hpp"
 #include "voxel_data/tetrahexa_tree.hpp"
 #include "voxel_data/voxel_allocator.hpp"
@@ -16,10 +16,6 @@ extern "C" {
     __declspec(dllexport) unsigned int NvOptimusEnablement = 1;
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
-
-extern void enableReportGlErrors();
-
-Chunk* chunk;
 
 const char* debugFrameTypeString[] {
     "Null",
@@ -69,10 +65,6 @@ u32 getMortonPos(glm::vec3 pos) {
 }
 
 void render() {
-    if (secondaryRaysFBO == 0 || normalTex == 0) {
-        printf("FUCK\n");
-        exit(1);
-    }
 
     glClearColor(1,1,1,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -84,7 +76,7 @@ void render() {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pixelsDataFBO);
     }
 
-    glUniform3f(glGetUniformLocation(lowResProgram, "origin"), cameraPos.x,cameraPos.y,cameraPos.z);
+    glUniform3f(glGetUniformLocation(lowResProgram, "trueOrigin"), cameraPos.x,cameraPos.y,cameraPos.z);
     glUniform3f(glGetUniformLocation(lowResProgram, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
     glUniform2f(glGetUniformLocation(lowResProgram, "mousePos"), mouse.x, mouse.y);
     glUniform1ui(glGetUniformLocation(lowResProgram, "originMortonPos"), getMortonPos(cameraPos));
@@ -178,17 +170,17 @@ int main() {
     if (!setupOpenGl())
         exit(1);
 
-    DEBUG(1) enableReportGlErrors();
-
     glBindVertexArray(VAO);
     initTetraHexaTree();
     initVoxelDataAllocator();
     checkGlError(0, "createSsbo");
 
-    printf("generating chunk...\n");
+    printf("generating world...\n");
     double start = glfwGetTime();
 
-    chunk = new Chunk();
+    DEBUG_LEVEL = 1;
+    genWorld();
+    DEBUG_LEVEL = 3;
 
     printf("generated chunk! time: %lf  \n",glfwGetTime()-start);
 
@@ -207,7 +199,6 @@ int main() {
 
     while (!glfwWindowShouldClose(window)) {
 
-        //glfwWaitEvents();
         start = glfwGetTime();
 
         updateSsboData();
@@ -225,7 +216,6 @@ int main() {
         for (int n = 0; n < averageSize && times[n]; n++) out += times[n];
         printf("\rrender time: %dms (%d fps) rotationXY: %lf, %lf camPos: %lf, %lf, %lf    ",(int)(out/(double)averageSize*1000),(int)(1000.0/(double)((out/(double)averageSize) * 1000)),rotationY,rotationX,cameraPos.x,cameraPos.y,cameraPos.z);
 
-        //glFinish();
     }
 
     glfwDestroyWindow(window);

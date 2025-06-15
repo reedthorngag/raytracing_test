@@ -7,7 +7,7 @@
 #ifndef _GLOBALS
 #define _GLOBALS
 
-#define DEBUG_LEVEL 3
+extern int DEBUG_LEVEL;
 
 #define DEBUG(x) if (x <= DEBUG_LEVEL) 
 
@@ -47,7 +47,7 @@ inline void checkGlErrorFunc(GLuint program, const char* id) {
 
 
 
-const float moveSpeed = 100000;
+const float moveSpeed = 1000000;
 
 struct Mouse {
     double x = 0;

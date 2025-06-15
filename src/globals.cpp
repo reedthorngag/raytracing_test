@@ -1,6 +1,8 @@
 #include <glm/glm.hpp>
 #include "globals.hpp"
 
+int DEBUG_LEVEL = 3;
+
 int width;
 int height;
 
@@ -45,12 +47,12 @@ Block hotbar[] {
     Block{
         REFLECTIVE,
         RGB_TO_U64(255,0,0),
-        0.9
+        0.94
     },
     Block{
         REFLECTIVE,
         RGB_TO_U64(255,255,255),
-        0.9
+        0.94
     },
     Block{
         REFRACTIVE,
