@@ -201,24 +201,24 @@ vec3 genSkyBox() {
     return (skyDefaultColor + clamp(haze,0,1) * 3) * modifier + sun;
 }
 
-// uint reconstructExactPos() {
+uint reconstructExactPos() {
 
-//     vec3 tmp = -min(lastHit,0) * vec3(0,1,2);
-//     uint index = int(tmp.x + tmp.y + tmp.z);
+    vec3 tmp = -min(lastHit,0) * vec3(0,1,2);
+    uint index = int(tmp.x + tmp.y + tmp.z);
 
-//     float val = pos.round[index]-origin[index];
+    float val = pos.round[index]-origin[index];
 
-//     if (index == 0)
-//         pos.exact = vec3(val * ray.ratiosX);
-//     else if (index == 1)
-//         pos.exact = vec3(val * ray.ratiosY);
-//     else if (index == 2)
-//         pos.exact = vec3(val * ray.ratiosZ);
+    if (index == 0)
+        pos.exact = vec3(val * ray.ratiosX);
+    else if (index == 1)
+        pos.exact = vec3(val * ray.ratiosY);
+    else if (index == 2)
+        pos.exact = vec3(val * ray.ratiosZ);
 
-//     pos.exact += origin;
+    pos.exact += origin;
 
-//     return index;
-// }
+    return index;
+}
 
 vec3 r = vec3(1,0,0);
 vec3 g = vec3(0,1,0);
@@ -235,45 +235,45 @@ void reflectRay(u64vec2 block) {
 
 float currentRefractiveIndex = 1.0;
 
-// void refractRay(float newRefractIndex) {
+void refractRay(float newRefractIndex) {
 
-//     if (currentRefractiveIndex == newRefractIndex) return;
+    if (currentRefractiveIndex == newRefractIndex) return;
 
-//     uint index = reconstructExactPos();
-//     pos.round = ivec3(floor(origin));
+    uint index = reconstructExactPos();
+    pos.round = ivec3(floor(origin));
 
-//     vec3 normal = vec3(0);
-//     normal[index] = ray.step[index];
+    vec3 normal = vec3(0);
+    normal[index] = ray.step[index];
 
-//     float r = currentRefractiveIndex/newRefractIndex;
+    float r = currentRefractiveIndex/newRefractIndex;
 
-//     float c1 = dot(normal, ray.dir);
-//     if (c1 < 0) {
-//         normal = -normal;
-//         c1 = dot(normal, ray.dir);
-//     }
+    float c1 = dot(normal, ray.dir);
+    if (c1 < 0) {
+        normal = -normal;
+        c1 = dot(normal, ray.dir);
+    }
 
-//     float c2 = sqrt(1-r*r*(1-c1*c1));
+    float c2 = sqrt(1-r*r*(1-c1*c1));
 
-//     ray.dir = r * ray.dir + (r*c1-c2) * normal;
+    ray.dir = r * ray.dir + (r*c1-c2) * normal;
 
-//     ray = buildRay(ray.dir);
+    ray = buildRay(ray.dir);
 
-//     if (ray.step.x < 0) pos.exact.x -= 1;
-//     if (ray.step.y < 0) pos.exact.y -= 1;
-//     if (ray.step.z < 0) pos.exact.z -= 1;
+    if (ray.step.x < 0) pos.exact.x -= 1;
+    if (ray.step.y < 0) pos.exact.y -= 1;
+    if (ray.step.z < 0) pos.exact.z -= 1;
 
-//     pos.deltaPos = ray.absDelta - (pos.exact - pos.round) * ray.delta;
+    pos.deltaPos = ray.absDelta - (pos.exact - pos.round) * ray.delta;
 
-//     currentRefractiveIndex = newRefractIndex;
-// }
+    currentRefractiveIndex = newRefractIndex;
+}
 
-// vec3 calcLightIntensity(vec3 color, vec3 lightDir, uint index) {
+vec3 calcLightIntensity(vec3 color, vec3 lightDir, uint index) {
 
-//     float intensity = max(0.5, lightDir[index]);
+    float intensity = min(max(0, lightDir[index] * -ray.step[index]) + 0.3, 1);
 
-//     return color * intensity;
-// }
+    return color * intensity;
+}
 
 void main()
 {
@@ -322,7 +322,6 @@ void main()
 
     pos.deltaPos = ray.absDelta - (pos.exact - pos.round) * ray.delta;
 
-    uint i = 0;
 
     u64vec2 block = getBlock();
     if (block.x != -1) {
@@ -334,15 +333,15 @@ void main()
         }
     }
 
-    const uint numSteps = 200;
-    while (i < numSteps) {
+    uint i = 0;
+    const uint numSteps = 100;
+    while (i++ < numSteps) {
 
-        do {
+        while (block.x == -1 && i++ < numSteps) {
             //if (currentRefractiveIndex != 1.0) refractRay(1.0);
             nextIntersectDDA();
-            //nextIntersect(1);
             block = getBlock();
-        } while (block.x == -1 && i++ < numSteps);
+        }
 
         if (block.x == -1) break;
 
@@ -351,24 +350,24 @@ void main()
             reflectRay(block);
 
         } else if (flags == 0x5) {
-            break;//refractRay(float(block.y >> 32));
+            refractRay(float(block.y >> 32));
 
         } else {
             break;
         }
 
-        // nextIntersectDDA();
-        // block = getBlock();
+        nextIntersectDDA();
+        block = getBlock();
     }
 
     if (block.x != -1) {
-        //uint index = reconstructExactPos();
+        uint index = reconstructExactPos();
 
-        FragColor = vec4(r,0);//vec4(calcLightIntensity(color_int_to_vec3(block.x),sunDir,index) * finalColorMod, 0);
+        FragColor = vec4(calcLightIntensity(color_int_to_vec3(block.x), sunDir, index) * finalColorMod, 0);
 
-        PosOut = pos.exact;
+        //PosOut = pos.exact;
         
-        NormalOut = -min(lastHit,0) * ray.step;
+        //NormalOut = -min(lastHit,0) * ray.step;
     } else {
         FragColor = vec4(genSkyBox() * finalColorMod, 0); 
     }
@@ -390,11 +389,13 @@ void main()
 
 void nextIntersect(int step) {
 
-    vec3 dst = step - abs(fract(pos.exact));
+    vec3 dst = step - abs(pos.exact - pos.round);
+    vec3 x = abs(vec3(dst.x * ray.ratiosX));
+    vec3 y = abs(vec3(dst.y * ray.ratiosY));
 
-    if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
+    if (x.x < x.y && x.x < x.z) {
 
-        pos.exact += vec3(dst.x * ray.ratiosX);
+        pos.exact += x;
         pos.round.x += ray.step.x * step;
         
         uint n = pos.round.x;
@@ -406,9 +407,9 @@ void nextIntersect(int step) {
 
         lastHit = ivec3(-1,1,1);
 
-    } else if (pos.deltaPos.y < pos.deltaPos.z) {
+    } else if (y.y < y.z) {
         
-        pos.exact += vec3(dst.y * ray.ratiosY);
+        pos.exact += y;
         pos.round.y += ray.step.y * step;
 
         uint n = pos.round.y;
@@ -434,7 +435,7 @@ void nextIntersect(int step) {
         lastHit = ivec3(1,1,-1);
     }
 
-    pos.deltaPos = ray.absDelta - fract(pos.exact) * ray.delta;
+    //pos.deltaPos = ray.absDelta - fract(pos.exact) * ray.delta;
 }
 
 void nextIntersectDDA() {
@@ -491,7 +492,7 @@ u64vec2 getBlock() {
 
     currentMortonPos = mortonPos;
 
-    depth = n < depth ? n : depth;
+    depth = (n < depth ? n : depth);
 
     uint posOffset = (MAX_DEPTH-1 - depth) * 6;
 
@@ -509,7 +510,7 @@ u64vec2 getBlock() {
 
         a = uint(node.x >> index & 1);
         if (a == 0) {
-            return u64vec2(-1,0);
+            return u64vec2(-1, 0);
         }
 
         stack[++depth] = children_array[
@@ -517,5 +518,5 @@ u64vec2 getBlock() {
         ][index];
     }
 
-    return u64vec2(0,0);
+    return u64vec2(-1, 0);
 }

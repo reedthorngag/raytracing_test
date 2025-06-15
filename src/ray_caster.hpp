@@ -3,11 +3,16 @@
 #include "types.hpp"
 #include "globals.hpp"
 
+struct RayResult {
+    glm::ivec3 pos;
+    glm::ivec3 lastPos;
+    int steps;
+};
+
 namespace RAY_CASTER {
 
-    glm::vec3 castRayFromCam(int steps);
+    RayResult castRayFromCam(int steps);
 
 }
-
 
 

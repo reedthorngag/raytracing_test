@@ -51,7 +51,7 @@ namespace RAY_CASTER {
         dvec3 deltaPos;
     };
 
-    vec3 castRayFromCam(int steps) {
+    RayResult castRayFromCam(int steps) {
 
         Ray ray = buildRay(cameraDir);
 
@@ -63,9 +63,7 @@ namespace RAY_CASTER {
         if (ray.step.y < 0) pos.exact.y -= 1;
         if (ray.step.z < 0) pos.exact.z -= 1;
 
-        pos.deltaPos.x = ray.absDelta.x - (pos.exact.x - pos.round.x) * ray.delta.x;
-        pos.deltaPos.y = ray.absDelta.y - (pos.exact.y - pos.round.y) * ray.delta.y;
-        pos.deltaPos.z = ray.absDelta.z - (pos.exact.z - pos.round.z) * ray.delta.z;
+        pos.deltaPos = ray.absDelta - (pos.exact - glm::dvec3(pos.round)) * ray.delta;
 
         ivec3 lastPos;
         while (steps--) {
@@ -80,11 +78,11 @@ namespace RAY_CASTER {
                 pos.round.z += ray.step.z;
                 pos.deltaPos.z += ray.absDelta.z;
             }
-            if (getBlock(Pos{pos.round.x,pos.round.y,pos.round.z}) != -1ull)
-                return lastPos;
+            if (getBlock(Pos{pos.round.x,pos.round.y,pos.round.z}).color != -1ull)
+                return RayResult{pos.round,lastPos,steps};
         }
 
-        return pos.round;
+        return RayResult{pos.round,lastPos,0};
     }
 
 }

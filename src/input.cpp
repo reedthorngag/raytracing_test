@@ -108,6 +108,11 @@ void glfwCharCallback(GLFWwindow* window, int key, int scancode, int action, int
                 sendDebugFrame = 10;
                 break;
 
+            case GLFW_KEY_L:
+                glfwSetCursorPos(window,halfWidth,halfHeight);
+                mouseLocked = !mouseLocked;
+                break;
+
             case GLFW_KEY_R:
                 printf("\r");
                 reloadShaders();
@@ -128,14 +133,22 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mod
     } else {
         // released
         switch (button) {
-            case GLFW_MOUSE_BUTTON_1:
-                glfwSetCursorPos(window,halfWidth,halfHeight);
-                mouseLocked = !mouseLocked;
+            case GLFW_MOUSE_BUTTON_1: {
+                printf("\rMouse pos: %lf, %lf\n",mouse.x,mouse.y);
+                RayResult result = RAY_CASTER::castRayFromCam(20);
+                glm::ivec3 pos = result.pos;
+                if (result.steps) {
+                    deleteBlock(Pos{pos.x,pos.y,pos.z}, 6);
+                    printf("\rDeleted block at %d,%d,%d!\n",pos.x,pos.y,pos.z);
+                } else {
+                    printf("\rNo block to delete in range!\n");
+                }
                 break;
+            }
             
             case GLFW_MOUSE_BUTTON_2: {
                 printf("\rMouse pos: %lf, %lf\n",mouse.x,mouse.y);
-                glm::ivec3 pos = RAY_CASTER::castRayFromCam(20);
+                glm::ivec3 pos = RAY_CASTER::castRayFromCam(20).lastPos;
                 putBlock(Pos{pos.x,pos.y,pos.z},hotbar[currentSelected],6);
                 printf("\rPut block at %d,%d,%d!\n",pos.x,pos.y,pos.z);
                 break;

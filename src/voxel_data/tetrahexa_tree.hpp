@@ -17,7 +17,9 @@ void putBlock(Pos pos, Block block, int targetDepth);
 
 void deleteChildren(Ptr node);
 
-u64 getBlock(Pos pos);
+Block getBlock(Pos pos);
+
+Block deleteBlock(Pos pos, int level);
 
 
 

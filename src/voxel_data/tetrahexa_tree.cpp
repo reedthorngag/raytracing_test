@@ -26,7 +26,7 @@ void initTetraHexaTree() {
     putBlock(Pos{3,10,10}, Block{7,0,0}, 6);
     putBlock(Pos{4,10,10}, Block{8,0,0}, 6);
 
-    printf("block at somewhere = %lld\n",getBlock({1002,1002,1003}));
+    printf("block at somewhere = %lld\n",getBlock({1002,1002,1003}).color);
 
     Pos* pos = new Pos[3]{
         {1,10,10},
@@ -110,7 +110,7 @@ void traverseTree(Pos* pos, int count) {
     }
 }
 
-u64 getBlock(Pos pos) {
+Block getBlock(Pos pos) {
     DEBUG(2) printf("Getting block at (%d,%d,%d)...\n",pos.x,pos.y,pos.z);
 
     int posOffset = (maxDepth-1) * 2;
@@ -133,11 +133,12 @@ u64 getBlock(Pos pos) {
 
         if (stack[depth].ptr->branch.flags & 1) {
             DEBUG(2) printf("Found leaf at depth %d, returning color\n",depth);
-            return stack[depth].ptr->leaf.packedColor;
+            Leaf leaf = stack[depth].ptr->leaf;
+            return Block{leaf.flags,leaf.packedColor,leaf.metadata};
 
         } else if (!((stack[depth].ptr->branch.bitmap >> index) & 1)) {
             DEBUG(2) printf("Found empty node at depth %d, index %d, returning -1\n",depth+1,index);
-            return -1;
+            return Block{0,-1ull,0};
         }
 
         // this might be used in future, its a tradeoff between memory and speed though
@@ -171,9 +172,10 @@ void deleteChildren(Ptr node) {
     freeArray(node.ptr->branch.children);
 }
 
-void putBlock(Pos pos, Block block, int targetDepth) {
-    DEBUG(3) printf("Putting block at (%d,%d,%d) (size: %d) with color %lld, flags %d and metadata %f...\n",pos.x,pos.y,pos.z,1<<((maxDepth-targetDepth)*2),block.color,block.flags,block.metadata);
-    targetDepth--; // convert to zero based index
+// level 6 is 1x1x1 block, 5 is 4x4x4
+void putBlock(Pos pos, Block block, int level) {
+    DEBUG(3) printf("Putting block at (%d,%d,%d) (size: %d) with color %lld, flags %d and metadata %f...\n",pos.x,pos.y,pos.z,1<<((maxDepth-level)*2),block.color,block.flags,block.metadata);
+    level--; // convert to zero based index
 
     int posOffset = (maxDepth-1) * 2;
 
@@ -192,7 +194,7 @@ void putBlock(Pos pos, Block block, int targetDepth) {
 
         DEBUG(4) printf("depth: %d, index: %d\n",depth, index);
  
-        if (depth == targetDepth) {
+        if (depth == level) {
 
             // if leaf
             if (stack[depth].ptr->branch.flags & 1) {
@@ -222,6 +224,7 @@ void putBlock(Pos pos, Block block, int targetDepth) {
 
             u32 leafFlags = stack[depth].ptr->branch.flags;
             u64 leafColor = stack[depth].ptr->leaf.packedColor;
+            float metadata = stack[depth].ptr->leaf.metadata;
 
             Ptr childPtrArray = allocArray();
             memset(childPtrArray.ptr, 0, sizeof(u32) * 64);
@@ -233,6 +236,7 @@ void putBlock(Pos pos, Block block, int targetDepth) {
                 ((u32*)childPtrArray.ptr)[i] = childNodes.index + i;
                 childNodes.ptr[i].leaf.flags = leafFlags;
                 childNodes.ptr[i].leaf.packedColor = leafColor;
+                childNodes.ptr[i].leaf.metadata = metadata;
             }
 
             stack[depth].ptr->branch.flags = 0;
@@ -245,7 +249,7 @@ void putBlock(Pos pos, Block block, int targetDepth) {
         // else if air/empty
         } else if (!((stack[depth].ptr->branch.bitmap >> index) & 1)) {
 
-            if (depth+1 == targetDepth) {
+            if (depth+1 == level) {
                 DEBUG(3) printf("Adding leaf at target depth %d, index %d...\n",depth+1,index);
                 Ptr leaf = allocNode();
                 *leaf.ptr = {{.leaf = {block.color, 1 | block.flags, block.metadata}}};
@@ -283,6 +287,75 @@ void putBlock(Pos pos, Block block, int targetDepth) {
     }
 
     printf("Error: hit max depth without finding leaf node! (putBlock in tetrahexa_tree.cpp)\n");
+    exit(1);
+}
+
+Block deleteBlock(Pos pos, int level) {
+    DEBUG(2) printf("deleting block at (%d,%d,%d) level %d...\n",pos.x,pos.y,pos.z,level);
+
+    int posOffset = (maxDepth-1) * 2;
+
+    int depth = 0;
+
+    Ptr stack[maxDepth];
+
+    stack[0] = root;
+
+    while (depth < maxDepth) {
+        posOffset -= 2;
+
+        Pos curr = (pos >> posOffset) & 0b11;
+
+        int index = curr.z << 4 | curr.y << 2 | curr.x;
+
+        DEBUG(4) printf("depth: %d, index: %d, pos: %d,%d,%d\n",depth, index, curr.x, curr.y, curr.z);
+
+        if (stack[depth].ptr->leaf.flags & 1) {
+            DEBUG(3) printf("Turning leaf into branch at depth %d\n",depth);
+
+            u32 leafFlags = stack[depth].ptr->leaf.flags;
+            u64 leafColor = stack[depth].ptr->leaf.packedColor;
+            float metadata  = stack[depth].ptr->leaf.metadata;
+
+            Ptr childPtrArray = allocArray();
+            memset(childPtrArray.ptr, 0, sizeof(u32) * 64);
+
+            Ptr childNodes = allocConsecNodes(64);
+            memset(childNodes.ptr, 0, sizeof(Node) * 64);
+
+            for (int i = 0; i < 64; i++) {
+                ((u32*)childPtrArray.ptr)[i] = childNodes.index + i;
+                childNodes.ptr[i].leaf.flags = leafFlags;
+                childNodes.ptr[i].leaf.packedColor = leafColor;
+                childNodes.ptr[i].leaf.metadata = metadata;
+            }
+
+            stack[depth].ptr->branch.flags = 0;
+            stack[depth].ptr->branch.bitmap = -1; // all set
+            stack[depth].ptr->branch.children = childPtrArray.index;
+            stack[depth].block->modified = true;
+
+        } else if (!((stack[depth].ptr->branch.bitmap >> index) & 1)) {
+            DEBUG(2) printf("Found empty node at depth %d, index %d, returning false\n",depth+1,index);
+            return Block{0,-1ull,0};
+        }
+
+        // this might be used in future, its a tradeoff between memory and speed though
+        //index = std::popcount(stack[depth].ptr.branch.bitmap << (64 - index));
+
+        stack[depth+1] = convertToPtr(
+            ((u32*)convertToArrayPtr(stack[depth].ptr->branch.children).ptr)[index]
+        );
+        depth++;
+
+        if (depth == level) {
+            Block block = Block{stack[depth].ptr->leaf.flags,stack[depth].ptr->leaf.packedColor,stack[depth].ptr->leaf.metadata};
+            deleteChildren(stack[depth]);
+            return block;
+        }
+    }
+
+    printf("Error: hit max depth without finding leaf node! (getBlock in tetrahexa_tree.cpp)\n");
     exit(1);
 }
 
