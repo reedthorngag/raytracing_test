@@ -19,16 +19,16 @@ void genWorld() {
     for (int x = 0; x < WIDTH; x++) {
         for (int z = 0; z < LENGTH; z++) {
 
-            int y = round(o1.eval(x*0.01,z*0.01)*20) + round(o2.eval(x*0.1,z*0.1)*5) + 20;
+            int y = round(o1.eval(x*0.005,z*0.005)*30) + round(o2.eval(x*0.05,z*0.05) * 5) + round(o3.eval(x*0.1,z*0.1) * 3) + 32;
 
             putBlock(Pos{x,y,z},Block{NONE,RGB_TO_U64(0,150,10),0},6);
             y--;
 
-            for (int i = 3; y && i; i--, y--) {
+            for (int i = 3; y > 0 && i; i--, y--) {
                 putBlock(Pos{x,y,z},Block{NONE,RGB_TO_U64(45,18,0),0},6);
             }
 
-            for (; y; y--) {
+            for (; y > 0; y--) {
                 putBlock(Pos{x,y,z},Block{NONE,RGB_TO_U64(33,33,33),0},6);
             }
         }

@@ -198,7 +198,7 @@ void reflectRay(u64vec2 block) {
 
     ray.step[lastHit] *= -1;
     ray.dir[lastHit] *= -1;
-    
+
     finalColorMod *= 0.94;
     rayReflected = true;
 }
@@ -212,8 +212,6 @@ void refractRay(float newRefractIndex) {
     if (lastHit != 0 && ray.step.x < 0) pos.exact.x += 1;
     if (lastHit != 1 && ray.step.y < 0) pos.exact.y += 1;
     if (lastHit != 2 && ray.step.z < 0) pos.exact.z += 1;
-    
-    pos.round = ivec3(floor(origin));
 
     vec3 normal = vec3(0);
     normal[lastHit] = ray.step[lastHit];
@@ -310,23 +308,25 @@ void main()
     }
 
     uint i = 0;
-    const uint numSteps = 300;
+    const uint numSteps = 350;
     while (i++ < numSteps) {
 
-        while (block.x == -1 && i++ < numSteps) {
-            //if (currentRefractiveIndex != 1.0) refractRay(1.0);
+        while (block.x == -1 && i++ < numSteps && currentRefractiveIndex == 1.0) {
             nextIntersectDDA();
             block = getBlock();
         }
 
-        if (block.x == -1) break;
-
         uint flags = uint(block.y) & 0x7;
-        if (flags == 0x3) {
+        if (currentRefractiveIndex != 1.0) {
+            refractRay(1.0);
+
+        } else if (block.x == -1) break;
+
+        else if (flags == 0x3) {
             reflectRay(block);
 
         } else if (flags == 0x5) {
-            break;//refractRay(float(block.y >> 32));
+            refractRay(1.5);//float(block.y >> 32));
 
         } else {
             break;
@@ -353,7 +353,7 @@ void main()
         hit[lastHit] = 0.5;
         if (hit.x > 0.9 || hit.y > 0.9 || hit.z > 0.9 ||
             hit.x < 0.1 || hit.y < 0.1 || hit.z < 0.1) {
-                FragColor = vec4(1,1,1,0);
+                FragColor = vec4(color_int_to_vec3(block.x) * 2 + 0.3,0);
                 return;
             }
     }
@@ -382,7 +382,7 @@ void main()
         pos.deltaPos = ray.absDelta - (pos.exact - pos.round) * ray.delta;
         pos.deltaPos[lastHit] -= ray.absDelta[lastHit];
 
-        int i = 50;
+        int i = 75;
         block = u64vec2(-1);
         while (block.x == -1 && i-- != 0) {
             nextIntersectDDA();
@@ -390,8 +390,6 @@ void main()
         }
 
         if (block.x != -1) {
-        //     FragColor = vec4(origLastHit * 0.3);//calcLightIntensity(color_int_to_vec3(origBlock.x), sunDir, origLastHit) * finalColorMod, 0);
-        // } else {
             FragColor = vec4(color_int_to_vec3(origBlock.x) * 0.3, 0);
         }
 
