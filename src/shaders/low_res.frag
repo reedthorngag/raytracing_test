@@ -58,21 +58,6 @@ struct Ray {
     vec3 absDelta;
 };
 
-double ifZeroMakeOne(double n) {
-    return n == 0 ? 1 : n;
-}
-
-double matchSign(double a, double sign) {
-    return a * sign;
-}
-
-double ratio(double a, double b) {
-    if (a == 0 || b == 0) {
-        return 0;
-    }
-    return (a) / (b);
-}
-
 Ray buildRay(vec3 dir) {
     Ray ray;
 
@@ -89,17 +74,17 @@ Ray buildRay(vec3 dir) {
 
     ray.ratiosX = dvec3(
         1,
-        ratio(dir.y,dir.x),
-        ratio(dir.z,dir.x)
+        dir.y/dir.x,
+        dir.z/dir.x
     );
     ray.ratiosY = dvec3(
-        ratio(dir.x,dir.y),
+        dir.x/dir.y,
         1,
-        ratio(dir.z,dir.y)
+        dir.z/dir.y
     );
     ray.ratiosZ = dvec3(
-        ratio(dir.x,dir.z),
-        ratio(dir.y,dir.z),
+        dir.x/dir.z,
+        dir.y/dir.z,
         1
     );
 
@@ -188,7 +173,6 @@ vec3 b = vec3(0,0,1);
 
 vec3 finalColorMod = vec3(1);
 
-bool rayReflected = false;
 
 void reflectRay(u64vec2 block) {
 
@@ -205,7 +189,6 @@ void reflectRay(u64vec2 block) {
     ray.dir[lastHit] *= -1;
 
     finalColorMod *= 0.94;
-    rayReflected = true;
 }
 
 float currentRefractiveIndex = 1.0;
@@ -228,9 +211,9 @@ void refractRay(float newRefractIndex, u64vec2 block) {
 
     if (currentRefractiveIndex == newRefractIndex) return;
 
-    // if (lastHit != 0 && ray.step.x < 0) pos.exact.x += 1;
-    // if (lastHit != 1 && ray.step.y < 0) pos.exact.y += 1;
-    // if (lastHit != 2 && ray.step.z < 0) pos.exact.z += 1;
+    if (lastHit != 0 && ray.step.x < 0) pos.exact.x += 1;
+    if (lastHit != 1 && ray.step.y < 0) pos.exact.y += 1;
+    if (lastHit != 2 && ray.step.z < 0) pos.exact.z += 1;
 
     vec3 normal = vec3(0);
     normal[lastHit] = ray.step[lastHit];
@@ -321,7 +304,7 @@ void main() {
     }
 
     uint i = 0;
-    const uint numSteps = 350;
+    const uint numSteps = 300;
     while (i++ < numSteps) {
 
         while (block.x == -1 && i++ < numSteps) {// && currentRefractiveIndex == 1.0
@@ -382,7 +365,7 @@ void main() {
         FragColor = vec4(calcLightIntensity(color_int_to_vec3(block.x), sunDir, lastHit) * finalColorMod, 0);
 
         if (!facingLightDir(sunDir, lastHit)) {
-            FragColor = vec4(color_int_to_vec3(block.x) * 0.3, 0);
+            FragColor = vec4(color_int_to_vec3(block.x) * 0.3 * finalColorMod, 0);
             return;
         }
 
@@ -403,7 +386,7 @@ void main() {
         }
 
         if (block.x != -1) {
-            FragColor = vec4(color_int_to_vec3(origBlock.x) * 0.3, 0);
+            FragColor = vec4(color_int_to_vec3(origBlock.x) * 0.3 * finalColorMod, 0);
         }
 
         //PosOut = pos.exact;
