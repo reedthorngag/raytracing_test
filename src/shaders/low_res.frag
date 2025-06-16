@@ -228,19 +228,15 @@ void refractRay(float newRefractIndex, u64vec2 block) {
 
     if (currentRefractiveIndex == newRefractIndex) return;
 
-    if (lastHit != 0 && ray.step.x < 0) pos.exact.x += 1;
-    if (lastHit != 1 && ray.step.y < 0) pos.exact.y += 1;
-    if (lastHit != 2 && ray.step.z < 0) pos.exact.z += 1;
+    // if (lastHit != 0 && ray.step.x < 0) pos.exact.x += 1;
+    // if (lastHit != 1 && ray.step.y < 0) pos.exact.y += 1;
+    // if (lastHit != 2 && ray.step.z < 0) pos.exact.z += 1;
 
     vec3 normal = vec3(0);
     normal[lastHit] = ray.step[lastHit];
 
     if ((uint(block.y) & 0x10) > 0) {
-        // float R = pos.exact.x + deltaTime-0.05;
-        // float L = pos.exact.x + deltaTime+0.05;
-        // float B = pos.exact.z + deltaTime-2;
-        // float T = pos.exact.z + deltaTime+2;
-        // normal = normalize(vec3(2*(R-L), 4, 2*(B-T)));
+
         float time = fract(deltaTime + pos.exact.x*0.2);
         if (time > 0.5) time = 0.5 - (time - 0.5);
         normal.x += time*0.3;
@@ -252,9 +248,7 @@ void refractRay(float newRefractIndex, u64vec2 block) {
 
     ray = buildRay(ray.dir);
 
-    if (ray.step.x < 0) pos.exact.x -= 1;
-    if (ray.step.y < 0) pos.exact.y -= 1;
-    if (ray.step.z < 0) pos.exact.z -= 1;
+    pos.exact += min(ray.step, 0);
 
     pos.deltaPos = ray.absDelta - (pos.exact - pos.round) * ray.delta;
 
@@ -339,9 +333,9 @@ void main() {
 
         if (block.x == -1) {
             break;
-            if (currentRefractiveIndex != 1.0) {
-                refractRay(1.0, u64vec2(0));
-            } else break;
+            // if (currentRefractiveIndex != 1.0) {
+            //     refractRay(1.0, u64vec2(0));
+            // } else break;
         }
 
         else if (flags == 0x3) {
