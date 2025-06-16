@@ -78,7 +78,8 @@ namespace RAY_CASTER {
                 pos.round.z += ray.step.z;
                 pos.deltaPos.z += ray.absDelta.z;
             }
-            if (getBlock(Pos{pos.round.x,pos.round.y,pos.round.z}).color != -1ull)
+            Block block = getBlock(Pos{pos.round.x,pos.round.y,pos.round.z});
+            if (block.color != -1ull && (block.flags & 0x10) == 0)
                 return RayResult{pos.round,lastPos,steps};
         }
 

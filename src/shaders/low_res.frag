@@ -207,7 +207,18 @@ vec3 refractRay(vec3 ray, vec3 normal, float n1, float n2) {
     return r * ray + (r*c1-c2) * normal;
 }
 
+#define PI 3.141592653589793
+float sineInOut(float t) {
+  return -0.5 * (cos(PI * t) - 1.0);
+}
+
 void refractRay(float newRefractIndex, u64vec2 block) {
+
+    if ((uint(block.y) & 0x10) > 0) {
+        finalColorMod *= vec3(0.92,0.95,1.0);
+    } else {
+        finalColorMod *= 0.95;
+    }
 
     if (currentRefractiveIndex == newRefractIndex) return;
 
@@ -220,9 +231,8 @@ void refractRay(float newRefractIndex, u64vec2 block) {
 
     if ((uint(block.y) & 0x10) > 0) {
 
-        float time = fract(deltaTime + pos.exact.x*0.2);
-        if (time > 0.5) time = 0.5 - (time - 0.5);
-        normal.x += time*0.3;
+        float delta = sin((deltaTime + pos.exact.x*0.2)*10)*0.2;
+        normal.x += delta;
 
         normal = normalize(normal);
     }
@@ -295,8 +305,8 @@ void main() {
 
     u64vec2 block = getBlock();
     if (block.x != -1) {
-        if ((block.y & 0x4) == 1) {
-            currentRefractiveIndex = float(block.y >> 32);
+        if ((block.y & 0x4) > 0) {
+            currentRefractiveIndex = 1.1;
         } else {
             FragColor = vec4(color_int_to_vec3(block.x),0);
             return;
@@ -304,7 +314,7 @@ void main() {
     }
 
     uint i = 0;
-    const uint numSteps = 300;
+    const uint numSteps = 350;
     while (i++ < numSteps) {
 
         while (block.x == -1 && i++ < numSteps) {// && currentRefractiveIndex == 1.0
@@ -393,7 +403,7 @@ void main() {
         
         //NormalOut = -min(lastHit,0) * ray.step;
     } else {
-        FragColor = vec4(genSkyBox() * finalColorMod, 0); 
+        FragColor = vec4(genSkyBox() * finalColorMod, 0);
     }
 }
 
