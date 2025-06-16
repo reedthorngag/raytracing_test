@@ -23,6 +23,7 @@ uniform vec2 pixelSize;
 uniform vec2 projPlaneSize;
 uniform uvec2 resolution;
 uniform vec3 sunDir;
+uniform ivec3 lookingAtBlock;
 
 in vec4 gl_FragCoord;
 
@@ -66,7 +67,7 @@ double ratio(double a, double b) {
     if (a == 0 || b == 0) {
         return 0;
     }
-    return abs(a) / abs(b);
+    return (a) / (b);
 }
 
 Ray buildRay(vec3 dir) {
@@ -87,17 +88,17 @@ Ray buildRay(vec3 dir) {
         1,
         ratio(dir.y,dir.x),
         ratio(dir.z,dir.x)
-    ) * ray.step;
+    );
     ray.ratiosY = dvec3(
         ratio(dir.x,dir.y),
         1,
         ratio(dir.z,dir.y)
-    ) * ray.step;
+    );
     ray.ratiosZ = dvec3(
         ratio(dir.x,dir.z),
         ratio(dir.y,dir.z),
         1
-    ) * ray.step;
+    );
 
     ray.ratios = mat3(vec3(ray.ratiosX),vec3(ray.ratiosY),vec3(ray.ratiosZ));
 
@@ -336,17 +337,39 @@ void main()
         block = getBlock();
     }
 
-    //reconstructExactPos();
-    if (ivec3(floor(pos.exact)) != pos.round) {
-        FragColor = vec4(r,0);
-    } else {
-        FragColor = vec4(b,0);
+    if (renderPosData == 1) {
+        FragColor = vec4(pos.exact, 0);
+        return;
+    } else if (renderPosData == 2) {
+        FragColor = vec4(pos.round, 0);
+        return;
     }
-    return;
+
+    if (lastHit != 0 && ray.step.x < 0) pos.exact.x += 1;
+    if (lastHit != 1 && ray.step.y < 0) pos.exact.y += 1;
+    if (lastHit != 2 && ray.step.z < 0) pos.exact.z += 1;
+    //reconstructExactPos();
+    // if (distance(ivec3(floor(pos.exact)), pos.round) > 0) {
+    //     FragColor = vec4(r,0);
+    // } else {
+    //     FragColor = vec4(b,0);
+    // }
+    // return;
+
+    if (lookingAtBlock == pos.round) {
+        vec3 hit = pos.exact;
+        hit[lastHit] = 0.5;
+        if (hit.x > 0.9 || hit.y > 0.9 || hit.z > 0.9 ||
+            hit.x < 0.1 || hit.y < 0.1 || hit.z < 0.1) {
+                FragColor = vec4(1,1,1,0);
+                return;
+            }
+    }
 
     if (block.x != -1) {
         u64vec2 origBlock = block;
         uint origLastHit = lastHit;
+        ivec3 origPos = pos.round;
         //reconstructExactPos();
         //pos.exact = pos.round + fract(pos.exact);
 
@@ -360,7 +383,7 @@ void main()
             return;
         }
 
-        pos.round = ivec3(floor(pos.exact));
+        //pos.round = ivec3(floor(pos.exact));
         ray = buildRay(sunDir);
 
         if (ray.step.x < 0) pos.exact.x -= 1;
@@ -371,14 +394,16 @@ void main()
 
         int i = 50;
         block = u64vec2(-1);
-        nextIntersectDDA();
+        // nextIntersectDDA();
+        while (pos.round == origPos) {
         while (block.x == -1 && i-- != 0) {
             nextIntersectDDA();
             block = getBlock();
         }
+        }
 
         if (block.x == -1) {
-            FragColor = vec4(calcLightIntensity(color_int_to_vec3(origBlock.x), sunDir, 2) * finalColorMod, 0);
+            FragColor = vec4(calcLightIntensity(color_int_to_vec3(origBlock.x), sunDir, origLastHit) * finalColorMod, 0);
         } else {
             FragColor = vec4(r,0);//color_int_to_vec3(origBlock.x) * 0.3, 0);
         }
@@ -458,7 +483,7 @@ void nextIntersect(int step) {
 
 void nextIntersectDDA() {
 
-    vec3 dst = 1 - abs(pos.exact - pos.round);
+    vec3 dst = ray.step - (pos.exact - pos.round);
 
     if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
         pos.round.x += ray.step.x;

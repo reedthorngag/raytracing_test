@@ -334,14 +334,14 @@ bool createDependencies() {
     // glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,midResPassTex,0);
 
 
-    // glGenTextures(1,&pixelsDataTex);
-    // glBindTexture(GL_TEXTURE_2D, pixelsDataTex);
+    glGenTextures(1,&pixelsDataTex);
+    glBindTexture(GL_TEXTURE_2D, pixelsDataTex);
 
-    // glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
 
-    // glGenFramebuffers(1, &pixelsDataFBO);
-    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pixelsDataFBO);
-    // glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,pixelsDataTex,0);
+    glGenFramebuffers(1, &pixelsDataFBO);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pixelsDataFBO);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,pixelsDataTex,0);
 
     return true;
 }
@@ -363,21 +363,21 @@ bool setupOpenGl() {
 void reloadShaders() {
     glUseProgram(0);
     GLuint oldProgram1 = lowResProgram;
-    GLuint oldProgram2 = midResProgram;
-    GLuint oldProgram3 = fullResProgram;
-    GLuint oldProgram4 = lightScatteringProgram;
+    // GLuint oldProgram2 = midResProgram;
+    // GLuint oldProgram3 = fullResProgram;
+    // GLuint oldProgram4 = lightScatteringProgram;
 
-    if (setupProgram1() && setupProgram4()){;// && setupProgram2() && setupProgram3()) {
+    if (setupProgram1()){;// && setupProgram4() && setupProgram2() && setupProgram3()) {
         glDeleteProgram(oldProgram1);
         //glDeleteProgram(oldProgram2);
-        //glDeleteProgram(oldProgram3);
-        glDeleteProgram(oldProgram4);
+        // glDeleteProgram(oldProgram3);
+        // glDeleteProgram(oldProgram4);
         printf("Shaders successfully reloaded!    \n");
     } else {
         lowResProgram = oldProgram1;
-        midResProgram = oldProgram2;
-        fullResProgram = oldProgram3;
-        lightScatteringProgram = oldProgram4;
+        // midResProgram = oldProgram2;
+        // fullResProgram = oldProgram3;
+        // lightScatteringProgram = oldProgram4;
     }
 }
 

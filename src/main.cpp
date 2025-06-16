@@ -10,6 +10,7 @@
 #include "input.hpp"
 #include "voxel_data/tetrahexa_tree.hpp"
 #include "voxel_data/voxel_allocator.hpp"
+#include "ray_caster.hpp"
 
 
 extern "C" {
@@ -76,12 +77,16 @@ void render() {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pixelsDataFBO);
     }
 
+    DEBUG_LEVEL = 1;
+    RayResult result = RAY_CASTER::castRayFromCam(30);
+    DEBUG_LEVEL = 3;
     glUniform3f(glGetUniformLocation(lowResProgram, "trueOrigin"), cameraPos.x,cameraPos.y,cameraPos.z);
     glUniform3f(glGetUniformLocation(lowResProgram, "cameraDir"), cameraDir.x,cameraDir.y,cameraDir.z);
     glUniform2f(glGetUniformLocation(lowResProgram, "mousePos"), mouse.x, mouse.y);
     glUniform1ui(glGetUniformLocation(lowResProgram, "originMortonPos"), getMortonPos(cameraPos));
     glUniform1i(glGetUniformLocation(lowResProgram, "renderPosData"), sendDebugFrame);
     glUniform3f(glGetUniformLocation(lowResProgram, "sunDir"), sun.x, sun.y, sun.z);
+    glUniform3i(glGetUniformLocation(lowResProgram, "lookingAtBlock"),result.pos.x,result.pos.y,result.pos.z);
 
     if (dimensionsChanged) {
         glUniform2ui(glGetUniformLocation(lowResProgram, "resolution"), width, height);

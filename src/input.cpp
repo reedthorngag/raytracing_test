@@ -136,7 +136,7 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mod
         switch (button) {
             case GLFW_MOUSE_BUTTON_1: {
                 printf("\rMouse pos: %lf, %lf\n",mouse.x,mouse.y);
-                RayResult result = RAY_CASTER::castRayFromCam(20);
+                RayResult result = RAY_CASTER::castRayFromCam(30);
                 glm::ivec3 pos = result.pos;
                 if (result.steps) {
                     deleteBlock(Pos{pos.x,pos.y,pos.z}, 6);
@@ -149,7 +149,7 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mod
             
             case GLFW_MOUSE_BUTTON_2: {
                 printf("\rMouse pos: %lf, %lf\n",mouse.x,mouse.y);
-                glm::ivec3 pos = RAY_CASTER::castRayFromCam(20).lastPos;
+                glm::ivec3 pos = RAY_CASTER::castRayFromCam(30).lastPos;
                 putBlock(Pos{pos.x,pos.y,pos.z},hotbar[currentSelected],6);
                 printf("\rPut block at %d,%d,%d!\n",pos.x,pos.y,pos.z);
                 break;
