@@ -21,7 +21,13 @@ void genWorld() {
 
             int y = round(o1.eval(x*0.005,z*0.005)*30) + round(o2.eval(x*0.05,z*0.05) * 5) + round(o3.eval(x*0.1,z*0.1) * 3) + 32;
 
-            putBlock(Pos{x,y,z},Block{NONE,RGB_TO_U64(0,150,10),0},6);
+            if (y < 20) {
+                for (int i = 20; i > y; i--) {
+                    putBlock(Pos{x,i,z},Block{REFRACTIVE | LIQUID, RGB_TO_U64(0,150,10), 0}, 6);
+                }
+                putBlock(Pos{x,y,z},Block{NONE,RGB_TO_U64(45,18,0),0},6);
+            } else
+                putBlock(Pos{x,y,z},Block{NONE,RGB_TO_U64(0,150,10),0},6);
             y--;
 
             for (int i = 3; y > 0 && i; i--, y--) {

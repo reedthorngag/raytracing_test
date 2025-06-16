@@ -69,7 +69,8 @@ enum properties {
     NONE = 0,
     REFLECTIVE = 0x2,
     REFRACTIVE = 0x4,
-    LUMINESCENT = 0x8
+    LUMINESCENT = 0x8,
+    LIQUID = 0x10
 };
 
 struct Block {

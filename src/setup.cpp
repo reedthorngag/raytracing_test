@@ -5,6 +5,7 @@
 #include "globals.hpp"
 
 #include <fstream>
+#include <openSimplexNoise.h>
 
 float vertices[] = {
     -1, -1, 0.0,
@@ -32,6 +33,8 @@ GLuint colorBufferTex;
 GLuint posTex;
 GLuint normalTex;
 GLuint secondaryRaysFBO;
+
+GLuint waterNormalsTex;
 
 void glfwErrorCallback(int errorCode, const char* errorMessage) {
     printf("glfw error: %d %s\n", errorCode, errorMessage);
@@ -342,6 +345,68 @@ bool createDependencies() {
     glGenFramebuffers(1, &pixelsDataFBO);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, pixelsDataFBO);
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,pixelsDataTex,0);
+
+    
+    // glGenTextures(1,&waterNormalsTex);
+    // glBindTexture(GL_TEXTURE_2D, waterNormalsTex);
+
+    // int width = 258;
+    // int height = 258;
+
+    // glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB32F, width-2, height-2);
+
+    // OpenSimplexNoise::Noise o1(42);
+
+    // double TAU = 6.283185307179586;
+    // float* buf = new float[width * height];
+
+    // float aspect_ratio = width / height;
+    // glm::vec2 x_offset = glm::vec2(-1.0,1.0);
+    // glm::vec2 y_offset = (float)(1.0 / aspect_ratio) * glm::vec2(-1.0,1.0);
+
+    // for (int y = 0; y < height; y++) {
+    //     for (int x = 0; x < width; x++) {
+    //         // set buffer (torus) resolution and scale
+    //         // float s = (float)x / (float)width;
+    //         // float t = (float)y / (float)height;
+    //         // float dx = x_offset.x - x_offset.y;
+    //         // float dy = y_offset.x - y_offset.y;
+                
+    //         // // calculate position on torus
+    //         // float nx = x_offset.x + glm::cos(TAU * s) * dx / TAU;
+    //         // float ny = y_offset.x + glm::cos(TAU * t) * dy / TAU;
+    //         // float nz = x_offset.x + glm::sin(TAU * s) * dx / TAU;
+    //         // float nw = y_offset.x + glm::sin(TAU * t) * dy / TAU;
+                
+    //         // calculate noise value	
+    //         float value = o1.eval(x*0.2,y*0.2);//nx, ny, nz, nw) + 1;
+    //         buf[y*width + x] = value;
+    //     }
+    // }
+
+    // float* outBuf = new float[width * height * 4 * 2];
+
+    // width -= 2;
+    // height -= 2;
+    // for (int y = 1; y < height+1; y++) {
+    //     for (int x = 1; x < width*4 + 1; x += 4) {
+    //         float L = buf[y * (width+2) + x - 1];
+    //         float R = buf[y * (width+2) + x + 1];
+    //         float T = buf[(y-1) * (width+2) + x];
+    //         float B = buf[(y+1) * (width+2) + x];
+    //         glm::vec3 normal = glm::normalize(glm::vec3(2*(R-L), 2*(B-T), -4));
+    //         outBuf[(y-1) * width + x - 1] = normal.x;
+    //         outBuf[(y-1) * width + x] = normal.y;
+    //         outBuf[(y-1) * width + x + 1] = normal.z;
+    //         outBuf[(y-1) * width + x + 2] = 0;
+    //     }
+    // }
+
+    // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 100, 100, GL_RGBA, GL_FLOAT, buf);
+    // checkGlError(0, "waterNormalsTex");
+
+    // delete[] buf;
+    // delete[] outBuf;
 
     return true;
 }

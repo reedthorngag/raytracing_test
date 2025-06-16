@@ -87,6 +87,7 @@ void render() {
     glUniform1i(glGetUniformLocation(lowResProgram, "renderPosData"), sendDebugFrame);
     glUniform3f(glGetUniformLocation(lowResProgram, "sunDir"), sun.x, sun.y, sun.z);
     glUniform3i(glGetUniformLocation(lowResProgram, "lookingAtBlock"),result.pos.x,result.pos.y,result.pos.z);
+    glUniform1f(glGetUniformLocation(lowResProgram, "deltaTime"), (float)glfwGetTime());
 
     if (dimensionsChanged) {
         glUniform2ui(glGetUniformLocation(lowResProgram, "resolution"), width, height);
@@ -98,6 +99,8 @@ void render() {
         sendDebugFrame = 0;
         return;
     }
+
+    //glBindTexture(GL_TEXTURE_2D, waterNormalsTex);
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);

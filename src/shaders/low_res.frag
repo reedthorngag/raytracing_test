@@ -24,6 +24,9 @@ uniform vec2 projPlaneSize;
 uniform uvec2 resolution;
 uniform vec3 sunDir;
 uniform ivec3 lookingAtBlock;
+uniform float deltaTime;
+
+uniform sampler2D waterTex;
 
 in vec4 gl_FragCoord;
 
@@ -196,6 +199,8 @@ void reflectRay(u64vec2 block) {
     ray.ratios[1][lastHit] *= -1;
     ray.ratios[2][lastHit] *= -1;
 
+    ray.ratios[lastHit][lastHit] *= -1;
+
     ray.step[lastHit] *= -1;
     ray.dir[lastHit] *= -1;
 
@@ -205,7 +210,21 @@ void reflectRay(u64vec2 block) {
 
 float currentRefractiveIndex = 1.0;
 
-void refractRay(float newRefractIndex) {
+vec3 refractRay(vec3 ray, vec3 normal, float n1, float n2) {
+    float r = n1 / n2;
+
+    float c1 = dot(normal, ray);
+    if (c1 < 0) {
+        normal = -normal;
+        c1 = dot(normal, ray);
+    }
+
+    float c2 = sqrt(1-r*r*(1-c1*c1));
+
+    return r * ray + (r*c1-c2) * normal;
+}
+
+void refractRay(float newRefractIndex, u64vec2 block) {
 
     if (currentRefractiveIndex == newRefractIndex) return;
 
@@ -216,17 +235,20 @@ void refractRay(float newRefractIndex) {
     vec3 normal = vec3(0);
     normal[lastHit] = ray.step[lastHit];
 
-    float r = currentRefractiveIndex/newRefractIndex;
+    if ((uint(block.y) & 0x10) > 0) {
+        // float R = pos.exact.x + deltaTime-0.05;
+        // float L = pos.exact.x + deltaTime+0.05;
+        // float B = pos.exact.z + deltaTime-2;
+        // float T = pos.exact.z + deltaTime+2;
+        // normal = normalize(vec3(2*(R-L), 4, 2*(B-T)));
+        float time = fract(deltaTime + pos.exact.x*0.2);
+        if (time > 0.5) time = 0.5 - (time - 0.5);
+        normal.x += time*0.3;
 
-    float c1 = dot(normal, ray.dir);
-    if (c1 < 0) {
-        normal = -normal;
-        c1 = dot(normal, ray.dir);
+        normal = normalize(normal);
     }
 
-    float c2 = sqrt(1-r*r*(1-c1*c1));
-
-    ray.dir = r * ray.dir + (r*c1-c2) * normal;
+    ray.dir = refractRay(ray.dir, normal, currentRefractiveIndex, newRefractIndex);
 
     ray = buildRay(ray.dir);
 
@@ -251,8 +273,7 @@ vec3 calcLightIntensity(vec3 color, vec3 lightDir, uint index) {
     return color * intensity;
 }
 
-void main()
-{
+void main() {
     origin = trueOrigin;
 
     if (renderPosData == 0 && distance(gl_FragCoord.xy, mousePos) <= 3) {
@@ -260,8 +281,8 @@ void main()
         return;
     }
 
-    float pixelWidth = 1.0/resolution.x;
-    float pixelHeight = 1.0/resolution.y;
+    vec2 pixelSize = 1.0/resolution;
+    vec2 FragCoord = gl_FragCoord.xy * pixelSize;
 
     stack[0] = 0;
     stack[1] = 0;
@@ -274,8 +295,6 @@ void main()
     pos.round = ivec3(floor(origin));
 
     mortonPos = originMortonPos;
-
-    vec2 FragCoord = gl_FragCoord.xy * vec2(pixelWidth,pixelHeight);//pixelSize;
 
     vec3 camLeft = cross(cameraDir,vec3(0,1,0));
     vec3 camUp = cross(cameraDir,camLeft);
@@ -311,22 +330,25 @@ void main()
     const uint numSteps = 350;
     while (i++ < numSteps) {
 
-        while (block.x == -1 && i++ < numSteps && currentRefractiveIndex == 1.0) {
+        while (block.x == -1 && i++ < numSteps) {// && currentRefractiveIndex == 1.0
             nextIntersectDDA();
             block = getBlock();
         }
 
         uint flags = uint(block.y) & 0x7;
-        if (currentRefractiveIndex != 1.0) {
-            refractRay(1.0);
 
-        } else if (block.x == -1) break;
+        if (block.x == -1) {
+            break;
+            if (currentRefractiveIndex != 1.0) {
+                refractRay(1.0, u64vec2(0));
+            } else break;
+        }
 
         else if (flags == 0x3) {
             reflectRay(block);
 
         } else if (flags == 0x5) {
-            refractRay(1.5);//float(block.y >> 32));
+            refractRay(1.1, block);
 
         } else {
             break;
@@ -364,9 +386,6 @@ void main()
         ivec3 origPos = pos.round;
 
         FragColor = vec4(calcLightIntensity(color_int_to_vec3(block.x), sunDir, lastHit) * finalColorMod, 0);
-        // if (rayReflected) {
-        //     return;
-        // }
 
         if (!facingLightDir(sunDir, lastHit)) {
             FragColor = vec4(color_int_to_vec3(block.x) * 0.3, 0);
@@ -384,7 +403,7 @@ void main()
 
         int i = 75;
         block = u64vec2(-1);
-        while (block.x == -1 && i-- != 0) {
+        while ((block.x == -1 || (int(block.y) & 0x10) > 0) && i-- != 0) {
             nextIntersectDDA();
             block = getBlock();
         }

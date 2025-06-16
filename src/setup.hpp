@@ -27,6 +27,8 @@ extern GLuint posTex;
 extern GLuint secondaryRaysFBO;
 extern GLuint normalTex;
 
+extern GLuint waterNormalsTex;
+
 void glfwErrorCallback(int errorCode, const char* errorMessage);
 
 void glfwMonitorCallback(GLFWmonitor* monitor, int event);
