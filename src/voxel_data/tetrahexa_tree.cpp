@@ -340,18 +340,16 @@ Block deleteBlock(Pos pos, int level) {
             return Block{0,-1ull,0};
         }
 
-        // this might be used in future, its a tradeoff between memory and speed though
-        //index = std::popcount(stack[depth].ptr.branch.bitmap << (64 - index));
-
         stack[depth+1] = convertToPtr(
             ((u32*)convertToArrayPtr(stack[depth].ptr->branch.children).ptr)[index]
         );
         depth++;
 
         if (depth == level) {
-            Block block = Block{stack[depth].ptr->leaf.flags,stack[depth].ptr->leaf.packedColor,stack[depth].ptr->leaf.metadata};
+            Block block = Block{stack[depth].ptr->leaf.flags, stack[depth].ptr->leaf.packedColor, stack[depth].ptr->leaf.metadata};
             deleteChildren(stack[depth]);
-            stack[depth-1].ptr->branch.bitmap &= ~(1 << index);
+            freeNode(stack[depth].index);
+            stack[depth-1].ptr->branch.bitmap ^= 1 << index;
             return block;
         }
     }

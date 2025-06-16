@@ -179,16 +179,6 @@ vec3 genSkyBox() {
     return (skyDefaultColor + clamp(haze,0,1) * 3) * modifier + sun;
 }
 
-void reconstructExactPos() {
-
-    float val = pos.round[lastHit] - origin[lastHit];
-
-    pos.exact = val * ray.ratios[lastHit];
-
-    pos.exact += origin;
-
-}
-
 vec3 r = vec3(1,0,0);
 vec3 g = vec3(0,1,0);
 vec3 b = vec3(0,0,1);
@@ -198,11 +188,17 @@ vec3 finalColorMod = vec3(1);
 bool rayReflected = false;
 
 void reflectRay(u64vec2 block) {
-    reconstructExactPos();
-    origin = pos.exact;
+
     pos.deltaPos[lastHit] -= ray.absDelta[lastHit];
+    pos.exact[lastHit] += ray.step[lastHit];
+
+    ray.ratios[0][lastHit] *= -1;
+    ray.ratios[1][lastHit] *= -1;
+    ray.ratios[2][lastHit] *= -1;
+
     ray.step[lastHit] *= -1;
     ray.dir[lastHit] *= -1;
+    
     finalColorMod *= 0.94;
     rayReflected = true;
 }
@@ -213,7 +209,10 @@ void refractRay(float newRefractIndex) {
 
     if (currentRefractiveIndex == newRefractIndex) return;
 
-    reconstructExactPos();
+    if (lastHit != 0 && ray.step.x < 0) pos.exact.x += 1;
+    if (lastHit != 1 && ray.step.y < 0) pos.exact.y += 1;
+    if (lastHit != 2 && ray.step.z < 0) pos.exact.z += 1;
+    
     pos.round = ivec3(floor(origin));
 
     vec3 normal = vec3(0);
@@ -348,13 +347,6 @@ void main()
     if (lastHit != 0 && ray.step.x < 0) pos.exact.x += 1;
     if (lastHit != 1 && ray.step.y < 0) pos.exact.y += 1;
     if (lastHit != 2 && ray.step.z < 0) pos.exact.z += 1;
-    //reconstructExactPos();
-    // if (distance(ivec3(floor(pos.exact)), pos.round) > 0) {
-    //     FragColor = vec4(r,0);
-    // } else {
-    //     FragColor = vec4(b,0);
-    // }
-    // return;
 
     if (lookingAtBlock == pos.round) {
         vec3 hit = pos.exact;
@@ -370,20 +362,17 @@ void main()
         u64vec2 origBlock = block;
         uint origLastHit = lastHit;
         ivec3 origPos = pos.round;
-        //reconstructExactPos();
-        //pos.exact = pos.round + fract(pos.exact);
 
-        if (rayReflected) {
-            FragColor = vec4(calcLightIntensity(color_int_to_vec3(block.x), sunDir, lastHit) * finalColorMod, 0);
-            return;
-        }
+        FragColor = vec4(calcLightIntensity(color_int_to_vec3(block.x), sunDir, lastHit) * finalColorMod, 0);
+        // if (rayReflected) {
+        //     return;
+        // }
 
         if (!facingLightDir(sunDir, lastHit)) {
             FragColor = vec4(color_int_to_vec3(block.x) * 0.3, 0);
             return;
         }
 
-        //pos.round = ivec3(floor(pos.exact));
         ray = buildRay(sunDir);
 
         if (ray.step.x < 0) pos.exact.x -= 1;
@@ -391,21 +380,19 @@ void main()
         if (ray.step.z < 0) pos.exact.z -= 1;
 
         pos.deltaPos = ray.absDelta - (pos.exact - pos.round) * ray.delta;
+        pos.deltaPos[lastHit] -= ray.absDelta[lastHit];
 
         int i = 50;
         block = u64vec2(-1);
-        // nextIntersectDDA();
-        while (pos.round == origPos) {
         while (block.x == -1 && i-- != 0) {
             nextIntersectDDA();
             block = getBlock();
         }
-        }
 
-        if (block.x == -1) {
-            FragColor = vec4(calcLightIntensity(color_int_to_vec3(origBlock.x), sunDir, origLastHit) * finalColorMod, 0);
-        } else {
-            FragColor = vec4(r,0);//color_int_to_vec3(origBlock.x) * 0.3, 0);
+        if (block.x != -1) {
+        //     FragColor = vec4(origLastHit * 0.3);//calcLightIntensity(color_int_to_vec3(origBlock.x), sunDir, origLastHit) * finalColorMod, 0);
+        // } else {
+            FragColor = vec4(color_int_to_vec3(origBlock.x) * 0.3, 0);
         }
 
         //PosOut = pos.exact;
@@ -414,20 +401,6 @@ void main()
     } else {
         FragColor = vec4(genSkyBox() * finalColorMod, 0); 
     }
-
-    // if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
-    //     pos.round.x += ray.step.x;
-    //     pos.exact = pos.round.x * vec3(1,ray.ratioXtoY,ray.ratioXtoZ);
-    // } else if (pos.deltaPos.y < pos.deltaPos.z) {
-    //     pos.round.y += ray.step.y;
-    //     pos.exact = pos.round.y * vec3(ray.ratioYtoX,1,ray.ratioYtoZ);
-    // } else {
-    //     pos.round.z += ray.step.z;
-    //     pos.exact = pos.round.z * vec3(ray.ratioZtoX,ray.ratioZtoY,1);
-    // }
-    // pos.exact -= ray.dir;
-    // FragOut = vec4(abs(pos.exact-origin), distance(pos.exact,origin));
-    // FragOut2 = vec4(ray.dir,0);
 }
 
 void nextIntersect(int step) {
