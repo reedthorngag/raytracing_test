@@ -207,18 +207,9 @@ vec3 refractRay(vec3 ray, vec3 normal, float n1, float n2) {
     return r * ray + (r*c1-c2) * normal;
 }
 
-#define PI 3.141592653589793
-float sineInOut(float t) {
-  return -0.5 * (cos(PI * t) - 1.0);
-}
+void refractRay(float newRefractIndex, uint flags) {
 
-void refractRay(float newRefractIndex, u64vec2 block) {
-
-    if ((uint(block.y) & 0x10) > 0) {
-        finalColorMod *= vec3(0.92,0.95,1.0);
-    } else {
-        finalColorMod *= 0.95;
-    }
+    finalColorMod *= (flags & 0x10) > 0 ? vec3(0.92,0.95,1.0) : vec3(0.95);
 
     if (currentRefractiveIndex == newRefractIndex) return;
 
@@ -229,10 +220,8 @@ void refractRay(float newRefractIndex, u64vec2 block) {
     vec3 normal = vec3(0);
     normal[lastHit] = ray.step[lastHit];
 
-    if ((uint(block.y) & 0x10) > 0) {
-
-        float delta = sin((deltaTime + pos.exact.x*0.2)*10)*0.2;
-        normal.x += delta;
+    if ((flags & 0x10) > 0) {
+        normal.x += sin((deltaTime + pos.exact.x*0.2)*10)*0.2;
 
         normal = normalize(normal);
     }
@@ -314,35 +303,34 @@ void main() {
     }
 
     uint i = 0;
-    const uint numSteps = 350;
+    const uint numSteps = 300;
+
+    // while (block.x == -1 && i++ < numSteps) {
+    //     nextIntersectDDA();
+    //     block = getBlock();
+    // }
+
     while (i++ < numSteps) {
 
-        while (block.x == -1 && i++ < numSteps) {// && currentRefractiveIndex == 1.0
-            nextIntersectDDA();
-            block = getBlock();
-        }
-
-        uint flags = uint(block.y) & 0x7;
-
-        if (block.x == -1) {
-            break;
-            // if (currentRefractiveIndex != 1.0) {
-            //     refractRay(1.0, u64vec2(0));
-            // } else break;
-        }
-
-        else if (flags == 0x3) {
-            reflectRay(block);
-
-        } else if (flags == 0x5) {
-            refractRay(1.1, block);
-
-        } else {
-            break;
-        }
+        // while (block.x == -1 && i++ < numSteps) {// && currentRefractiveIndex == 1.0
+        //     nextIntersectDDA();
+        //     block = getBlock();
+        // }
 
         nextIntersectDDA();
         block = getBlock();
+
+        if (block.x != -1) {
+            uint flags = uint(block.y) & 0x7;
+
+            if (flags == 0x3) {
+                reflectRay(block);
+
+            } else if (flags == 0x5) {
+                refractRay(1.1, uint(block.y));
+                
+            } else break;
+        }
     }
 
     if (renderPosData == 1) {

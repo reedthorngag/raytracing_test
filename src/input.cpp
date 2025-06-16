@@ -79,34 +79,34 @@ void glfwCharCallback(GLFWwindow* window, int key, int scancode, int action, int
                 break;
 
             case GLFW_KEY_1:
-                sendDebugFrame = 1;
+            currentSelected = glm::min(0,hotbarLength-1);
                 break;
             case GLFW_KEY_2:
-                sendDebugFrame = 2;
+            currentSelected = glm::min(1,hotbarLength-1);
                 break;
             case GLFW_KEY_3:
-                sendDebugFrame = 3;
+                currentSelected = glm::min(2,hotbarLength-1);
                 break;
             case GLFW_KEY_4:
-                sendDebugFrame = 4;
+                currentSelected = glm::min(3,hotbarLength-1);
                 break;
             case GLFW_KEY_5:
-                sendDebugFrame = 5;
+                currentSelected = glm::min(4,hotbarLength-1);
                 break;
             case GLFW_KEY_6:
-                sendDebugFrame = 6;
+                currentSelected = glm::min(5,hotbarLength-1);
                 break;
             case GLFW_KEY_7:
-                sendDebugFrame = 7;
+                currentSelected = glm::min(6,hotbarLength-1);
                 break;
             case GLFW_KEY_8:
-                sendDebugFrame = 8;
+                currentSelected = glm::min(7,hotbarLength-1);
                 break;
             case GLFW_KEY_9:
-                sendDebugFrame = 9;
+                currentSelected = glm::min(8,hotbarLength-1);
                 break;
             case GLFW_KEY_0:
-                sendDebugFrame = 10;
+                currentSelected = glm::min(9,hotbarLength-1);
                 break;
 
             case GLFW_KEY_L:
@@ -117,6 +117,10 @@ void glfwCharCallback(GLFWwindow* window, int key, int scancode, int action, int
             case GLFW_KEY_R:
                 printf("\r");
                 reloadShaders();
+                break;
+
+            case GLFW_KEY_N:
+                printf("\n");
                 break;
             
             default:
