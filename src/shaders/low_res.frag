@@ -118,7 +118,7 @@ uint lastHit = 0;
 uint lastHitFlags = 0;
 float lastHitMetadata = 0;
 
-u64vec2 getBlock();
+void getBlock();
 void nextIntersect(int step);
 void nextIntersectDDA();
 
@@ -173,22 +173,24 @@ vec3 b = vec3(0,0,1);
 
 vec3 finalColorMod = vec3(1);
 
+bool rayReflected = false;
 
 void reflectRay(u64vec2 block) {
 
     pos.deltaPos[lastHit] -= ray.absDelta[lastHit];
-    pos.exact[lastHit] += ray.step[lastHit];
+    // pos.exact[lastHit] += ray.step[lastHit];
 
-    ray.ratios[0][lastHit] *= -1;
-    ray.ratios[1][lastHit] *= -1;
-    ray.ratios[2][lastHit] *= -1;
+    // ray.ratios[0][lastHit] *= -1;
+    // ray.ratios[1][lastHit] *= -1;
+    // ray.ratios[2][lastHit] *= -1;
 
-    ray.ratios[lastHit][lastHit] *= -1;
+    // ray.ratios[lastHit][lastHit] *= -1;
 
     ray.step[lastHit] *= -1;
     ray.dir[lastHit] *= -1;
 
     finalColorMod *= 0.94;
+    rayReflected = true;
 }
 
 float currentRefractiveIndex = 1.0;
@@ -209,7 +211,7 @@ vec3 refractRay(vec3 ray, vec3 normal, float n1, float n2) {
 
 void refractRay(float newRefractIndex, uint flags) {
 
-    finalColorMod *= (flags & 0x10) > 0 ? vec3(0.92,0.95,1.0) : vec3(0.95);
+    finalColorMod *= (flags & 0x10) > 0 ? vec3(0.94,0.97,1.0) : vec3(0.95);
 
     if (currentRefractiveIndex == newRefractIndex) return;
 
@@ -221,7 +223,7 @@ void refractRay(float newRefractIndex, uint flags) {
     normal[lastHit] = ray.step[lastHit];
 
     if ((flags & 0x10) > 0) {
-        normal.x += sin((deltaTime + pos.exact.x*0.2)*10)*0.2;
+        normal.x += sin((deltaTime + pos.exact.x*0.2 - pos.exact.z * 0.1)*10)*0.2;
 
         normal = normalize(normal);
     }
@@ -248,6 +250,8 @@ vec3 calcLightIntensity(vec3 color, vec3 lightDir, uint index) {
 
     return color * intensity;
 }
+
+u64vec2 block;
 
 void main() {
     origin = trueOrigin;
@@ -292,7 +296,7 @@ void main() {
     pos.deltaPos = ray.absDelta - (pos.exact - pos.round) * ray.delta;
 
 
-    u64vec2 block = getBlock();
+    getBlock();
     if (block.x != -1) {
         if ((block.y & 0x4) > 0) {
             currentRefractiveIndex = 1.1;
@@ -305,20 +309,12 @@ void main() {
     uint i = 0;
     const uint numSteps = 300;
 
-    // while (block.x == -1 && i++ < numSteps) {
-    //     nextIntersectDDA();
-    //     block = getBlock();
-    // }
+    while (block.x == -1 && i++ < numSteps) {
+        nextIntersectDDA();
+        getBlock();
+    }
 
     while (i++ < numSteps) {
-
-        // while (block.x == -1 && i++ < numSteps) {// && currentRefractiveIndex == 1.0
-        //     nextIntersectDDA();
-        //     block = getBlock();
-        // }
-
-        nextIntersectDDA();
-        block = getBlock();
 
         if (block.x != -1) {
             uint flags = uint(block.y) & 0x7;
@@ -328,9 +324,12 @@ void main() {
 
             } else if (flags == 0x5) {
                 refractRay(1.1, uint(block.y));
-                
+
             } else break;
         }
+
+        nextIntersectDDA();
+        getBlock();
     }
 
     if (renderPosData == 1) {
@@ -346,53 +345,51 @@ void main() {
     if (lastHit != 2 && ray.step.z < 0) pos.exact.z += 1;
 
     if (lookingAtBlock == pos.round) {
-        vec3 hit = pos.exact;
-        hit[lastHit] = 0.5;
-        if (hit.x > 0.9 || hit.y > 0.9 || hit.z > 0.9 ||
-            hit.x < 0.1 || hit.y < 0.1 || hit.z < 0.1) {
-                FragColor = vec4(color_int_to_vec3(block.x) * 2 + 0.3,0);
-                return;
-            }
+        FragColor = vec4(color_int_to_vec3(block.x) * 2 + 0.3,0);
+        return;
+    }
+
+    if (block.x == -1) {
+        FragColor = vec4(genSkyBox() * finalColorMod, 0);
+        return;
+    }
+    
+    u64vec2 origBlock = block;
+    uint origLastHit = lastHit;
+    ivec3 origPos = pos.round;
+
+    vec3 color = color_int_to_vec3(block.x);
+
+    FragColor = vec4(calcLightIntensity(color, sunDir, lastHit) * finalColorMod, 0);
+    if (rayReflected) {
+        return;
+    }
+
+    if (!facingLightDir(sunDir, lastHit)) {
+        FragColor = vec4(color * 0.3 * finalColorMod, 0);
+        return;
+    }
+
+    ray = buildRay(sunDir);
+
+    if (ray.step.x < 0) pos.exact.x -= 1;
+    if (ray.step.y < 0) pos.exact.y -= 1;
+    if (ray.step.z < 0) pos.exact.z -= 1;
+
+    pos.deltaPos = ray.absDelta - (pos.exact - pos.round) * ray.delta;
+    pos.deltaPos[lastHit] -= ray.absDelta[lastHit];
+
+    i = 75;
+    block = u64vec2(-1);
+    while ((block.x == -1 || (uint(block.y) & 0x10) > 0) && i-- != 0) {
+        nextIntersectDDA();
+        getBlock();
     }
 
     if (block.x != -1) {
-        u64vec2 origBlock = block;
-        uint origLastHit = lastHit;
-        ivec3 origPos = pos.round;
-
-        FragColor = vec4(calcLightIntensity(color_int_to_vec3(block.x), sunDir, lastHit) * finalColorMod, 0);
-
-        if (!facingLightDir(sunDir, lastHit)) {
-            FragColor = vec4(color_int_to_vec3(block.x) * 0.3 * finalColorMod, 0);
-            return;
-        }
-
-        ray = buildRay(sunDir);
-
-        if (ray.step.x < 0) pos.exact.x -= 1;
-        if (ray.step.y < 0) pos.exact.y -= 1;
-        if (ray.step.z < 0) pos.exact.z -= 1;
-
-        pos.deltaPos = ray.absDelta - (pos.exact - pos.round) * ray.delta;
-        pos.deltaPos[lastHit] -= ray.absDelta[lastHit];
-
-        int i = 75;
-        block = u64vec2(-1);
-        while ((block.x == -1 || (int(block.y) & 0x10) > 0) && i-- != 0) {
-            nextIntersectDDA();
-            block = getBlock();
-        }
-
-        if (block.x != -1) {
-            FragColor = vec4(color_int_to_vec3(origBlock.x) * 0.3 * finalColorMod, 0);
-        }
-
-        //PosOut = pos.exact;
-        
-        //NormalOut = -min(lastHit,0) * ray.step;
-    } else {
-        FragColor = vec4(genSkyBox() * finalColorMod, 0);
+        FragColor = vec4(color * 0.3 * finalColorMod, 0);
     }
+
 }
 
 void nextIntersect(int step) {
@@ -493,7 +490,7 @@ void nextIntersectDDA() {
     pos.exact += dst[lastHit] * ray.ratios[lastHit];
 }
 
-u64vec2 getBlock() {
+void getBlock() {
     
     currentMortonPos ^= mortonPos;
     int n = MAX_DEPTH-1;
@@ -510,25 +507,27 @@ u64vec2 getBlock() {
 
     while (depth < MAX_DEPTH) {
 
-        u64vec2 node = nodes[stack[depth]];
+        block = nodes[stack[depth]];
         
-        uint a = uint(node.y & 1);
+        uint a = uint(block.y & 1);
         if (a == 1) {
-            return node;
+            return;
         }
 
         posOffset -= 6;
         uint index = (mortonPos >> posOffset) & 0x3f;
 
-        a = uint(node.x >> index & 1);
+        a = uint(block.x >> index & 1);
         if (a == 0) {
-            return u64vec2(-1, 0);
+            block = u64vec2(-1, 0);
+            return;
         }
 
         stack[++depth] = children_array[
-            uint(node.y >> 32)
+            uint(block.y >> 32)
         ][index];
     }
 
-    return u64vec2(-1, 0);
+    //block = u64vec2(-1, 0);
+    return;
 }
