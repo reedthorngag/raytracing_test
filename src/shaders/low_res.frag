@@ -114,8 +114,6 @@ uint currentMortonPos = 0;
 int depth;
 uint mortonPos = 0;
 
-ivec3 currentPos;
-
 uint lastHit = 0;
 uint lastHitFlags = 0;
 float lastHitMetadata = 0;
@@ -275,7 +273,6 @@ void main() {
     depth = 0;
 
     pos.round = ivec3(floor(origin));
-    currentPos = pos.round;
 
     mortonPos = originMortonPos;
 
@@ -450,36 +447,47 @@ void nextIntersectDDA() {
 
     vec3 dst = ray.step - (pos.exact - pos.round);
 
-    float minP = min(min(pos.deltaPos.x, pos.deltaPos.y), pos.deltaPos.z);
-    ivec3 invMask = ivec3(step(1e-4, pos.deltaPos - minP));
-    ivec3 mask = 1 - invMask;
-    mask = mask & invMask.yzx;
+    if (pos.deltaPos.x < pos.deltaPos.y && pos.deltaPos.x < pos.deltaPos.z) {
+        pos.round.x += ray.step.x;
+        pos.deltaPos.x += ray.absDelta.x;
 
-    pos.round += mask * ray.step;
-    pos.deltaPos += mask * ray.absDelta;
-
-    ivec3 indexMap = ivec3(0,1,2) * mask;
-    lastHit = indexMap.x + indexMap.y + indexMap.z;
-
-    pos.exact += dst[lastHit] * ray.ratios[lastHit];
-
-    uint n = pos.round[lastHit];
-    n = (n | (n << 16)) & 0x030000FF;
-    n = (n | (n <<  8)) & 0x0300F00F;
-    n = (n | (n <<  4)) & 0x030C30C3;
-
-    if (lastHit == 0) {
+        uint n = pos.round.x;
+        n = (n | (n << 16)) & 0x030000FF;
+        n = (n | (n <<  8)) & 0x0300F00F;
+        n = (n | (n <<  4)) & 0x030C30C3;
         mortonPos &= 0xFCF3CF3C;
         mortonPos |= n;
 
-    } else if (lastHit == 1) {
+        lastHit = 0;
+
+    } else if (pos.deltaPos.y < pos.deltaPos.z) {
+        pos.round.y += ray.step.y;
+        pos.deltaPos.y += ray.absDelta.y;
+
+        uint n = pos.round.y;
+        n = (n | (n << 16)) & 0x030000FF;
+        n = (n | (n <<  8)) & 0x0300F00F;
+        n = (n | (n <<  4)) & 0x030C30C3;
         mortonPos &= 0xFCF3CF3C << 2 | 0x3;
         mortonPos |= n << 2;
 
+        lastHit = 1;
+
     } else {
+        pos.round.z += ray.step.z;
+        pos.deltaPos.z += ray.absDelta.z;
+        
+        uint n = pos.round.z;
+        n = (n | (n << 16)) & 0x030000FF;
+        n = (n | (n <<  8)) & 0x0300F00F;
+        n = (n | (n <<  4)) & 0x030C30C3;
         mortonPos &= 0xFCF3CF3C << 4 | 0xf;
         mortonPos |= n << 4;
+
+        lastHit = 2;
     }
+
+    pos.exact += dst[lastHit] * ray.ratios[lastHit];
 }
 
 void getBlock() {
